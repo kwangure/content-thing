@@ -31,8 +31,6 @@ export function content() {
 	let root = process.cwd();
 	/** @type {string} */
 	let outputDir;
-	/** @type {string} */
-	let sqliteBinaryPath;
 
 	return {
 		name: 'vite-plugin-content',
@@ -60,84 +58,17 @@ export function content() {
 			}
 		},
 		load(id) {
-			if (id.endsWith('sqlite.db')) {
-				const dbPath = path.join(outputDir, 'sqlite.db');
-				if (config.command === 'serve') {
-					return `export default ${JSON.stringify(dbPath)}`;
-				}
-				const referenceId = this.emitFile({
-					type: 'asset',
-					name: 'sqlite.db',
-					source: fs.readFileSync(dbPath),
-				});
-				return `export default import.meta.ROLLUP_FILE_URL_${referenceId};\n`;
+			if (!id.endsWith('sqlite.db')) return;
+			const dbPath = path.join(outputDir, 'sqlite.db');
+			if (config.command === 'serve') {
+				return `export default ${JSON.stringify(dbPath)}`;
 			}
-			if (id.endsWith('better_sqlite3.node')) {
-				if (config.command === 'serve') {
-					sqliteBinaryPath = id;
-					return `export default ${JSON.stringify(id)}`;
-				}
-				const referenceId = this.emitFile({
-					type: 'asset',
-					name: 'better_sqlite3.node',
-					source: fs.readFileSync(id),
-				});
-				sqliteBinaryPath = `import.meta.ROLLUP_FILE_URL_${referenceId}`;
-				return `export default import.meta.ROLLUP_FILE_URL_${referenceId};\n`;
-			}
-		},
-		transform(code, id) {
-			if (!id.endsWith('better-sqlite3/lib/database.js')) return;
-
-			const lines = code.split('\n');
-
-			let insertCreateRequireIndex = -1;
-			let replaceAddonRequireIndex = -1;
-			let compareNativeBindingPathIndex = -1;
-
-			for (let i = 0; i < lines.length; i++) {
-				if (insertCreateRequireIndex === -1 && lines[i].startsWith('const')) {
-					insertCreateRequireIndex = i;
-				}
-
-				if (
-					compareNativeBindingPathIndex === -1 &&
-					lines[i].includes('nativeBindingPath == null')
-				) {
-					compareNativeBindingPathIndex = i;
-				}
-
-				if (
-					replaceAddonRequireIndex === -1 &&
-					lines[i].includes('addon = require(')
-				) {
-					replaceAddonRequireIndex = i;
-				}
-			}
-
-			if (compareNativeBindingPathIndex !== -1) {
-				// Removing this if branch allows the require of `bindings` to be tree-shaken
-				lines[compareNativeBindingPathIndex] = lines[
-					compareNativeBindingPathIndex
-				].replace('nativeBindingPath == null', 'false');
-			}
-
-			if (replaceAddonRequireIndex !== -1) {
-				// Vite prepends with `file://` in production;
-				const replacedRequire = `		addon = require2(${sqliteBinaryPath}.replace(/^[a-zA-Z]+:\\/\\//, ''));`;
-				lines[replaceAddonRequireIndex] = replacedRequire;
-			}
-
-			if (insertCreateRequireIndex !== -1) {
-				lines.splice(
-					insertCreateRequireIndex,
-					0,
-					"	const { createRequire } = require('module');\n	const require2 = createRequire(import.meta.url);",
-				);
-			}
-
-			// Joining modified lines back to a single string
-			return lines.join('\n');
+			const referenceId = this.emitFile({
+				type: 'asset',
+				name: 'sqlite.db',
+				source: fs.readFileSync(dbPath),
+			});
+			return `export default import.meta.ROLLUP_FILE_URL_${referenceId};\n`;
 		},
 	};
 }
