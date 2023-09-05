@@ -1,0 +1,209 @@
+{
+	"name": "content-thing",
+	"version": "0.0.0",
+	"scripts": {
+		"check": "wireit",
+		"format": "wireit",
+		"lint": "wireit",
+		"package": "wireit",
+		"test": "wireit"
+	},
+	"wireit": {
+		"check": {
+			"command": "tsc",
+			"files": [
+				"src/**/*.{js,ts}",
+				"tests/**/*.{js,ts}",
+				"tsconfig.json"
+			],
+			"dependencies": [
+				"../internal-utils:package",
+				"../remark-attributes:package",
+				"../remark-rich-attributes:package",
+				"../remark-toc:package",
+				"../remark-variables:package",
+				"../remark-yaml-parse:package"
+			],
+			"output": []
+		},
+		"format": {
+			"command": "prettier . --write --cache",
+			"files": [
+				"**/*.{css,html,js,json,md,ts,svelte}",
+				"!types/**",
+				".prettierignore"
+			],
+			"output": []
+		},
+		"lint": {
+			"command": "eslint \"**/*.{js,svelte}\" --color --cache --fix",
+			"files": [
+				"**/*.{js,svelte}",
+				".eslintignore",
+				"eslint.config.js"
+			],
+			"output": []
+		},
+		"package": {
+			"dependencies": [
+				"package:config",
+				"package:lib"
+			]
+		},
+		"package:config": {
+			"command": "node ./src/config/json-schema.js",
+			"dependencies": [
+				"../internal-utils:package"
+			],
+			"files": [
+				"./src/config/*.js"
+			],
+			"output": [
+				"./config/schema.json"
+			]
+		},
+		"package:lib": {
+			"command": "tsc --project tsconfig.build.json",
+			"dependencies": [
+				"../internal-utils:package",
+				"../remark-attributes:package",
+				"../remark-rich-attributes:package",
+				"../remark-toc:package",
+				"../remark-variables:package",
+				"../remark-yaml-parse:package"
+			],
+			"files": [
+				"src/**/*.{js,ts}",
+				"tsconfig.build.json",
+				"tsconfig.json"
+			],
+			"output": [
+				"types"
+			]
+		},
+		"pre-commit": {
+			"dependencies": [
+				"check",
+				"format",
+				"publint",
+				"test"
+			]
+		},
+		"publint": {
+			"command": "publint",
+			"dependencies": [
+				"package"
+			],
+			"files": [
+				"src/**",
+				"types/**",
+				"package.json"
+			],
+			"output": []
+		},
+		"release": {
+			"dependencies": [
+				"check",
+				"format",
+				"package",
+				"publint",
+				"test"
+			]
+		},
+		"test": {
+			"command": "node --test --test-reporter spec",
+			"files": [
+				"src/**/*.js",
+				"tests/**/*.js"
+			],
+			"output": []
+		}
+	},
+	"exports": {
+		".": {
+			"types": "./types/index.d.ts",
+			"default": "./src/index.js"
+		},
+		"./config": {
+			"default": "./config/schema.json"
+		},
+		"./db": {
+			"types": "./types/db/index.d.ts",
+			"default": "./src/db/index.js"
+		},
+		"./better-sqlite3": {
+			"types": "./types/packages/better-sqlite3/index.d.ts",
+			"default": "./src/packages/better-sqlite3/index.js"
+		},
+		"./drizzle-orm": {
+			"types": "./types/packages/drizzle-orm/index.d.ts",
+			"default": "./src/packages/drizzle-orm/index.js"
+		},
+		"./drizzle-orm/better-sqlite3": {
+			"types": "./types/packages/drizzle-orm/better-sqlite3.d.ts",
+			"default": "./src/packages/drizzle-orm/better-sqlite3.js"
+		},
+		"./drizzle-orm/sqlite-core": {
+			"types": "./types/packages/drizzle-orm/sqlite.d.ts",
+			"default": "./src/packages/drizzle-orm/sqlite.js"
+		},
+		"./drizzle-zod": {
+			"types": "./types/packages/drizzle-zod.d.ts",
+			"default": "./src/packages/drizzle-zod.js"
+		},
+		"./mdast": {
+			"types": "./types/packages/mdast.d.ts",
+			"default": "./src/packages/mdast.js"
+		}
+	},
+	"dependencies": {
+		"@content-thing/internal-utils": "^0.0.0",
+		"@content-thing/remark-attributes": "^0.0.0",
+		"@content-thing/remark-rich-attributes": "^0.0.0",
+		"@content-thing/remark-toc": "^0.0.0",
+		"@content-thing/remark-variables": "^0.0.0",
+		"@content-thing/remark-yaml-parse": "^0.0.0",
+		"@types/mdast": "^3.0.12",
+		"better-sqlite3": "^8.5.2",
+		"drizzle-orm": "^0.28.5",
+		"drizzle-zod": "^0.5.1",
+		"glob": "^10.3.3",
+		"js-yaml": "^4.1.0",
+		"remark-frontmatter": "^4.0.1",
+		"remark-parse": "^10.0.2",
+		"remark-stringify": "^10.0.3",
+		"unified": "^10.1.2",
+		"vfile": "^5.0.0",
+		"zod": "^3.22.2"
+	},
+	"devDependencies": {
+		"@sveltejs/kit": "^1.22.4",
+		"@types/better-sqlite3": "^7.6.4",
+		"@types/js-yaml": "^4.0.5",
+		"@types/node": "^20.4.10",
+		"drizzle-kit": "^0.19.13",
+		"eslint": "^8.47.0",
+		"eslint-config": "workspace:*",
+		"prettier": "^3.0.2",
+		"prettier-config": "workspace:*",
+		"publint": "^0.2.2",
+		"typescript": "^5.1.6",
+		"vite": "^4.4.9",
+		"zod-to-json-schema": "^3.21.4"
+	},
+	"peerDependencies": {
+		"@sveltejs/kit": "^1.22.0",
+		"drizzle-kit": "^0.19.13"
+	},
+	"files": [
+		"src",
+		"types",
+		"dist",
+		"config",
+		"!**/*.test.*",
+		"!**/*.spec.*"
+	],
+	"prettier": "prettier-config",
+	"license": "MIT",
+	"type": "module"
+}

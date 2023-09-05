@@ -1,0 +1,124 @@
+{
+	"name": "content-thing-monorepo",
+	"private": true,
+	"workspaces": [
+		"packages/*"
+	],
+	"scripts": {
+		"check": "wireit",
+		"format": "wireit",
+		"lint": "wireit",
+		"package": "wireit",
+		"pre-commit": "wireit",
+		"prepare": "husky install",
+		"release": "wireit",
+		"test": "wireit",
+		"version": "wireit"
+	},
+	"wireit": {
+		"check": {
+			"dependencies": [
+				"./packages/content-thing:check",
+				"./packages/internal-utils:check",
+				"./packages/remark-attributes:check",
+				"./packages/remark-rich-attributes:check",
+				"./packages/remark-toc:check",
+				"./packages/remark-variables:check",
+				"./packages/remark-yaml-parse:check"
+			]
+		},
+		"format": {
+			"dependencies": [
+				"./packages/content-thing:format",
+				"./packages/eslint-config:format",
+				"./packages/internal-utils:format",
+				"./packages/prettier-config:format",
+				"./packages/remark-attributes:format",
+				"./packages/remark-rich-attributes:format",
+				"./packages/remark-toc:format",
+				"./packages/remark-variables:format",
+				"./packages/remark-yaml-parse:format"
+			]
+		},
+		"lint": {
+			"dependencies": [
+				"./packages/content-thing:lint",
+				"./packages/eslint-config:lint",
+				"./packages/internal-utils:lint",
+				"./packages/prettier-config:lint",
+				"./packages/remark-attributes:lint",
+				"./packages/remark-rich-attributes:lint",
+				"./packages/remark-toc:lint",
+				"./packages/remark-variables:lint",
+				"./packages/remark-yaml-parse:lint"
+			]
+		},
+		"package": {
+			"dependencies": [
+				"./packages/content-thing:package",
+				"./packages/eslint-config:package",
+				"./packages/internal-utils:package",
+				"./packages/prettier-config:package",
+				"./packages/remark-attributes:package",
+				"./packages/remark-rich-attributes:package",
+				"./packages/remark-toc:package",
+				"./packages/remark-variables:package",
+				"./packages/remark-yaml-parse:package"
+			]
+		},
+		"pre-commit": {
+			"dependencies": [
+				"./packages/content-thing:pre-commit",
+				"./packages/eslint-config:pre-commit",
+				"./packages/internal-utils:pre-commit",
+				"./packages/prettier-config:pre-commit",
+				"./packages/remark-attributes:pre-commit",
+				"./packages/remark-rich-attributes:pre-commit",
+				"./packages/remark-toc:pre-commit",
+				"./packages/remark-variables:lint",
+				"./packages/remark-yaml-parse:pre-commit"
+			]
+		},
+		"release": {
+			"command": "changeset publish",
+			"dependencies": [
+				"./packages/content-thing:release",
+				"./packages/internal-utils:release",
+				"./packages/remark-attributes:release",
+				"./packages/remark-rich-attributes:release",
+				"./packages/remark-toc:release",
+				"./packages/remark-variables:release",
+				"./packages/remark-yaml-parse:release"
+			]
+		},
+		"test": {
+			"dependencies": [
+				"./packages/content-thing:test",
+				"./packages/internal-utils:test",
+				"./packages/remark-attributes:test",
+				"./packages/remark-rich-attributes:test",
+				"./packages/remark-toc:test",
+				"./packages/remark-variables:test",
+				"./packages/remark-yaml-parse:test"
+			]
+		},
+		"version": {
+			"#comment": [
+				"Changesets doesn't bump pnpm-lock.json so we run `pnpm install`",
+				"to do it for us"
+			],
+			"command": "changeset version && pnpm install",
+			"files": [
+				"./changeset/*.md",
+				"./packages/**/package.json",
+				"./packages/**/CHANGELOG.md"
+			],
+			"output": []
+		}
+	},
+	"devDependencies": {
+		"@changesets/cli": "^2.26.2",
+		"husky": "^8.0.3",
+		"wireit": "^0.10.0"
+	}
+}

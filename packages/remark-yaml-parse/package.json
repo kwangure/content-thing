@@ -1,0 +1,124 @@
+{
+	"name": "@content-thing/remark-yaml-parse",
+	"version": "0.0.0",
+	"scripts": {
+		"check": "wireit",
+		"format": "wireit",
+		"lint": "wireit",
+		"package": "wireit",
+		"publint": "wireit",
+		"pre-commit": "wireit",
+		"test": "wireit"
+	},
+	"wireit": {
+		"check": {
+			"command": "tsc",
+			"files": [
+				"src/**/*.{js,ts}",
+				"tests/**/*.{js,ts}",
+				"tsconfig.json"
+			],
+			"output": []
+		},
+		"format": {
+			"command": "prettier . --write --cache",
+			"files": [
+				"**/*.{css,html,js,json,md,ts,svelte}",
+				"!types/**",
+				".prettierignore"
+			],
+			"output": []
+		},
+		"lint": {
+			"command": "eslint \"**/*.{js,svelte}\" --color --cache --fix",
+			"files": [
+				"**/*.{js,svelte}",
+				".eslintignore",
+				"eslint.config.js"
+			],
+			"output": []
+		},
+		"package": {
+			"command": "tsc --project tsconfig.build.json",
+			"files": [
+				"src/**/*.{js,ts}",
+				"tsconfig.build.json",
+				"tsconfig.json"
+			],
+			"output": [
+				"types"
+			]
+		},
+		"pre-commit": {
+			"dependencies": [
+				"check",
+				"format",
+				"lint",
+				"publint",
+				"test"
+			]
+		},
+		"publint": {
+			"command": "publint",
+			"dependencies": [
+				"package"
+			],
+			"files": [
+				"src/**",
+				"types/**",
+				"package.json"
+			],
+			"output": []
+		},
+		"release": {
+			"dependencies": [
+				"check",
+				"format",
+				"package",
+				"publint",
+				"test"
+			]
+		},
+		"test": {
+			"command": "node --test --test-reporter spec",
+			"files": [
+				"src/**/*.js",
+				"tests/**/*.js"
+			],
+			"output": []
+		}
+	},
+	"files": [
+		"src",
+		"types",
+		"!**/*.test.*",
+		"!**/*.spec.*"
+	],
+	"exports": {
+		".": {
+			"types": "./types/index.d.ts",
+			"default": "./src/index.js"
+		}
+	},
+	"dependencies": {
+		"js-yaml": "^4.1.0",
+		"unist-util-visit": "^4.0.0"
+	},
+	"devDependencies": {
+		"@types/js-yaml": "^4.0.5",
+		"@types/mdast": "^3.0.12",
+		"@types/node": "^20.4.10",
+		"eslint": "^8.47.0",
+		"eslint-config": "workspace:*",
+		"prettier": "^3.0.2",
+		"prettier-config": "workspace:*",
+		"publint": "^0.2.2",
+		"remark-frontmatter": "^4.0.1",
+		"remark-parse": "^10.0.2",
+		"typescript": "^5.1.6",
+		"unified": "^10.1.2"
+	},
+	"prettier": "prettier-config",
+	"license": "MIT",
+	"type": "module"
+}

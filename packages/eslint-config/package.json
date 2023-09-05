@@ -1,0 +1,98 @@
+{
+	"name": "eslint-config",
+	"version": "0.0.0",
+	"private": true,
+	"scripts": {
+		"check": "wireit",
+		"format": "wireit",
+		"lint": "wireit",
+		"package": "wireit",
+		"pre-commit": "wireit",
+		"publint": "wireit"
+	},
+	"wireit": {
+		"check": {
+			"command": "tsc",
+			"files": [
+				"*.js",
+				"tsconfig.json"
+			],
+			"output": []
+		},
+		"format": {
+			"command": "prettier . --write --cache",
+			"files": [
+				"**/*.{js,json}"
+			],
+			"output": []
+		},
+		"lint": {
+			"command": "eslint \"**/*.{js,svelte}\" --color --cache --fix",
+			"files": [
+				"**/*.{js,svelte}",
+				".eslintignore",
+				"eslint.config.js"
+			],
+			"output": []
+		},
+		"package": {
+			"command": "tsc",
+			"files": [
+				"*.js",
+				"tsconfig.json"
+			],
+			"output": [
+				"types"
+			]
+		},
+		"pre-commit": {
+			"dependencies": [
+				"check",
+				"format",
+				"lint",
+				"publint"
+			]
+		},
+		"publint": {
+			"command": "publint",
+			"dependencies": [
+				"package"
+			],
+			"files": [
+				"*.{js,ts,mjs}",
+				"package.json"
+			],
+			"output": []
+		}
+	},
+	"exports": {
+		".": {
+			"types": "./types/eslint.config.d.ts",
+			"default": "./eslint.config.js"
+		}
+	},
+	"module": "./eslint.config.js",
+	"dependencies": {
+		"eslint-config-prettier": "^8.5.0",
+		"eslint-plugin-svelte": "^2.32.0"
+	},
+	"devDependencies": {
+		"@eslint/js": "^8.47.0",
+		"@types/eslint": "^8.44.2",
+		"@types/eslint-config-prettier": "^6.11.0",
+		"@types/eslint__js": "^8.42.0",
+		"eslint": "^8.47.0",
+		"globals": "^13.21.0",
+		"prettier": "^3.0.2",
+		"prettier-config": "workspace:*",
+		"publint": "^0.2.2",
+		"typescript": "^5.1.6"
+	},
+	"files": [
+		"./eslint.config.js",
+		"types"
+	],
+	"prettier": "prettier-config",
+	"license": "MIT",
+	"type": "module"
+}

@@ -1,0 +1,117 @@
+{
+	"name": "@content-thing/internal-utils",
+	"version": "0.0.0",
+	"scripts": {
+		"check": "wireit",
+		"format": "wireit",
+		"lint": "wireit",
+		"package": "wireit",
+		"test": "wireit"
+	},
+	"wireit": {
+		"check": {
+			"command": "tsc",
+			"files": [
+				"src/**/*.{js,ts}",
+				"tests/**/*.{js,ts}",
+				"tsconfig.json"
+			],
+			"output": []
+		},
+		"format": {
+			"command": "prettier . --write --cache",
+			"files": [
+				"**/*.{css,html,js,json,md,ts,svelte}",
+				"!types/**",
+				".prettierignore"
+			],
+			"output": []
+		},
+		"lint": {
+			"command": "eslint \"**/*.{js,svelte}\" --color --cache --fix",
+			"files": [
+				"**/*.{js,svelte}",
+				".eslintignore",
+				"eslint.config.js"
+			],
+			"output": []
+		},
+		"package": {
+			"command": "tsc --project tsconfig.build.json",
+			"files": [
+				"src/**/*.{js,ts}",
+				"tsconfig.build.json",
+				"tsconfig.json"
+			],
+			"output": [
+				"types"
+			]
+		},
+		"pre-commit": {
+			"dependencies": [
+				"check",
+				"format",
+				"lint",
+				"publint",
+				"test"
+			]
+		},
+		"publint": {
+			"command": "publint",
+			"dependencies": [
+				"package"
+			],
+			"files": [
+				"src/**",
+				"types/**",
+				"package.json"
+			],
+			"output": []
+		},
+		"release": {
+			"dependencies": [
+				"check",
+				"format",
+				"package",
+				"publint",
+				"test"
+			]
+		},
+		"test": {
+			"command": "node --test --test-reporter spec",
+			"files": [
+				"src/**/*.js",
+				"tests/**/*.js"
+			],
+			"output": []
+		}
+	},
+	"exports": {
+		"./filesystem": {
+			"types": "./types/filesystem.d.ts",
+			"default": "./src/filesystem.js"
+		},
+		"./vite": {
+			"types": "./types/vite.d.ts",
+			"default": "./src/vite.js"
+		}
+	},
+	"files": [
+		"src",
+		"types",
+		"!**/*.test.*",
+		"!**/*.spec.*"
+	],
+	"devDependencies": {
+		"@types/node": "^20.4.10",
+		"eslint": "^8.47.0",
+		"eslint-config": "workspace:*",
+		"prettier": "^3.0.2",
+		"prettier-config": "workspace:*",
+		"publint": "^0.1.16",
+		"typescript": "^5.1.6"
+	},
+	"prettier": "prettier-config",
+	"license": "MIT",
+	"type": "module"
+}

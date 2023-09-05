@@ -1,0 +1,16 @@
+{
+	"compilerOptions": {
+		"allowJs": true,
+		"checkJs": true,
+		"declaration": true,
+		"declarationDir": "types",
+		"emitDeclarationOnly": true,
+		"moduleResolution": "bundler",
+		"resolveJsonModule": true,
+		"skipLibCheck": true,
+		"strict": true,
+		"target": "esnext"
+	},
+	"include": ["*.js"],
+	"exclude": []
+}
