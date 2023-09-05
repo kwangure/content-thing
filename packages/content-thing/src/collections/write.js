@@ -87,7 +87,7 @@ export function outputYamlCollection(
  * @param {string[]} collections
  */
 export function writeDBClient(dbClientPath, collections) {
-	let result = `import { BETTER_SQLITE3_PATH, Database } from 'content-thing/better-sqlite3';\n`;
+	let result = `import { Database } from 'content-thing/better-sqlite3';\n`;
 	result += `import { drizzle } from 'content-thing/drizzle-orm/better-sqlite3';\n`;
 	result += `// @ts-ignore\n`;
 	result += `import dbPath from './sqlite.db';\n`;
@@ -102,9 +102,7 @@ export function writeDBClient(dbClientPath, collections) {
 	result += `\n`;
 	result += `// Vite prepends file:// in production\n`;
 	result += `const normalizedDBPath = dbPath.replace(/^[a-zA-Z]+:\\/\\//, '');\n`;
-	result += `const sqlite = new Database(normalizedDBPath, {\n`;
-	result += `	nativeBinding: BETTER_SQLITE3_PATH.replace(/^[a-zA-Z]+:\\/\\//, ''),\n`;
-	result += `});\n`;
+	result += `const sqlite = new Database(normalizedDBPath);\n`;
 	result += `export const collections = drizzle(sqlite, { schema });\n`;
 
 	write(dbClientPath, result);
