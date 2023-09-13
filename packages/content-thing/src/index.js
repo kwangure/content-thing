@@ -26,7 +26,7 @@ export function content() {
 	/** @type {import('vite').ResolvedConfig} */
 	let config;
 	/** @type {string} */
-	let contentDir;
+	let collectionsDir;
 	/** @type {string} */
 	let root = process.cwd();
 	/** @type {string} */
@@ -39,18 +39,18 @@ export function content() {
 				root = _config.root;
 			}
 			config = _config;
-			contentDir = path.join(root, 'src/thing/collections');
+			collectionsDir = path.join(root, 'src/thing/collections');
 			outputDir = path.join(root, '.svelte-kit/content-thing/generated');
 		},
 		configureServer(vite) {
-			vite.watcher.on('all', (_event, filepath) => {
-				if (filepath.startsWith(contentDir)) {
-					outputCollections(contentDir, outputDir);
+			vite.watcher.on('all', (event, filepath) => {
+				if (filepath.startsWith(collectionsDir)) {
+					outputCollections(collectionsDir, outputDir);
 				}
 			});
 		},
 		async buildStart() {
-			await outputCollections(contentDir, outputDir);
+			await outputCollections(collectionsDir, outputDir);
 		},
 		resolveId(id) {
 			if (id.endsWith('sqlite.db')) {
