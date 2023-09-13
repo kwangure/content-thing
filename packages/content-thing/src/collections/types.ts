@@ -1,5 +1,12 @@
 import type { CTMarkdownSchema, CTRelations, CTYamlSchema } from '../db/types';
 
+export interface CollectionEntryOptions {
+	collections: {
+		inputDir: string;
+		outputDir: string;
+	};
+}
+
 export interface CollectionInfo {
 	/** The name of a collection */
 	name: string;

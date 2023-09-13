@@ -1,22 +1,10 @@
 import { generateMarkdownSchema, generateYamlSchema } from '../db/schema.js';
 import { generateRelationImports, generateRelations } from '../db/relations.js';
-import fs from 'node:fs';
 import path from 'node:path';
-import { remarkAttributes } from '@content-thing/remark-attributes';
-import remarkFrontmatter from 'remark-frontmatter';
-import remarkParse from 'remark-parse';
-import { remarkRichAttributes } from '@content-thing/remark-rich-attributes';
-import { remarkVariables } from '@content-thing/remark-variables';
-import remarkStringify from 'remark-stringify';
-import { remarkTableOfContents } from '@content-thing/remark-toc';
-import { remarkYamlParse } from '@content-thing/remark-yaml-parse';
-import { unified } from 'unified';
-import { VFile } from 'vfile';
 import { write } from '@content-thing/internal-utils/filesystem';
-import yaml from 'js-yaml';
 
 /**
- * @param {import("./types.js").FileInfo[]} files
+ * @param {import('./entry/markdown.js').MarkdownEntry[]} files
  * @param {import('./types.js').CTMarkdownConfig} config
  * @param {import('./types.js').CollectionInfo} collection
  * @param {Record<string, string>} collectionOutputs
@@ -45,12 +33,12 @@ export async function outputMarkdownCollection(
 	writeValidator(collection);
 	write(schemaPath, schemaCode);
 	for (const file of files) {
-		writeMarkdownData(file);
+		file.writeOutput();
 	}
 }
 
 /**
- * @param {import("./types.js").FileInfo[]} files
+ * @param {import('./entry/yaml.js').YamlEntry[]} files
  * @param {import('./types.js').CTYamlConfig} config
  * @param {import('./types.js').CollectionInfo} collection
  * @param {Record<string, string>} collectionOutputs
@@ -78,7 +66,7 @@ export function outputYamlCollection(
 	writeValidator(collection);
 	write(path.join(collection.output, 'schema.config.js'), schemaCode);
 	for (const file of files) {
-		writeYamlData(file);
+		file.writeOutput();
 	}
 }
 
@@ -127,43 +115,6 @@ export function writeFileErrors(object, schema, directory) {
 	return result;
 }
 
-const processor = unified()
-	.use(remarkParse)
-	.use(remarkStringify)
-	.use(remarkFrontmatter)
-	.use(remarkYamlParse)
-	.use(remarkAttributes)
-	.use(remarkRichAttributes)
-	.use(remarkVariables)
-	.use(remarkTableOfContents);
-
-/**
- * @param {import('./types.js').FileInfo} file
- */
-export function writeMarkdownData(file) {
-	const code = fs.readFileSync(file.input);
-	const vfile = new VFile({
-		path: file.input,
-		value: code,
-	});
-	const tree = processor.parse(vfile);
-	const transformedTree = processor.runSync(tree, vfile);
-
-	/** @type {Record<string, any>} */
-	const data = {
-		id: file.id,
-		content: transformedTree,
-		headingTree: vfile.data.tableOfContents,
-	};
-	const frontmatter = transformedTree.data?.frontmatter;
-	if (frontmatter) {
-		for (const [key, value] of Object.entries(frontmatter)) {
-			data[`data_${key}`] = value;
-		}
-	}
-	write(file.output, JSON.stringify(data, null, 4));
-}
-
 /**
  * @param {string} output
  * @param {string[]} collections
@@ -186,20 +137,4 @@ function writeValidator(collection) {
 	result += `export const insert = createInsertSchema(${collection.name});\n`;
 
 	write(path.join(collection.output, 'validate.js'), result);
-}
-
-/**
- * @param {import('./types.js').FileInfo} file
- */
-export function writeYamlData(file) {
-	const code = fs.readFileSync(file.input, 'utf-8');
-	const json = yaml.load(code);
-	/** @type {Record<string, any>} */
-	const data = { id: file.id };
-	if (json) {
-		for (const [key, value] of Object.entries(json)) {
-			data[`data_${key}`] = value;
-		}
-	}
-	write(file.output, JSON.stringify(data, null, 4));
 }

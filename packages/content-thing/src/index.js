@@ -1,5 +1,5 @@
 import {
-	getMarkdownCollectionInputs,
+	getMarkdownCollectionEntries,
 	getYamlCollectionInputs,
 	getCollections,
 } from './collections/collect.js';
@@ -90,7 +90,11 @@ async function outputCollections(input, output) {
 	for (const collection of collections) {
 		const config = loadCollectionConfig(collection.input);
 		if (config.type === 'markdown') {
-			const markdownOptions = getMarkdownCollectionInputs(collection);
+			const markdownOptions = getMarkdownCollectionEntries(
+				collection,
+				input,
+				output,
+			);
 			outputMarkdownCollection(
 				markdownOptions,
 				config,
@@ -98,7 +102,7 @@ async function outputCollections(input, output) {
 				collectionOutputs,
 			);
 		} else if (config.type === 'yaml') {
-			const yamlOptions = getYamlCollectionInputs(collection);
+			const yamlOptions = getYamlCollectionInputs(collection, input, output);
 			outputYamlCollection(yamlOptions, config, collection, collectionOutputs);
 		}
 	}

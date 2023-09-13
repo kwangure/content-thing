@@ -1,6 +1,8 @@
 import fs from 'node:fs';
+import { MarkdownEntry } from './entry/markdown.js';
 import path from 'node:path';
 import { walk } from '@content-thing/internal-utils/filesystem';
+import { YamlEntry } from './entry/yaml.js';
 
 /**
  * @param {string} input The parent directory of input collections
@@ -32,20 +34,27 @@ export function getCollections(input, output) {
 
 /**
  * @param {import('./types.js').CollectionInfo} collection
+ * @param {string} collectionsDir
+ * @param {string} outputDir
  */
-export function getMarkdownCollectionInputs(collection) {
+export function getMarkdownCollectionEntries(
+	collection,
+	collectionsDir,
+	outputDir,
+) {
 	/**
-	 * @type {import('./types.js').FileInfo[]}
+	 * @type {MarkdownEntry[]}
 	 */
 	const collectionManifest = [];
-	walk(collection.input, (entry) => {
-		if (entry.name.toLowerCase() !== 'readme.md') return;
+	walk(collection.input, (file) => {
+		if (file.name.toLowerCase() !== 'readme.md') return;
 
-		collectionManifest.push({
-			id: entry.baseDir,
-			input: entry.fullPath,
-			output: path.join(collection.output, entry.basePath, 'output.json'),
-		});
+		collectionManifest.push(
+			new MarkdownEntry(file.fullPath, {
+				collectionsDir,
+				outputDir,
+			}),
+		);
 	});
 
 	return collectionManifest;
@@ -53,20 +62,23 @@ export function getMarkdownCollectionInputs(collection) {
 
 /**
  * @param {import('./types.js').CollectionInfo} collection
+ * @param {string} collectionsDir
+ * @param {string} outputDir
  */
-export function getYamlCollectionInputs(collection) {
+export function getYamlCollectionInputs(collection, collectionsDir, outputDir) {
 	/**
-	 * @type {import('./types.js').FileInfo[]}
+	 * @type {YamlEntry[]}
 	 */
 	const collectionManifest = [];
 	walk(collection.input, (file) => {
 		if (file.name.toLowerCase() !== 'data.yaml') return;
 
-		collectionManifest.push({
-			id: file.baseDir,
-			input: file.fullPath,
-			output: path.join(collection.output, file.basePath, 'output.json'),
-		});
+		collectionManifest.push(
+			new YamlEntry(file.fullPath, {
+				collectionsDir,
+				outputDir,
+			}),
+		);
 	});
 
 	return collectionManifest;
