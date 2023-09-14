@@ -5,3 +5,10 @@ export interface EntryOptions {
 	collectionsDir: string;
 	outputDir: string;
 }
+
+export interface EntryRecord {
+	id: string;
+	[x: string]: any;
+}
+
+export type CollectionEntry = MarkdownEntry | YamlEntry;

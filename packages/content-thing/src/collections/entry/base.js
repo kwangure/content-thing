@@ -5,8 +5,6 @@ const COLLECTION_FILE_RE =
 	/^\/?(?<collection>[^\/]+)\/(?<id>.+)\/(?<basename>[^\/]+)$/;
 
 export class BaseEntry {
-	/** @type {Record<string, any>} */
-	data = {};
 	/**
 	 * Make `unified` to treat `BaseEntry` like a `VFile`
 	 * @type {any}
@@ -35,6 +33,7 @@ export class BaseEntry {
 		this.__id = id;
 		this.__basename = basename;
 		this.__filepath = filepath;
+		this.__collectionsDir = collectionsDir;
 		this.__outputDir = outputDir;
 	}
 	get basename() {
@@ -42,6 +41,12 @@ export class BaseEntry {
 	}
 	get collection() {
 		return this.__collection;
+	}
+	get collectionsDir() {
+		return this.__collectionsDir;
+	}
+	get collectionDir() {
+		return path.join(this.__collectionsDir, this.__collection);
 	}
 	get filepath() {
 		return this.__filepath;
@@ -57,6 +62,9 @@ export class BaseEntry {
 			this.__id,
 			'output.json',
 		);
+	}
+	get outputDir() {
+		return this.__outputDir;
 	}
 	toString() {
 		return this.value;

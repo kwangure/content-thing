@@ -43,7 +43,7 @@ export function content() {
 			outputDir = path.join(root, '.svelte-kit/content-thing/generated');
 		},
 		configureServer(vite) {
-			vite.watcher.on('all', (event, filepath) => {
+			vite.watcher.on('all', (_event, filepath) => {
 				if (filepath.startsWith(collectionsDir)) {
 					outputCollections(collectionsDir, outputDir);
 				}
@@ -87,6 +87,8 @@ async function outputCollections(input, output) {
 	for (const collection of collections) {
 		collectionOutputs[collection.name] = collection.output;
 	}
+	/** @type {import('./collections/entry/types.js').CollectionEntry[]} */
+	const collectionEntries = [];
 	for (const collection of collections) {
 		const config = loadCollectionConfig(collection.input);
 		if (config.type === 'markdown') {
@@ -101,9 +103,11 @@ async function outputCollections(input, output) {
 				collection,
 				collectionOutputs,
 			);
+			collectionEntries.push(...markdownOptions);
 		} else if (config.type === 'yaml') {
 			const yamlOptions = getYamlCollectionInputs(collection, input, output);
 			outputYamlCollection(yamlOptions, config, collection, collectionOutputs);
+			collectionEntries.push(...yamlOptions);
 		}
 	}
 
@@ -116,7 +120,7 @@ async function outputCollections(input, output) {
 
 	await generateSQLiteDB(schemaPath, path.join(output, 'migrations'));
 	await pushSQLiteDB(schemaPath, dbPath);
-	await loadSQLiteDB(dbPath, collectionOutput, collectionNames);
+	await loadSQLiteDB(dbPath, collectionEntries);
 }
 
 /**

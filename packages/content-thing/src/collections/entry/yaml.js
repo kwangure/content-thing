@@ -1,19 +1,14 @@
-import { BaseEntry } from './base.js';
+import { DrizzleEntry } from './drizzle.js';
 import { write } from '@content-thing/internal-utils/filesystem';
 import yaml from 'js-yaml';
 
-export class YamlEntry extends BaseEntry {
+export class YamlEntry extends DrizzleEntry {
 	type = 'yaml';
-	processValue() {
-		return yaml.load(this.value);
-	}
-	writeOutput() {
-		const json = this.processValue();
+	getRecord() {
+		const json = yaml.load(this.value);
 
-		/** @type {Record<string, any>} */
-		const data = {
-			id: this.id,
-		};
+		/** @type {import('./types.js').EntryRecord} */
+		const data = super.getRecord();
 
 		if (json) {
 			for (const [key, value] of Object.entries(json)) {
@@ -21,6 +16,9 @@ export class YamlEntry extends BaseEntry {
 			}
 		}
 
-		write(this.output, JSON.stringify(data, null, 4));
+		return data;
+	}
+	writeOutput() {
+		write(this.output, JSON.stringify(this.getRecord(), null, 4));
 	}
 }

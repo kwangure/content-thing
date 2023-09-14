@@ -1,4 +1,4 @@
-import { BaseEntry } from './base.js';
+import { DrizzleEntry } from './drizzle.js';
 import { remarkAttributes } from '@content-thing/remark-attributes';
 import remarkFrontmatter from 'remark-frontmatter';
 import remarkParse from 'remark-parse';
@@ -20,28 +20,35 @@ const processor = unified()
 	.use(remarkVariables)
 	.use(remarkTableOfContents);
 
-export class MarkdownEntry extends BaseEntry {
+export class MarkdownEntry extends DrizzleEntry {
 	type = 'markdown';
-	processValue() {
+	/**
+	 * A property used by Rehype plugins to output arbitrary data
+	 *
+	 * @type {Record<string, any>}
+	 */
+	data = {};
+	getRecord() {
 		const tree = processor.parse(/** @type {any} */ (this));
-		return processor.runSync(tree, /** @type {any} */ (this));
-	}
-	writeOutput() {
-		const ast = this.processValue();
-		/** @type {Record<string, any>} */
+		const transformedTree = processor.runSync(tree, /** @type {any} */ (this));
+
+		/** @type {import('./types.js').EntryRecord} */
 		const data = {
-			id: this.id,
-			content: ast,
+			...super.getRecord(),
+			content: transformedTree,
 			headingTree: this.data.tableOfContents,
 		};
 
-		const frontmatter = ast.data?.frontmatter;
+		const frontmatter = transformedTree.data?.frontmatter;
 		if (frontmatter) {
 			for (const [key, value] of Object.entries(frontmatter)) {
 				data[`data_${key}`] = value;
 			}
 		}
 
-		write(this.output, JSON.stringify(data, null, 4));
+		return data;
+	}
+	writeOutput() {
+		write(this.output, JSON.stringify(this.getRecord(), null, 4));
 	}
 }
