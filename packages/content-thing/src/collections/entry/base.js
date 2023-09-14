@@ -39,6 +39,9 @@ export class BaseEntry {
 	get basename() {
 		return this.__basename;
 	}
+	get dirname() {
+		return path.join(this.__collectionsDir, this.__collection, this.__id);
+	}
 	get collection() {
 		return this.__collection;
 	}

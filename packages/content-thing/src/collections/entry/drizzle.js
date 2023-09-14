@@ -1,11 +1,8 @@
 import { BaseEntry } from './base.js';
-import { createRequire } from 'node:module';
 import Database from 'better-sqlite3';
 import { drizzle } from 'drizzle-orm/better-sqlite3';
 import path from 'node:path';
 import { writeFileErrors } from '../write.js';
-
-const require = createRequire(import.meta.url);
 
 export class DrizzleEntry extends BaseEntry {
 	getRecord() {
@@ -17,7 +14,7 @@ export class DrizzleEntry extends BaseEntry {
 	 * @param {any} schema
 	 */
 	createDrizzle(schema) {
-		const dbPath = path.join(this.outputDir, 'sqlite.db');
+		const dbPath = path.join(this.__outputDir, 'sqlite.db');
 		const sqlite = new Database(dbPath);
 		return drizzle(sqlite, {
 			schema: {
@@ -26,26 +23,42 @@ export class DrizzleEntry extends BaseEntry {
 		});
 	}
 	getSchemas() {
-		const schemaFilepath = path.join(this.collectionDir, 'schema.config.js');
-		return require(schemaFilepath);
+		const schemaFilepath = path.join(
+			this.outputDir,
+			'collections',
+			this.collection,
+			'schema.config.js',
+		);
+		return import(schemaFilepath);
 	}
 	getValidators() {
-		const validatorFilepath = path.join(this.collectionDir, 'validate.js');
-		return require(validatorFilepath);
+		const validatorFilepath = path.join(
+			this.outputDir,
+			'collections',
+			this.collection,
+			'validate.js',
+		);
+		return import(validatorFilepath);
 	}
 	/**
 	 * @param {import("drizzle-orm/better-sqlite3").BetterSQLite3Database<{ [x:string]: any }>} db
 	 */
-	writeToStorage(db) {
-		const schema = this.getSchemas()[this.collection];
-		const validator = this.getValidators().insert;
+	async writeToStorage(db) {
+		const schema = await this.getSchemas().then(
+			(schemas) => schemas[this.collection],
+		);
+		const validator = await this.getValidators().then(({ insert }) => insert);
 		const data = this.getRecord();
 
 		if (!db) {
 			db = this.createDrizzle(schema);
 		}
 
-		const validatedJson = writeFileErrors(data, validator, this.collectionDir);
+		const validatedJson = writeFileErrors(
+			data,
+			validator,
+			path.join(this.outputDir, 'collections', this.collection, this.id),
+		);
 		db.insert(schema).values(validatedJson).onConflictDoUpdate({
 			target: schema.id,
 			set: validatedJson,
