@@ -35,13 +35,8 @@ export function getCollections(input, output) {
 /**
  * @param {import('./types.js').CollectionInfo} collection
  * @param {string} collectionsDir
- * @param {string} outputDir
  */
-export function getMarkdownCollectionEntries(
-	collection,
-	collectionsDir,
-	outputDir,
-) {
+export function getMarkdownCollectionEntries(collection, collectionsDir) {
 	/**
 	 * @type {MarkdownEntry[]}
 	 */
@@ -50,10 +45,7 @@ export function getMarkdownCollectionEntries(
 		if (file.name.toLowerCase() !== 'readme.md') return;
 
 		collectionManifest.push(
-			new MarkdownEntry(file.fullPath, {
-				collectionsDir,
-				outputDir,
-			}),
+			new MarkdownEntry(file.fullPath, { collectionsDir }),
 		);
 	});
 
@@ -63,9 +55,8 @@ export function getMarkdownCollectionEntries(
 /**
  * @param {import('./types.js').CollectionInfo} collection
  * @param {string} collectionsDir
- * @param {string} outputDir
  */
-export function getYamlCollectionInputs(collection, collectionsDir, outputDir) {
+export function getYamlCollectionInputs(collection, collectionsDir) {
 	/**
 	 * @type {YamlEntry[]}
 	 */
@@ -73,12 +64,7 @@ export function getYamlCollectionInputs(collection, collectionsDir, outputDir) {
 	walk(collection.input, (file) => {
 		if (file.name.toLowerCase() !== 'data.yaml') return;
 
-		collectionManifest.push(
-			new YamlEntry(file.fullPath, {
-				collectionsDir,
-				outputDir,
-			}),
-		);
+		collectionManifest.push(new YamlEntry(file.fullPath, { collectionsDir }));
 	});
 
 	return collectionManifest;

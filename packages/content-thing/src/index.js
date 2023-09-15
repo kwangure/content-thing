@@ -92,11 +92,7 @@ async function outputCollections(input, output) {
 	for (const collection of collections) {
 		const config = loadCollectionConfig(collection.input);
 		if (config.type === 'markdown') {
-			const markdownOptions = getMarkdownCollectionEntries(
-				collection,
-				input,
-				output,
-			);
+			const markdownOptions = getMarkdownCollectionEntries(collection, input);
 			outputMarkdownCollection(
 				markdownOptions,
 				config,
@@ -105,7 +101,7 @@ async function outputCollections(input, output) {
 			);
 			collectionEntries.push(...markdownOptions);
 		} else if (config.type === 'yaml') {
-			const yamlOptions = getYamlCollectionInputs(collection, input, output);
+			const yamlOptions = getYamlCollectionInputs(collection, input);
 			outputYamlCollection(yamlOptions, config, collection, collectionOutputs);
 			collectionEntries.push(...yamlOptions);
 		}

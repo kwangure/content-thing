@@ -1,8 +1,6 @@
+import { cwd } from 'node:process';
 import fs from 'node:fs';
 import path from 'node:path';
-
-const COLLECTION_FILE_RE =
-	/^\/?(?<collection>[^\/]+)\/(?<id>.+)\/(?<basename>[^\/]+)$/;
 
 export class BaseEntry {
 	/**
@@ -17,39 +15,31 @@ export class BaseEntry {
 	 * @param {import("./types").EntryOptions} options
 	 */
 	constructor(filepath, options) {
-		const { collectionsDir, outputDir } = options;
+		const { collectionsDir } = options;
+		const { collection, entry } = BaseEntry.parseFilepath(filepath);
 		if (!filepath.startsWith(collectionsDir)) {
 			throw Error(
 				`Entry filepapth '${filepath}' is not in '${collectionsDir}'`,
 			);
 		}
-		const baseFilepath = filepath.substring(collectionsDir.length);
-		const matchResult = baseFilepath.match(COLLECTION_FILE_RE);
-		if (!matchResult?.groups) {
-			throw Error(`Filepath '${filepath}' is not a valid collection entry.`);
-		}
-		const { collection, id, basename } = matchResult.groups;
-		this.__collection = collection;
-		this.__id = id;
-		this.__basename = basename;
+
+		this.__collection = collection.name;
+		this.__id = entry.id;
+		this.__basename = entry.basename;
 		this.__filepath = filepath;
 		this.__collectionsDir = collectionsDir;
-		this.__outputDir = outputDir;
 	}
 	get basename() {
 		return this.__basename;
 	}
 	get dirname() {
-		return path.join(this.__collectionsDir, this.__collection, this.__id);
+		return path.dirname(this.__filepath);
 	}
 	get collection() {
 		return this.__collection;
 	}
 	get collectionsDir() {
 		return this.__collectionsDir;
-	}
-	get collectionDir() {
-		return path.join(this.__collectionsDir, this.__collection);
 	}
 	get filepath() {
 		return this.__filepath;
@@ -59,15 +49,36 @@ export class BaseEntry {
 	}
 	get output() {
 		return path.join(
-			this.__outputDir,
-			'collections',
+			cwd(),
+			'.svelte-kit/content-thing/generated/collections',
 			this.__collection,
 			this.__id,
 			'output.json',
 		);
 	}
-	get outputDir() {
-		return this.__outputDir;
+	/**
+	 * @param {string} filepath
+	 */
+	static parseFilepath(filepath) {
+		const matcher = new RegExp(
+			`${cwd()}/src/thing/collections/([^/]+)/(.+)/([^/]+)$`,
+		);
+		const match = matcher.exec(filepath);
+		if (!match) {
+			throw Error(`Filepath '${filepath}' is not a valid collection entry.`);
+		}
+		const [, collection, id, basename] = match;
+		return {
+			collection: {
+				name: collection,
+				filepath: path.join(cwd(), '/src/thing/collections/', collection),
+			},
+			entry: /** @type {import('./types').BaseEntryConfig} */ ({
+				filepath,
+				id,
+				basename,
+			}),
+		};
 	}
 	toString() {
 		return this.value;
@@ -82,8 +93,8 @@ export class BaseEntry {
 	}
 	getSchemas() {
 		const schemaFilepath = path.join(
-			this.outputDir,
-			'collections',
+			cwd(),
+			'.svelte-kit/content-thing/generated/collections',
 			this.collection,
 			'schema.config.js',
 		);
@@ -91,8 +102,8 @@ export class BaseEntry {
 	}
 	getValidators() {
 		const validatorFilepath = path.join(
-			this.outputDir,
-			'collections',
+			cwd(),
+			'.svelte-kit/content-thing/generated/collections',
 			this.collection,
 			'validate.js',
 		);

@@ -69,11 +69,8 @@ export async function loadSQLiteDB(entries) {
 		Object.assign(schema, await entry.getSchemas());
 	}
 
-	const dbPath = path.join(
-		cwd(),
-		'./.svelte-kit/content-thing/generated',
-		'sqlite.db',
-	);
+	const outputDir = path.join(cwd(), './.svelte-kit/content-thing/generated');
+	const dbPath = path.join(outputDir, 'sqlite.db');
 	const sqlite = new Database(dbPath);
 	const db = drizzle(sqlite, { schema });
 
@@ -83,7 +80,7 @@ export async function loadSQLiteDB(entries) {
 		const validatedJson = writeFileErrors(
 			data,
 			validator,
-			path.join(entry.outputDir, 'collections', entry.collection, entry.id),
+			path.join(outputDir, 'collections', entry.collection, entry.id),
 		);
 		await db
 			.insert(schema[entry.collection])
