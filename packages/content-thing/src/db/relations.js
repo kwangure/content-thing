@@ -1,4 +1,5 @@
 import path from 'node:path';
+import { cwd } from 'node:process';
 
 /**
  * Generates the code for the one relation
@@ -43,19 +44,26 @@ export function generateRelations(relations, tableName) {
 
 /**
  * @param {import("./types").CTRelations} relations
- * @param {Record<string, string>} collectionOutputs
  * @param {string} output The output directory of the current collection
  */
-export function generateRelationImports(relations, collectionOutputs, output) {
+export function generateRelationImports(relations, output) {
 	let imports = `import { relations } from 'content-thing/drizzle-orm';\n`;
 	const relatedCollections = new Set(
 		Object.values(relations).map(({ collection }) => collection),
 	);
 
-	for (const name in collectionOutputs) {
+	const collectionsOutput = path.join(
+		cwd(),
+		'./.svelte-kit/content-thing/generated/collections',
+	);
+
+	for (const name of relatedCollections) {
 		if (!relatedCollections.has(name)) continue;
-		const collectionOutput = collectionOutputs[name];
-		const outputSchemaPath = path.join(collectionOutput, 'schema.config.js');
+		const outputSchemaPath = path.join(
+			collectionsOutput,
+			name,
+			'schema.config.js',
+		);
 		const relativePath = path.relative(output, outputSchemaPath);
 		imports += `import { ${name} } from '${relativePath}';\n`;
 	}

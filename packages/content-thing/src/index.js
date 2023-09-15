@@ -5,10 +5,11 @@ import {
 } from './collections/collect.js';
 import { generateSQLiteDB, loadSQLiteDB, pushSQLiteDB } from './db/io.js';
 import {
-	outputMarkdownCollection,
-	outputYamlCollection,
+	writeMarkdownSchema,
+	writeYamlSchema,
 	writeDBClient,
 	writeSchemaExporter,
+	writeValidator,
 } from './collections/write.js';
 import { loadCollectionConfig } from './config/load.js';
 import path from 'node:path';
@@ -82,28 +83,20 @@ async function outputCollections(input, output) {
 
 	const collectionOutput = path.join(output, 'collections');
 	const collections = getCollections(input, collectionOutput);
-	/** @type {Record<string, string>} */
-	const collectionOutputs = {};
-	for (const collection of collections) {
-		collectionOutputs[collection.name] = collection.output;
-	}
 	/** @type {import('./collections/entry/types.js').CollectionEntry[]} */
 	const collectionEntries = [];
 	for (const collection of collections) {
 		const config = loadCollectionConfig(collection.input);
 		if (config.type === 'markdown') {
-			const markdownOptions = getMarkdownCollectionEntries(collection, input);
-			outputMarkdownCollection(
-				markdownOptions,
-				config,
-				collection,
-				collectionOutputs,
-			);
-			collectionEntries.push(...markdownOptions);
+			const markdownEntries = getMarkdownCollectionEntries(collection, input);
+			collectionEntries.push(...markdownEntries);
+			writeMarkdownSchema(config, collection);
+			writeValidator(collection.name, collection.output);
 		} else if (config.type === 'yaml') {
-			const yamlOptions = getYamlCollectionInputs(collection, input);
-			outputYamlCollection(yamlOptions, config, collection, collectionOutputs);
-			collectionEntries.push(...yamlOptions);
+			const yamlEntries = getYamlCollectionInputs(collection, input);
+			collectionEntries.push(...yamlEntries);
+			writeYamlSchema(config, collection);
+			writeValidator(collection.name, collection.output);
 		}
 	}
 

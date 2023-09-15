@@ -4,25 +4,13 @@ import path from 'node:path';
 import { write } from '@content-thing/internal-utils/filesystem';
 
 /**
- * @param {import('./entry/markdown.js').MarkdownEntry[]} files
  * @param {import('./types.js').CTMarkdownConfig} config
  * @param {import('./types.js').CollectionInfo} collection
- * @param {Record<string, string>} collectionOutputs
  */
-export async function outputMarkdownCollection(
-	files,
-	config,
-	collection,
-	collectionOutputs,
-) {
-	const schemaPath = path.join(collection.output, 'schema.config.js');
+export async function writeMarkdownSchema(config, collection) {
 	let schemaCode = '';
 	if (config.relations) {
-		schemaCode += generateRelationImports(
-			config.relations,
-			collectionOutputs,
-			collection.output,
-		);
+		schemaCode += generateRelationImports(config.relations, collection.output);
 	}
 	schemaCode += generateMarkdownSchema(config.schema, collection.name);
 	if (config.relations) {
@@ -30,32 +18,18 @@ export async function outputMarkdownCollection(
 		schemaCode += generateRelations(config.relations, collection.name);
 	}
 
-	writeValidator(collection);
-	write(schemaPath, schemaCode);
-	for (const file of files) {
-		file.writeOutput();
-	}
+	writeValidator(collection.name, collection.output);
+	write(path.join(collection.output, 'schema.config.js'), schemaCode);
 }
 
 /**
- * @param {import('./entry/yaml.js').YamlEntry[]} files
  * @param {import('./types.js').CTYamlConfig} config
  * @param {import('./types.js').CollectionInfo} collection
- * @param {Record<string, string>} collectionOutputs
  */
-export function outputYamlCollection(
-	files,
-	config,
-	collection,
-	collectionOutputs,
-) {
+export function writeYamlSchema(config, collection) {
 	let schemaCode = '';
 	if (config.relations) {
-		schemaCode += generateRelationImports(
-			config.relations,
-			collectionOutputs,
-			collection.output,
-		);
+		schemaCode += generateRelationImports(config.relations, collection.output);
 	}
 	schemaCode += generateYamlSchema(config.schema, collection.name);
 	if (config.relations) {
@@ -63,11 +37,7 @@ export function outputYamlCollection(
 		schemaCode += `${generateRelations(config.relations, collection.name)}\n\n`;
 	}
 
-	writeValidator(collection);
 	write(path.join(collection.output, 'schema.config.js'), schemaCode);
-	for (const file of files) {
-		file.writeOutput();
-	}
 }
 
 /**
@@ -128,13 +98,14 @@ export function writeSchemaExporter(output, collections) {
 }
 
 /**
- * @param {import('./types.js').CollectionInfo} collection
+ * @param {string} name
+ * @param {string} filepath
  */
-function writeValidator(collection) {
+export function writeValidator(name, filepath) {
 	let result = `import { createInsertSchema } from 'content-thing/drizzle-zod';\n`;
-	result += `import { ${collection.name} } from './schema.config.js'\n`;
+	result += `import { ${name} } from './schema.config.js'\n`;
 	result += `\n`;
-	result += `export const insert = createInsertSchema(${collection.name});\n`;
+	result += `export const insert = createInsertSchema(${name});\n`;
 
-	write(path.join(collection.output, 'validate.js'), result);
+	write(path.join(filepath, 'validate.js'), result);
 }
