@@ -75,4 +75,27 @@ export class BaseEntry {
 	get value() {
 		return fs.readFileSync(this.__filepath, 'utf-8');
 	}
+	getRecord() {
+		return /** @type {Record<string, any> & { id: string }} */ ({
+			id: this.id,
+		});
+	}
+	getSchemas() {
+		const schemaFilepath = path.join(
+			this.outputDir,
+			'collections',
+			this.collection,
+			'schema.config.js',
+		);
+		return import(schemaFilepath);
+	}
+	getValidators() {
+		const validatorFilepath = path.join(
+			this.outputDir,
+			'collections',
+			this.collection,
+			'validate.js',
+		);
+		return import(validatorFilepath);
+	}
 }

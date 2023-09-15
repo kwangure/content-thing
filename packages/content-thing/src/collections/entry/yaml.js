@@ -1,8 +1,8 @@
-import { DrizzleEntry } from './drizzle.js';
+import { BaseEntry } from './base.js';
 import { write } from '@content-thing/internal-utils/filesystem';
 import yaml from 'js-yaml';
 
-export class YamlEntry extends DrizzleEntry {
+export class YamlEntry extends BaseEntry {
 	type = 'yaml';
 	getRecord() {
 		const json = yaml.load(this.value);

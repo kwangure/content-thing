@@ -1,6 +1,7 @@
 import Database from 'better-sqlite3';
 import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { exec } from 'child_process';
+import { writeToStorage } from '../collections/entry/drizzle.js';
 
 /**
  * Executes the "drizzle-kit generate:sqlite" CLI command.
@@ -69,6 +70,6 @@ export async function loadSQLiteDB(dbPath, entries) {
 	const sqlite = new Database(dbPath);
 	const db = drizzle(sqlite, { schema });
 	for (const entry of entries) {
-		entry.writeToStorage(db);
+		writeToStorage(db, entry);
 	}
 }

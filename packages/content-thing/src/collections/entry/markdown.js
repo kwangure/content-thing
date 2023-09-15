@@ -1,4 +1,4 @@
-import { DrizzleEntry } from './drizzle.js';
+import { BaseEntry } from './base.js';
 import { remarkAttributes } from '@content-thing/remark-attributes';
 import remarkFrontmatter from 'remark-frontmatter';
 import remarkParse from 'remark-parse';
@@ -20,7 +20,7 @@ const processor = unified()
 	.use(remarkVariables)
 	.use(remarkTableOfContents);
 
-export class MarkdownEntry extends DrizzleEntry {
+export class MarkdownEntry extends BaseEntry {
 	type = 'markdown';
 	/**
 	 * A property used by Rehype plugins to output arbitrary data
