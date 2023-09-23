@@ -6,7 +6,7 @@ export interface EntryOptions {
 }
 
 export interface EntryRecord {
-	id: string;
+	_id: string;
 	[x: string]: any;
 }
 

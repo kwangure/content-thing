@@ -178,11 +178,11 @@ describe('generateMarkdownSchema', () => {
 			"import { json } from 'content-thing/db';\n" +
 			`import { integer, sqliteTable, text } from 'content-thing/drizzle-orm/sqlite-core';\n\n` +
 			`export const testTable = sqliteTable('testTable', {\n` +
-			`\tid: text('id').primaryKey(),\n` +
-			`\tdata_title: text('data_title').notNull(),\n` +
-			`\tdata_age: integer('data_age').notNull(),\n` +
-			"\theadingTree: /** @type {ReturnType<typeof json<import('content-thing').TocEntry[], 'headingTree'>>} */(json('headingTree')).notNull(),\n" +
-			"\tcontent: /** @type {ReturnType<typeof json<import('content-thing/mdast').Root, 'content'>>} */(json('content')).notNull(),\n" +
+			`\t_id: text('_id').primaryKey(),\n` +
+			`\ttitle: text('title').notNull(),\n` +
+			`\tage: integer('age').notNull(),\n` +
+			"\t_headingTree: /** @type {ReturnType<typeof json<import('content-thing').TocEntry[], '_headingTree'>>} */(json('_headingTree')).notNull(),\n" +
+			"\t_content: /** @type {ReturnType<typeof json<import('content-thing/mdast').Root, '_content'>>} */(json('_content')).notNull(),\n" +
 			`});\n`;
 		assert.strictEqual(generateMarkdownSchema(config, tableName), expected);
 	});
@@ -220,9 +220,9 @@ describe('generateYamlSchema', () => {
 		const expected =
 			`import { sqliteTable, integer, text } from 'content-thing/drizzle-orm/sqlite-core';\n\n` +
 			`export const testTable = sqliteTable('testTable', {\n` +
-			`\tid: text('id').primaryKey(),\n` +
-			`\tdata_title: text('data_title').notNull(),\n` +
-			`\tdata_age: integer('data_age').notNull(),\n` +
+			`\t_id: text('_id').primaryKey(),\n` +
+			`\ttitle: text('title').notNull(),\n` +
+			`\tage: integer('age').notNull(),\n` +
 			`});\n`;
 		assert.strictEqual(generateYamlSchema(config, tableName), expected);
 	});

@@ -86,11 +86,6 @@ export class BaseEntry {
 	get value() {
 		return fs.readFileSync(this.__filepath, 'utf-8');
 	}
-	getRecord() {
-		return /** @type {Record<string, any> & { id: string }} */ ({
-			id: this.id,
-		});
-	}
 	getSchemas() {
 		const schemaFilepath = path.join(
 			cwd(),

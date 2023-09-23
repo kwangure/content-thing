@@ -9,7 +9,7 @@ import { cwd } from 'node:process';
  */
 export function generateOneRelationCode(table, relation) {
 	let relationCode = `one(${relation.collection}, {\n`;
-	relationCode += `\t\tfields: [${table}.data_${relation.field}],\n`;
+	relationCode += `\t\tfields: [${table}.${relation.field}],\n`;
 	relationCode += `\t\treferences: [${relation.collection}.${relation.reference}],\n`;
 	relationCode += `\t}),`;
 

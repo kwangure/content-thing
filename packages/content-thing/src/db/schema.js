@@ -120,7 +120,7 @@ export function generateMarkdownSchema(schema, tableName) {
 	}
 	schemaCode += `\n`;
 	schemaCode += `export const ${tableName} = sqliteTable('${tableName}', {\n`;
-	schemaCode += `\tid: text('id').primaryKey(),\n`;
+	schemaCode += `\t_id: text('_id').primaryKey(),\n`;
 
 	if (schema.data) {
 		for (const key in schema.data) {
@@ -128,19 +128,19 @@ export function generateMarkdownSchema(schema, tableName) {
 			const columnType = column.type;
 			let columnCode = '';
 			if (columnType === 'text') {
-				columnCode = generateTextColumnCode(`data_${key}`, column);
+				columnCode = generateTextColumnCode(key, column);
 			} else if (columnType === 'integer') {
-				columnCode = generateIntegerColumnCode(`data_${key}`, column);
+				columnCode = generateIntegerColumnCode(key, column);
 			} else {
 				throw new Error(
 					`Unsupported column type in schema: ${columnType}. File an issue to implement missing types.`,
 				);
 			}
-			schemaCode += `\tdata_${key}: ${columnCode},\n`;
+			schemaCode += `\t${key}: ${columnCode},\n`;
 		}
 	}
-	schemaCode += `\theadingTree: /** @type {ReturnType<typeof json<import('content-thing').TocEntry[], 'headingTree'>>} */(json('headingTree')).notNull(),\n`;
-	schemaCode += `\tcontent: /** @type {ReturnType<typeof json<import('content-thing/mdast').Root, 'content'>>} */(json('content')).notNull(),\n`;
+	schemaCode += `\t_headingTree: /** @type {ReturnType<typeof json<import('content-thing').TocEntry[], '_headingTree'>>} */(json('_headingTree')).notNull(),\n`;
+	schemaCode += `\t_content: /** @type {ReturnType<typeof json<import('content-thing/mdast').Root, '_content'>>} */(json('_content')).notNull(),\n`;
 	schemaCode += '});\n';
 	return schemaCode;
 }
@@ -155,22 +155,22 @@ export function generateMarkdownSchema(schema, tableName) {
 export function generateYamlSchema(schema, tableName) {
 	let schemaCode = `import { sqliteTable, integer, text } from 'content-thing/drizzle-orm/sqlite-core';\n\n`;
 	schemaCode += `export const ${tableName} = sqliteTable('${tableName}', {\n`;
-	schemaCode += `\tid: text('id').primaryKey(),\n`;
+	schemaCode += `\t_id: text('_id').primaryKey(),\n`;
 
 	for (const key in schema.data) {
 		const column = schema.data[key];
 		const columnType = column.type;
 		let columnCode = '';
 		if (columnType === 'text') {
-			columnCode = generateTextColumnCode(`data_${key}`, column);
+			columnCode = generateTextColumnCode(key, column);
 		} else if (columnType === 'integer') {
-			columnCode = generateIntegerColumnCode(`data_${key}`, column);
+			columnCode = generateIntegerColumnCode(key, column);
 		} else {
 			throw new Error(
 				`Unsupported column type in schema: ${columnType}. File an issue to implement missing types.`,
 			);
 		}
-		schemaCode += `\tdata_${key}: ${columnCode},\n`;
+		schemaCode += `\t${key}: ${columnCode},\n`;
 	}
 
 	schemaCode += '});\n';

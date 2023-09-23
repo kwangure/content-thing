@@ -32,21 +32,12 @@ export class MarkdownEntry extends BaseEntry {
 		const tree = processor.parse(/** @type {any} */ (this));
 		const transformedTree = processor.runSync(tree, /** @type {any} */ (this));
 
-		/** @type {import('./types.js').EntryRecord} */
-		const data = {
-			...super.getRecord(),
-			content: transformedTree,
-			headingTree: this.data.tableOfContents,
-		};
-
-		const frontmatter = transformedTree.data?.frontmatter;
-		if (frontmatter) {
-			for (const [key, value] of Object.entries(frontmatter)) {
-				data[`data_${key}`] = value;
-			}
-		}
-
-		return data;
+		return /** @type {import('./types.js').EntryRecord} */ ({
+			.../** @type {any} */ (transformedTree.data?.frontmatter),
+			_content: transformedTree,
+			_id: this.id,
+			_headingTree: this.data.tableOfContents,
+		});
 	}
 	writeOutput() {
 		write(this.output, JSON.stringify(this.getRecord(), null, 4));

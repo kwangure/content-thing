@@ -42,12 +42,20 @@ export const drizzleManyRelation = z.object({
 	collection: z.string(),
 });
 
+const dataPropertySchema = z.string().refine(
+	(value) => !value.startsWith('_'),
+	(value) => ({
+		message: `Forbidden property '${value}'. Data property names beginning with underscore are reserved.`,
+	}),
+);
+
 export const markdownSchema = z.object({
 	data: z
 		.record(
+			dataPropertySchema,
 			z.discriminatedUnion('type', [drizzleIntegerColumn, drizzleTextColumn]),
 		)
-		.optional(),
+		.default({}),
 });
 
 export const markdownConfig = z.object({
@@ -55,6 +63,7 @@ export const markdownConfig = z.object({
 	schema: markdownSchema,
 	relations: z
 		.record(
+			dataPropertySchema,
 			z.discriminatedUnion('type', [drizzleOneRelation, drizzleManyRelation]),
 		)
 		.optional(),

@@ -86,7 +86,7 @@ export async function loadSQLiteDB(entries) {
 			.insert(schema[entry.collection])
 			.values(validatedJson)
 			.onConflictDoUpdate({
-				target: schema[entry.collection].id,
+				target: schema[entry.collection]._id,
 				set: validatedJson,
 			});
 	}
