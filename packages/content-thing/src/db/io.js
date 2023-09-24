@@ -1,93 +1,24 @@
-import { cwd } from 'node:process';
-import Database from 'better-sqlite3';
-import { drizzle } from 'drizzle-orm/better-sqlite3';
-import { exec } from 'child_process';
-import path from 'node:path';
-import { writeFileErrors } from '../collections/write.js';
-
 /**
- * Executes the "drizzle-kit generate:sqlite" CLI command.
- *
- * @param {string} schema The schema for the DB
- * @param {string} output The directory to output the folder
+ * Create or replace a SQLite table based on a schema.
+ * @param {import('better-sqlite3').Database} db - The better-sqlite3 database instance.
+ * @param {import('../config/types.js').CollectionConfig} config - The schema for the table.
+ * @param {string} tableName - The name of the table to be created or replaced.
  */
-export function generateSQLiteDB(schema, output) {
-	return /** @type {Promise<void>} */ (
-		new Promise((resolve, reject) => {
-			exec(
-				`drizzle-kit generate:sqlite --schema ${schema} --out ${output}`,
-				(error, stdout, stderr) => {
-					if (error) {
-						console.log(stdout);
-						console.error(stderr);
-						console.error(error);
-						reject();
-						return;
-					}
-					resolve();
-				},
-			);
-		})
-	);
-}
+export function createTableFromSchema(db, config, tableName) {
+	db.prepare(`DROP TABLE IF EXISTS ${tableName}`).run();
 
-/**
- * Executes the "drizzle-kit push:sqlite" CLI command.
- *
- * @param {string} schema The schema for the DB
- * @param {string} url The location of the DB
- */
-export function pushSQLiteDB(schema, url) {
-	return /** @type {Promise<void>} */ (
-		new Promise((resolve, reject) => {
-			exec(
-				`drizzle-kit push:sqlite --schema ${schema} --driver better-sqlite --url ${url}`,
-				(error, stdout, stderr) => {
-					if (error) {
-						console.log(stdout);
-						console.error(stderr);
-						console.error(error);
-						reject();
-						return;
-					}
-					resolve();
-				},
-			);
-		})
-	);
-}
+	let columns = [];
+	for (const [key, value] of Object.entries(config.schema.data)) {
+		let columnDef = `"${key}" ${value.type.toUpperCase()}`;
 
-/**
- * Loads the JSON output of collection files into the databse
- *
- * @param {import('../collections/entry/types.js').CollectionEntry[]} entries
- */
-export async function loadSQLiteDB(entries) {
-	/** @type {Record<string, any>} */
-	const schema = {};
-	for (const entry of entries) {
-		Object.assign(schema, await entry.getSchemas());
+		// Add the enum constraint only if type is text
+		if (value.type === 'text' && value.enum) {
+			columnDef += ` CHECK ("${key}" IN ('${value.enum.join("', '")}'))`;
+		}
+
+		columns.push(columnDef);
 	}
 
-	const outputDir = path.join(cwd(), './.svelte-kit/content-thing/generated');
-	const dbPath = path.join(outputDir, 'sqlite.db');
-	const sqlite = new Database(dbPath);
-	const db = drizzle(sqlite, { schema });
-
-	for (const entry of entries) {
-		const data = entry.getRecord();
-		const validator = await entry.getValidators().then(({ insert }) => insert);
-		const validatedJson = writeFileErrors(
-			data,
-			validator,
-			path.join(outputDir, 'collections', entry.collection, entry.id),
-		);
-		await db
-			.insert(schema[entry.collection])
-			.values(validatedJson)
-			.onConflictDoUpdate({
-				target: schema[entry.collection]._id,
-				set: validatedJson,
-			});
-	}
+	const createTableSQL = `CREATE TABLE ${tableName} (${columns.join(', ')})`;
+	db.prepare(createTableSQL).run();
 }
