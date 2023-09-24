@@ -120,7 +120,6 @@ export function generateMarkdownSchema(schema, tableName) {
 	}
 	schemaCode += `\n`;
 	schemaCode += `export const ${tableName} = sqliteTable('${tableName}', {\n`;
-	schemaCode += `\t_id: text('_id').primaryKey(),\n`;
 
 	if (schema.data) {
 		for (const key in schema.data) {
@@ -155,7 +154,6 @@ export function generateMarkdownSchema(schema, tableName) {
 export function generateYamlSchema(schema, tableName) {
 	let schemaCode = `import { sqliteTable, integer, text } from 'content-thing/drizzle-orm/sqlite-core';\n\n`;
 	schemaCode += `export const ${tableName} = sqliteTable('${tableName}', {\n`;
-	schemaCode += `\t_id: text('_id').primaryKey(),\n`;
 
 	for (const key in schema.data) {
 		const column = schema.data[key];

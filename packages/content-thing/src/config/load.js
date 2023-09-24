@@ -49,14 +49,25 @@ const dataPropertySchema = z.string().refine(
 	}),
 );
 
-export const markdownSchema = z.object({
-	data: z
-		.record(
-			dataPropertySchema,
-			z.discriminatedUnion('type', [drizzleIntegerColumn, drizzleTextColumn]),
-		)
-		.default({}),
-});
+export const markdownSchema = z
+	.object({
+		data: z
+			.record(
+				dataPropertySchema,
+				z.discriminatedUnion('type', [drizzleIntegerColumn, drizzleTextColumn]),
+			)
+			.default({}),
+	})
+	.transform((value) => {
+		value.data = {
+			...value.data,
+			_id: drizzleTextColumn.parse({
+				type: 'text',
+				primaryKey: true,
+			}),
+		};
+		return value;
+	});
 
 export const markdownConfig = z.object({
 	type: z.literal('markdown'),
@@ -69,11 +80,22 @@ export const markdownConfig = z.object({
 		.optional(),
 });
 
-export const yamlSchema = z.object({
-	data: z.record(
-		z.discriminatedUnion('type', [drizzleIntegerColumn, drizzleTextColumn]),
-	),
-});
+export const yamlSchema = z
+	.object({
+		data: z.record(
+			z.discriminatedUnion('type', [drizzleIntegerColumn, drizzleTextColumn]),
+		),
+	})
+	.transform((value) => {
+		value.data = {
+			...value.data,
+			_id: drizzleTextColumn.parse({
+				type: 'text',
+				primaryKey: true,
+			}),
+		};
+		return value;
+	});
 
 export const yamlConfig = z.object({
 	type: z.literal('yaml'),

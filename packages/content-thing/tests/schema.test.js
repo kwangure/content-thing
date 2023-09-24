@@ -178,7 +178,6 @@ describe('generateMarkdownSchema', () => {
 			"import { json } from 'content-thing/db';\n" +
 			`import { integer, sqliteTable, text } from 'content-thing/drizzle-orm/sqlite-core';\n\n` +
 			`export const testTable = sqliteTable('testTable', {\n` +
-			`\t_id: text('_id').primaryKey(),\n` +
 			`\ttitle: text('title').notNull(),\n` +
 			`\tage: integer('age').notNull(),\n` +
 			"\t_headingTree: /** @type {ReturnType<typeof json<import('content-thing').TocEntry[], '_headingTree'>>} */(json('_headingTree')).notNull(),\n" +
@@ -220,7 +219,6 @@ describe('generateYamlSchema', () => {
 		const expected =
 			`import { sqliteTable, integer, text } from 'content-thing/drizzle-orm/sqlite-core';\n\n` +
 			`export const testTable = sqliteTable('testTable', {\n` +
-			`\t_id: text('_id').primaryKey(),\n` +
 			`\ttitle: text('title').notNull(),\n` +
 			`\tage: integer('age').notNull(),\n` +
 			`});\n`;
