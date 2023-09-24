@@ -30,6 +30,12 @@ export const drizzleTextColumn = drizzleColumn.extend({
 	defaultValue: z.string().optional(),
 });
 
+export const drizzleJsonColumn = drizzleColumn.extend({
+	type: z.literal('json'),
+	jsDocType: z.string().default('any'),
+	defaultValue: z.string().optional(),
+});
+
 export const drizzleOneRelation = z.object({
 	type: z.literal('one'),
 	collection: z.string(),
@@ -54,7 +60,11 @@ export const markdownSchema = z
 		data: z
 			.record(
 				dataPropertySchema,
-				z.discriminatedUnion('type', [drizzleIntegerColumn, drizzleTextColumn]),
+				z.discriminatedUnion('type', [
+					drizzleIntegerColumn,
+					drizzleJsonColumn,
+					drizzleTextColumn,
+				]),
 			)
 			.default({}),
 	})
@@ -83,7 +93,12 @@ export const markdownConfig = z.object({
 export const yamlSchema = z
 	.object({
 		data: z.record(
-			z.discriminatedUnion('type', [drizzleIntegerColumn, drizzleTextColumn]),
+			dataPropertySchema,
+			z.discriminatedUnion('type', [
+				drizzleIntegerColumn,
+				drizzleJsonColumn,
+				drizzleTextColumn,
+			]),
 		),
 	})
 	.transform((value) => {

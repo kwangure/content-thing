@@ -99,6 +99,47 @@ export function generateIntegerColumnCode(key, column) {
 }
 
 /**
+ * Generates the column code for JSON type
+ *
+ * @param {string} key - The key or name of the column
+ * @param {import("../config/types.js").JsonColumType} column - The column configuration for JSON type
+ * @returns {string} - Generated code for JSON column
+ */
+export function generateJsonColumnCode(key, column) {
+	let columnCode = `json('${key}')`;
+
+	if (column.jsDocType) {
+		columnCode = `/** @type {ReturnType<typeof json<${column.jsDocType}, '${key}'>>} */(${columnCode})`;
+	}
+
+	if (!column.nullable) {
+		columnCode += `.notNull()`;
+	}
+
+	if (column.unique) {
+		if (typeof column.unique === 'boolean') {
+			columnCode += `.unique()`;
+		} else {
+			columnCode += `.unique(${JSON.stringify(column.unique)})`;
+		}
+	}
+
+	if (column.defaultValue !== undefined) {
+		columnCode += `.default(${JSON.stringify(column.defaultValue)})`;
+	}
+
+	if (column.primaryKey) {
+		if (typeof column.primaryKey === 'boolean') {
+			columnCode += '.primaryKey()';
+		} else {
+			columnCode += `.primaryKey(${JSON.stringify(column.primaryKey)})`;
+		}
+	}
+
+	return columnCode;
+}
+
+/**
  * Generates SQLite schema for Markdown type
  *
  * @param {import("./types").CTMarkdownSchema} schema - The configuration for Markdown type

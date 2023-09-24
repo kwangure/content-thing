@@ -3,6 +3,7 @@ import assert from 'node:assert';
 import {
 	generateTextColumnCode,
 	generateIntegerColumnCode,
+	generateJsonColumnCode,
 	generateMarkdownSchema,
 	generateYamlSchema,
 } from '../src/db/schema.js';
@@ -157,6 +158,84 @@ describe('generateIntegerColumnCode', () => {
 		};
 		const expected = `integer('age').notNull()`;
 		assert.strictEqual(generateIntegerColumnCode(key, column), expected);
+	});
+});
+
+describe('generateJsonColumnCode', () => {
+	it('generates code for JSON column with no options', () => {
+		const result = generateJsonColumnCode('data', { type: 'json' });
+		assert.strictEqual(result, "json('data').notNull()");
+	});
+
+	it('generates code for JSON column with JSDoc type', () => {
+		const result = generateJsonColumnCode('data', {
+			type: 'json',
+			jsDocType: 'SomeType',
+		});
+		assert.strictEqual(
+			result,
+			"/** @type {ReturnType<typeof json<SomeType, 'data'>>} */(json('data')).notNull()",
+		);
+	});
+
+	it('generates code for JSON column with default value', () => {
+		const result = generateJsonColumnCode('data', {
+			type: 'json',
+			defaultValue: '{"key": "value"}',
+		});
+		assert.strictEqual(
+			result,
+			`json('data').notNull().default("{\\"key\\": \\"value\\"}")`,
+		);
+	});
+
+	it('generates code for JSON column as primary key', () => {
+		const result = generateJsonColumnCode('data', {
+			type: 'json',
+			primaryKey: true,
+		});
+		assert.strictEqual(result, "json('data').notNull().primaryKey()");
+	});
+
+	it('generates code for nullable JSON column', () => {
+		const result = generateJsonColumnCode('data', {
+			type: 'json',
+			nullable: true,
+		});
+		assert.strictEqual(result, "json('data')");
+	});
+
+	it('generates code for unique JSON column', () => {
+		const result = generateJsonColumnCode('data', {
+			type: 'json',
+			unique: 'unique_data',
+		});
+		assert.strictEqual(result, `json('data').notNull().unique("unique_data")`);
+	});
+
+	it('should generate JSON column code with all options', () => {
+		const key = 'data';
+		/** @type {import('../src/config/types.js').JsonColumType} */
+		const column = {
+			type: 'json',
+			jsDocType: 'SomeType',
+			defaultValue: '{"key": "value"}',
+			primaryKey: true,
+			nullable: true,
+			unique: true,
+		};
+		const expected = `/** @type {ReturnType<typeof json<SomeType, 'data'>>} */(json('data')).unique().default("{\\"key\\": \\"value\\"}").primaryKey()`;
+		assert.strictEqual(generateJsonColumnCode(key, column), expected);
+	});
+
+	it('should generate JSON column code with minimal options', () => {
+		const key = 'data';
+		/** @type {import('../src/config/types.js').JsonColumType} */
+		const column = {
+			type: 'json',
+		};
+		const expected = `json('data').notNull()`;
+		assert.strictEqual(generateJsonColumnCode(key, column), expected);
 	});
 });
 
