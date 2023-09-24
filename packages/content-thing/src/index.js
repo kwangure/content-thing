@@ -11,7 +11,7 @@ import {
 	writeSchemaExporter,
 	writeValidator,
 } from './collections/write.js';
-import { createTableFromSchema } from './db/io.js';
+import { createTableFromSchema, loadSQLiteDB } from './db/io.js';
 import Database from 'better-sqlite3';
 import fs from 'node:fs';
 import { loadCollectionConfig } from './config/load.js';
@@ -85,6 +85,7 @@ async function outputCollections(input, output) {
 
 	const dbPath = path.join(output, 'sqlite.db');
 	const db = new Database(dbPath);
+	db.pragma('journal_mode = WAL');
 	const collectionOutput = path.join(output, 'collections');
 	const collections = getCollections(input, collectionOutput);
 	/** @type {import('./collections/entry/types.js').CollectionEntry[]} */
@@ -110,6 +111,7 @@ async function outputCollections(input, output) {
 
 	writeSchemaExporter(schemaPath, collectionNames);
 	writeDBClient(path.join(output, 'db.js'), collectionNames);
+	await loadSQLiteDB(db, collectionEntries);
 }
 
 /**

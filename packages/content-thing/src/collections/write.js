@@ -4,7 +4,7 @@ import path from 'node:path';
 import { write } from '@content-thing/internal-utils/filesystem';
 
 /**
- * @param {import('./types.js').CTMarkdownConfig} config
+ * @param {import('../config/types.js').MarkdownConfig} config
  * @param {import('./types.js').CollectionInfo} collection
  */
 export async function writeMarkdownSchema(config, collection) {
@@ -23,7 +23,7 @@ export async function writeMarkdownSchema(config, collection) {
 }
 
 /**
- * @param {import('./types.js').CTYamlConfig} config
+ * @param {import('../config/types.js').YamlConfig} config
  * @param {import('./types.js').CollectionInfo} collection
  */
 export function writeYamlSchema(config, collection) {

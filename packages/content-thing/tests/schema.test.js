@@ -162,15 +162,23 @@ describe('generateIntegerColumnCode', () => {
 
 describe('generateJsonColumnCode', () => {
 	it('generates code for JSON column with no options', () => {
-		const result = generateJsonColumnCode('data', { type: 'json' });
+		const result = generateJsonColumnCode(
+			'data',
+			/** @type {import('../src/config/types.js').JsonColumn} */ ({
+				type: 'json',
+			}),
+		);
 		assert.strictEqual(result, "json('data').notNull()");
 	});
 
 	it('generates code for JSON column with JSDoc type', () => {
-		const result = generateJsonColumnCode('data', {
-			type: 'json',
-			jsDocType: 'SomeType',
-		});
+		const result = generateJsonColumnCode(
+			'data',
+			/** @type {import('../src/config/types.js').JsonColumn} */ ({
+				type: 'json',
+				jsDocType: 'SomeType',
+			}),
+		);
 		assert.strictEqual(
 			result,
 			"/** @type {ReturnType<typeof json<SomeType, 'data'>>} */(json('data')).notNull()",
@@ -178,10 +186,13 @@ describe('generateJsonColumnCode', () => {
 	});
 
 	it('generates code for JSON column with default value', () => {
-		const result = generateJsonColumnCode('data', {
-			type: 'json',
-			defaultValue: '{"key": "value"}',
-		});
+		const result = generateJsonColumnCode(
+			'data',
+			/** @type {import('../src/config/types.js').JsonColumn} */ ({
+				type: 'json',
+				defaultValue: '{"key": "value"}',
+			}),
+		);
 		assert.strictEqual(
 			result,
 			`json('data').notNull().default("{\\"key\\": \\"value\\"}")`,
@@ -189,32 +200,41 @@ describe('generateJsonColumnCode', () => {
 	});
 
 	it('generates code for JSON column as primary key', () => {
-		const result = generateJsonColumnCode('data', {
-			type: 'json',
-			primaryKey: true,
-		});
+		const result = generateJsonColumnCode(
+			'data',
+			/** @type {import('../src/config/types.js').JsonColumn} */ ({
+				type: 'json',
+				primaryKey: true,
+			}),
+		);
 		assert.strictEqual(result, "json('data').notNull().primaryKey()");
 	});
 
 	it('generates code for nullable JSON column', () => {
-		const result = generateJsonColumnCode('data', {
-			type: 'json',
-			nullable: true,
-		});
+		const result = generateJsonColumnCode(
+			'data',
+			/** @type {import('../src/config/types.js').JsonColumn} */ ({
+				type: 'json',
+				nullable: true,
+			}),
+		);
 		assert.strictEqual(result, "json('data')");
 	});
 
 	it('generates code for unique JSON column', () => {
-		const result = generateJsonColumnCode('data', {
-			type: 'json',
-			unique: 'unique_data',
-		});
+		const result = generateJsonColumnCode(
+			'data',
+			/** @type {import('../src/config/types.js').JsonColumn} */ ({
+				type: 'json',
+				unique: 'unique_data',
+			}),
+		);
 		assert.strictEqual(result, `json('data').notNull().unique("unique_data")`);
 	});
 
 	it('should generate JSON column code with all options', () => {
 		const key = 'data';
-		/** @type {import('../src/config/types.js').JsonColumType} */
+		/** @type {import('../src/config/types.js').JsonColumn} */
 		const column = {
 			type: 'json',
 			jsDocType: 'SomeType',
@@ -229,10 +249,9 @@ describe('generateJsonColumnCode', () => {
 
 	it('should generate JSON column code with minimal options', () => {
 		const key = 'data';
-		/** @type {import('../src/config/types.js').JsonColumType} */
-		const column = {
+		const column = /** @type {import('../src/config/types.js').JsonColumn} */ ({
 			type: 'json',
-		};
+		});
 		const expected = `json('data').notNull()`;
 		assert.strictEqual(generateJsonColumnCode(key, column), expected);
 	});
@@ -240,7 +259,6 @@ describe('generateJsonColumnCode', () => {
 
 describe('generateSchema', () => {
 	it('should generate markdown schema', () => {
-		/** @type {import('../src/config/types.js').MarkdownSchema} */
 		const config = {
 			data: {
 				name: {
@@ -264,20 +282,21 @@ describe('generateSchema', () => {
 			`\tage: integer('age').notNull(),\n` +
 			`\tpreferences: json('preferences').notNull(),\n` +
 			`});\n`;
-		assert.strictEqual(generateSchema(config, tableName), expected);
+		assert.strictEqual(
+			generateSchema(/** @type {any} */ (config), tableName),
+			expected,
+		);
 	});
 	it('throws error for unsupported column types', () => {
-		/** @type {import('../src/db/types.js').CTMarkdownSchema} */
 		const config = {
 			data: {
 				title: {
-					// @ts-expect-error
 					type: 'unsupported',
 				},
 			},
 		};
 		assert.throws(
-			() => generateSchema(config, 'MyTable'),
+			() => generateSchema(/** @type {any} */ (config), 'MyTable'),
 			/Unsupported column type in schema/,
 		);
 	});

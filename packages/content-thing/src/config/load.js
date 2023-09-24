@@ -33,7 +33,10 @@ export const drizzleTextColumn = drizzleColumn.extend({
 export const drizzleJsonColumn = drizzleColumn.extend({
 	type: z.literal('json'),
 	jsDocType: z.string().default('any'),
-	defaultValue: z.string().optional(),
+	defaultValue: z
+		.record(z.any())
+		.transform((value) => JSON.stringify(value))
+		.optional(),
 });
 
 export const drizzleOneRelation = z.object({
