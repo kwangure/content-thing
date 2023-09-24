@@ -4,8 +4,7 @@ import {
 	generateTextColumnCode,
 	generateIntegerColumnCode,
 	generateJsonColumnCode,
-	generateMarkdownSchema,
-	generateYamlSchema,
+	generateSchema,
 } from '../src/db/schema.js';
 
 describe('generateTextColumnCode', () => {
@@ -239,30 +238,33 @@ describe('generateJsonColumnCode', () => {
 	});
 });
 
-describe('generateMarkdownSchema', () => {
+describe('generateSchema', () => {
 	it('should generate markdown schema', () => {
-		/** @type {import('../src/db/types.js').CTMarkdownSchema} */
+		/** @type {import('../src/config/types.js').MarkdownSchema} */
 		const config = {
 			data: {
-				title: {
+				name: {
 					type: 'text',
 				},
 				age: {
 					type: 'integer',
 				},
+				preferences: {
+					type: 'json',
+				},
 			},
 		};
 		const tableName = 'testTable';
 		const expected =
+			`import { integer, sqliteTable, text } from 'content-thing/drizzle-orm/sqlite-core';\n` +
 			"import { json } from 'content-thing/db';\n" +
-			`import { integer, sqliteTable, text } from 'content-thing/drizzle-orm/sqlite-core';\n\n` +
+			'\n' +
 			`export const testTable = sqliteTable('testTable', {\n` +
-			`\ttitle: text('title').notNull(),\n` +
+			`\tname: text('name').notNull(),\n` +
 			`\tage: integer('age').notNull(),\n` +
-			"\t_headingTree: /** @type {ReturnType<typeof json<import('content-thing').TocEntry[], '_headingTree'>>} */(json('_headingTree')).notNull(),\n" +
-			"\t_content: /** @type {ReturnType<typeof json<import('content-thing/mdast').Root, '_content'>>} */(json('_content')).notNull(),\n" +
+			`\tpreferences: json('preferences').notNull(),\n` +
 			`});\n`;
-		assert.strictEqual(generateMarkdownSchema(config, tableName), expected);
+		assert.strictEqual(generateSchema(config, tableName), expected);
 	});
 	it('throws error for unsupported column types', () => {
 		/** @type {import('../src/db/types.js').CTMarkdownSchema} */
@@ -275,46 +277,7 @@ describe('generateMarkdownSchema', () => {
 			},
 		};
 		assert.throws(
-			() => generateMarkdownSchema(config, 'MyTable'),
-			/Unsupported column type in schema/,
-		);
-	});
-});
-
-describe('generateYamlSchema', () => {
-	it('should generate yaml schema', () => {
-		/** @type {import('../src/db/types.js').CTYamlSchema} */
-		const config = {
-			data: {
-				title: {
-					type: 'text',
-				},
-				age: {
-					type: 'integer',
-				},
-			},
-		};
-		const tableName = 'testTable';
-		const expected =
-			`import { sqliteTable, integer, text } from 'content-thing/drizzle-orm/sqlite-core';\n\n` +
-			`export const testTable = sqliteTable('testTable', {\n` +
-			`\ttitle: text('title').notNull(),\n` +
-			`\tage: integer('age').notNull(),\n` +
-			`});\n`;
-		assert.strictEqual(generateYamlSchema(config, tableName), expected);
-	});
-	it('throws error for unsupported YAML column type', () => {
-		/** @type {import('../src/db/types.js').CTYamlSchema} */
-		const config = {
-			data: {
-				title: {
-					// @ts-expect-error
-					type: 'unsupported',
-				},
-			},
-		};
-		assert.throws(
-			() => generateYamlSchema(config, 'MyTable'),
+			() => generateSchema(config, 'MyTable'),
 			/Unsupported column type in schema/,
 		);
 	});

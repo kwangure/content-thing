@@ -75,6 +75,14 @@ export const markdownSchema = z
 				type: 'text',
 				primaryKey: true,
 			}),
+			_headingTree: drizzleJsonColumn.parse({
+				type: 'json',
+				jsDocType: "import('content-thing').TocEntry[]",
+			}),
+			_content: drizzleJsonColumn.parse({
+				type: 'json',
+				jsDocType: "import('content-thing/mdast').Root",
+			}),
 		};
 		return value;
 	});

@@ -1,5 +1,5 @@
-import { generateMarkdownSchema, generateYamlSchema } from '../db/schema.js';
 import { generateRelationImports, generateRelations } from '../db/relations.js';
+import { generateSchema } from '../db/schema.js';
 import path from 'node:path';
 import { write } from '@content-thing/internal-utils/filesystem';
 
@@ -12,7 +12,7 @@ export async function writeMarkdownSchema(config, collection) {
 	if (config.relations) {
 		schemaCode += generateRelationImports(config.relations, collection.output);
 	}
-	schemaCode += generateMarkdownSchema(config.schema, collection.name);
+	schemaCode += generateSchema(config.schema, collection.name);
 	if (config.relations) {
 		schemaCode += `\n`;
 		schemaCode += generateRelations(config.relations, collection.name);
@@ -31,7 +31,7 @@ export function writeYamlSchema(config, collection) {
 	if (config.relations) {
 		schemaCode += generateRelationImports(config.relations, collection.output);
 	}
-	schemaCode += generateYamlSchema(config.schema, collection.name);
+	schemaCode += generateSchema(config.schema, collection.name);
 	if (config.relations) {
 		schemaCode += `\n`;
 		schemaCode += `${generateRelations(config.relations, collection.name)}\n\n`;

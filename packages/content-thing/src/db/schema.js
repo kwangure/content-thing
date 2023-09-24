@@ -139,26 +139,40 @@ export function generateJsonColumnCode(key, column) {
 	return columnCode;
 }
 
+const DRIZZLE_COLUMNS = ['integer', 'text'];
+const CONTENT_THING_COLUMNS = ['json'];
 /**
  * Generates SQLite schema for Markdown type
  *
- * @param {import("./types").CTMarkdownSchema} schema - The configuration for Markdown type
+ * @param {import("../config/types.js").CollectionSchema} schema - The configuration for Markdown type
  * @param {string} tableName - The name of the table
  * @returns {string} - The generated SQLite schema
  */
-export function generateMarkdownSchema(schema, tableName) {
-	let schemaCode = `import { json } from 'content-thing/db';\n`;
+export function generateSchema(schema, tableName) {
+	const drizzleImports = new Set(['sqliteTable']);
+	const contentThingImports = new Set();
+
 	if (schema.data) {
-		const types = new Set(
-			[
-				'sqliteTable',
-				...Object.values(schema.data).map(({ type }) => type),
-			].sort(),
-		);
-		schemaCode += `import { ${[...types].join(
-			', ',
-		)} } from 'content-thing/drizzle-orm/sqlite-core';\n`;
+		const columns = Object.values(schema.data);
+		for (const column of columns) {
+			if (DRIZZLE_COLUMNS.includes(column.type)) {
+				drizzleImports.add(column.type);
+			} else if (CONTENT_THING_COLUMNS.includes(column.type)) {
+				contentThingImports.add(column.type);
+			}
+		}
 	}
+
+	let schemaCode = `import { ${[...drizzleImports]
+		.sort()
+		.join(', ')} } from 'content-thing/drizzle-orm/sqlite-core';\n`;
+
+	if (contentThingImports.size) {
+		schemaCode += `import { ${[...contentThingImports]
+			.sort()
+			.join(', ')} } from 'content-thing/db';\n`;
+	}
+
 	schemaCode += `\n`;
 	schemaCode += `export const ${tableName} = sqliteTable('${tableName}', {\n`;
 
@@ -171,6 +185,8 @@ export function generateMarkdownSchema(schema, tableName) {
 				columnCode = generateTextColumnCode(key, column);
 			} else if (columnType === 'integer') {
 				columnCode = generateIntegerColumnCode(key, column);
+			} else if (columnType === 'json') {
+				columnCode = generateJsonColumnCode(key, column);
 			} else {
 				throw new Error(
 					`Unsupported column type in schema: ${columnType}. File an issue to implement missing types.`,
@@ -179,39 +195,6 @@ export function generateMarkdownSchema(schema, tableName) {
 			schemaCode += `\t${key}: ${columnCode},\n`;
 		}
 	}
-	schemaCode += `\t_headingTree: /** @type {ReturnType<typeof json<import('content-thing').TocEntry[], '_headingTree'>>} */(json('_headingTree')).notNull(),\n`;
-	schemaCode += `\t_content: /** @type {ReturnType<typeof json<import('content-thing/mdast').Root, '_content'>>} */(json('_content')).notNull(),\n`;
-	schemaCode += '});\n';
-	return schemaCode;
-}
-
-/**
- * Generates SQLite schema for YAML type
- *
- * @param {import("./types").CTYamlSchema} schema - The configuration for YAML type
- * @param {string} tableName - The name of the table
- * @returns {string} - The generated SQLite schema
- */
-export function generateYamlSchema(schema, tableName) {
-	let schemaCode = `import { sqliteTable, integer, text } from 'content-thing/drizzle-orm/sqlite-core';\n\n`;
-	schemaCode += `export const ${tableName} = sqliteTable('${tableName}', {\n`;
-
-	for (const key in schema.data) {
-		const column = schema.data[key];
-		const columnType = column.type;
-		let columnCode = '';
-		if (columnType === 'text') {
-			columnCode = generateTextColumnCode(key, column);
-		} else if (columnType === 'integer') {
-			columnCode = generateIntegerColumnCode(key, column);
-		} else {
-			throw new Error(
-				`Unsupported column type in schema: ${columnType}. File an issue to implement missing types.`,
-			);
-		}
-		schemaCode += `\t${key}: ${columnCode},\n`;
-	}
-
 	schemaCode += '});\n';
 	return schemaCode;
 }
