@@ -8,8 +8,9 @@ import { writeFileErrors } from '../collections/write.js';
  *
  * @param {import('better-sqlite3').Database} sqlite - The better-sqlite3 database instance.
  * @param {import('../collections/entry/types.js').CollectionEntry[]} entries
+ * @param {AbortSignal} signal
  */
-export async function loadSQLiteDB(sqlite, entries) {
+export async function loadSQLiteDB(sqlite, entries, signal) {
 	/** @type {Record<string, any>} */
 	const schema = {};
 	for (const entry of entries) {
@@ -20,6 +21,7 @@ export async function loadSQLiteDB(sqlite, entries) {
 	const db = drizzle(sqlite, { schema });
 
 	for (const entry of entries) {
+		if (signal.aborted) return;
 		const data = entry.getRecord();
 		const validator = await entry.getValidators().then(({ insert }) => insert);
 		const validatedJson = writeFileErrors(
@@ -27,13 +29,15 @@ export async function loadSQLiteDB(sqlite, entries) {
 			validator,
 			path.join(outputDir, 'collections', entry.collection, entry.id),
 		);
-		await db
-			.insert(schema[entry.collection])
-			.values(validatedJson)
-			.onConflictDoUpdate({
-				target: schema[entry.collection]._id,
-				set: validatedJson,
-			});
+		if (validatedJson) {
+			await db
+				.insert(schema[entry.collection])
+				.values(validatedJson)
+				.onConflictDoUpdate({
+					target: schema[entry.collection]._id,
+					set: validatedJson,
+				});
+		}
 	}
 }
 

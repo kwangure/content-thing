@@ -168,6 +168,7 @@
 		"drizzle-orm": "^0.28.5",
 		"drizzle-zod": "^0.5.1",
 		"glob": "^10.3.3",
+		"hine": "^0.0.19",
 		"js-yaml": "^4.1.0",
 		"remark-frontmatter": "^4.0.1",
 		"remark-parse": "^10.0.2",

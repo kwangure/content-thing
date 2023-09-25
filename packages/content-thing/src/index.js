@@ -1,21 +1,6 @@
-import {
-	getMarkdownCollectionEntries,
-	getYamlCollectionInputs,
-	getCollections,
-} from './collections/collect.js';
-import { mkdirp, rimraf } from '@content-thing/internal-utils/filesystem';
-import {
-	writeMarkdownSchema,
-	writeYamlSchema,
-	writeDBClient,
-	writeSchemaExporter,
-	writeValidator,
-} from './collections/write.js';
-import { createTableFromSchema, loadSQLiteDB } from './db/io.js';
-import Database from 'better-sqlite3';
 import fs from 'node:fs';
-import { loadCollectionConfig } from './config/load.js';
 import path from 'node:path';
+import { thing } from './state/state.js';
 
 export { extendSvelteConfig } from './svelte-kit.js';
 
@@ -28,31 +13,35 @@ export function content() {
 	/** @type {import('vite').ResolvedConfig} */
 	let config;
 	/** @type {string} */
-	let collectionsDir;
-	/** @type {string} */
-	let root = process.cwd();
-	/** @type {string} */
 	let outputDir;
 
 	return {
 		name: 'vite-plugin-content',
 		configResolved(_config) {
-			if (_config.root) {
-				root = _config.root;
-			}
 			config = _config;
-			collectionsDir = path.join(root, 'src/thing/collections');
-			outputDir = path.join(root, '.svelte-kit/content-thing/generated');
+
+			const root = _config.root || process.cwd();
+			const collectionsDir = path.join(root, 'src/thing/collections');
+
+			outputDir = path.join(root, '.svelte-kit/content-thing');
+			const dbPath = path.join(outputDir, 'sqlite.db');
+			const generatedDir = path.join(outputDir, 'generated');
+
+			thing.dispatch('configure', {
+				collectionsDir,
+				dbPath,
+				generatedDir,
+				outputDir,
+				root,
+			});
 		},
 		configureServer(vite) {
-			vite.watcher.on('all', (_event, filepath) => {
-				if (filepath.startsWith(collectionsDir)) {
-					outputCollections(collectionsDir, outputDir);
-				}
+			vite.watcher.on('all', (event, filepath) => {
+				thing.dispatch('build', { event, filepath });
 			});
 		},
 		async buildStart() {
-			await outputCollections(collectionsDir, outputDir);
+			thing.dispatch('build');
 		},
 		resolveId(id) {
 			if (id.endsWith('sqlite.db')) {
@@ -61,10 +50,9 @@ export function content() {
 		},
 		load(id) {
 			if (!id.endsWith('sqlite.db')) return;
+			if (config.command !== 'build') return;
+
 			const dbPath = path.join(outputDir, 'sqlite.db');
-			if (config.command === 'serve') {
-				return `export default ${JSON.stringify(dbPath)}`;
-			}
 			const referenceId = this.emitFile({
 				type: 'asset',
 				name: 'sqlite.db',
@@ -73,45 +61,6 @@ export function content() {
 			return `export default import.meta.ROLLUP_FILE_URL_${referenceId};\n`;
 		},
 	};
-}
-
-/**
- * @param {string} input The parent directory of collections
- * @param {string} output The output directory of generated content
- */
-async function outputCollections(input, output) {
-	rimraf(output);
-	mkdirp(output);
-
-	const dbPath = path.join(output, 'sqlite.db');
-	const db = new Database(dbPath);
-	db.pragma('journal_mode = WAL');
-	const collectionOutput = path.join(output, 'collections');
-	const collections = getCollections(input, collectionOutput);
-	/** @type {import('./collections/entry/types.js').CollectionEntry[]} */
-	const collectionEntries = [];
-	for (const collection of collections) {
-		const config = loadCollectionConfig(collection.input);
-		if (config.type === 'markdown') {
-			const markdownEntries = getMarkdownCollectionEntries(collection, input);
-			collectionEntries.push(...markdownEntries);
-			writeMarkdownSchema(config, collection);
-			writeValidator(collection.name, collection.output);
-		} else if (config.type === 'yaml') {
-			const yamlEntries = getYamlCollectionInputs(collection, input);
-			collectionEntries.push(...yamlEntries);
-			writeYamlSchema(config, collection);
-			writeValidator(collection.name, collection.output);
-		}
-		createTableFromSchema(db, config, collection.name);
-	}
-
-	const schemaPath = path.join(output, 'schema.js');
-	const collectionNames = collections.map((entry) => entry.name);
-
-	writeSchemaExporter(schemaPath, collectionNames);
-	writeDBClient(path.join(output, 'db.js'), collectionNames);
-	await loadSQLiteDB(db, collectionEntries);
 }
 
 /**
