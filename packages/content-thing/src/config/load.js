@@ -9,47 +9,60 @@ export const drizzlePrimaryKeyConfig = z
 			.enum(['abort', 'fail', 'ignore', 'replace', 'rollback'])
 			.optional(),
 	})
+	.strict()
 	.or(z.boolean());
 
-export const drizzleColumn = z.object({
-	nullable: z.boolean().default(false),
-	primaryKey: drizzlePrimaryKeyConfig.optional(),
-	unique: z.string().or(z.boolean()).optional(),
-});
+export const drizzleColumn = z
+	.object({
+		nullable: z.boolean().default(false),
+		primaryKey: drizzlePrimaryKeyConfig.optional(),
+		unique: z.string().or(z.boolean()).optional(),
+	})
+	.strict();
 
-export const drizzleIntegerColumn = drizzleColumn.extend({
-	type: z.literal('integer'),
-	mode: z.enum(['boolean', 'number', 'timestamp', 'timestamp_ms']).optional(),
-	defaultValue: z.number().optional(),
-});
+export const drizzleIntegerColumn = drizzleColumn
+	.extend({
+		type: z.literal('integer'),
+		mode: z.enum(['boolean', 'number', 'timestamp', 'timestamp_ms']).optional(),
+		defaultValue: z.number().optional(),
+	})
+	.strict();
 
-export const drizzleTextColumn = drizzleColumn.extend({
-	type: z.literal('text'),
-	enum: z.string().array().optional(),
-	length: z.number().optional(),
-	defaultValue: z.string().optional(),
-});
+export const drizzleTextColumn = drizzleColumn
+	.extend({
+		type: z.literal('text'),
+		enum: z.string().array().optional(),
+		length: z.number().optional(),
+		defaultValue: z.string().optional(),
+	})
+	.strict();
 
-export const drizzleJsonColumn = drizzleColumn.extend({
-	type: z.literal('json'),
-	jsDocType: z.string().default('any'),
-	defaultValue: z
-		.record(z.any())
-		.transform((value) => JSON.stringify(value))
-		.optional(),
-});
+export const drizzleJsonColumn = drizzleColumn
+	.extend({
+		type: z.literal('json'),
+		jsDocType: z.string().default('any'),
+		defaultValue: z
+			.record(z.any())
+			.transform((value) => JSON.stringify(value))
+			.optional(),
+	})
+	.strict();
 
-export const drizzleOneRelation = z.object({
-	type: z.literal('one'),
-	collection: z.string(),
-	reference: z.string(),
-	field: z.string(),
-});
+export const drizzleOneRelation = z
+	.object({
+		type: z.literal('one'),
+		collection: z.string(),
+		reference: z.string(),
+		field: z.string(),
+	})
+	.strict();
 
-export const drizzleManyRelation = z.object({
-	type: z.literal('many'),
-	collection: z.string(),
-});
+export const drizzleManyRelation = z
+	.object({
+		type: z.literal('many'),
+		collection: z.string(),
+	})
+	.strict();
 
 const dataPropertySchema = z.string().refine(
 	(value) => !value.startsWith('_'),
@@ -71,12 +84,15 @@ export const markdownSchema = z
 			)
 			.default({}),
 	})
+	.strict()
 	.transform((value) => {
 		value.data = {
 			...value.data,
 			_id: drizzleTextColumn.parse({
 				type: 'text',
-				primaryKey: true,
+				primaryKey: {
+					onConflict: 'replace',
+				},
 			}),
 			_headingTree: drizzleJsonColumn.parse({
 				type: 'json',
@@ -90,16 +106,19 @@ export const markdownSchema = z
 		return value;
 	});
 
-export const markdownConfig = z.object({
-	type: z.literal('markdown'),
-	schema: markdownSchema,
-	relations: z
-		.record(
-			dataPropertySchema,
-			z.discriminatedUnion('type', [drizzleOneRelation, drizzleManyRelation]),
-		)
-		.optional(),
-});
+export const markdownConfig = z
+	.object({
+		$schema: z.string().optional(),
+		type: z.literal('markdown'),
+		schema: markdownSchema,
+		relations: z
+			.record(
+				dataPropertySchema,
+				z.discriminatedUnion('type', [drizzleOneRelation, drizzleManyRelation]),
+			)
+			.optional(),
+	})
+	.strict();
 
 export const yamlSchema = z
 	.object({
@@ -112,26 +131,32 @@ export const yamlSchema = z
 			]),
 		),
 	})
+	.strict()
 	.transform((value) => {
 		value.data = {
 			...value.data,
 			_id: drizzleTextColumn.parse({
 				type: 'text',
-				primaryKey: true,
+				primaryKey: {
+					onConflict: 'replace',
+				},
 			}),
 		};
 		return value;
 	});
 
-export const yamlConfig = z.object({
-	type: z.literal('yaml'),
-	schema: yamlSchema,
-	relations: z
-		.record(
-			z.discriminatedUnion('type', [drizzleOneRelation, drizzleManyRelation]),
-		)
-		.optional(),
-});
+export const yamlConfig = z
+	.object({
+		$schema: z.string().optional(),
+		type: z.literal('yaml'),
+		schema: yamlSchema,
+		relations: z
+			.record(
+				z.discriminatedUnion('type', [drizzleOneRelation, drizzleManyRelation]),
+			)
+			.optional(),
+	})
+	.strict();
 
 export const configSchema = z.discriminatedUnion('type', [
 	markdownConfig,
