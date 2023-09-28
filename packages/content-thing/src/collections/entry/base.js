@@ -12,22 +12,14 @@ export class BaseEntry {
 	message() {}
 	/**
 	 * @param {string} filepath
-	 * @param {import("./types").EntryOptions} options
 	 */
-	constructor(filepath, options) {
-		const { collectionsDir } = options;
+	constructor(filepath) {
 		const { collection, entry } = BaseEntry.parseFilepath(filepath);
-		if (!filepath.startsWith(collectionsDir)) {
-			throw Error(
-				`Entry filepapth '${filepath}' is not in '${collectionsDir}'`,
-			);
-		}
 
 		this.__collection = collection.name;
 		this.__id = entry.id;
 		this.__basename = entry.basename;
 		this.__filepath = filepath;
-		this.__collectionsDir = collectionsDir;
 	}
 	get basename() {
 		return this.__basename;
@@ -37,9 +29,6 @@ export class BaseEntry {
 	}
 	get collection() {
 		return this.__collection;
-	}
-	get collectionsDir() {
-		return this.__collectionsDir;
 	}
 	get filepath() {
 		return this.__filepath;

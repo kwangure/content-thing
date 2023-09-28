@@ -45,12 +45,11 @@ export async function loadSQLiteDB(sqlite, entries, signal) {
  * Create a SQLite table based on a schema.
  *
  * @param {import('better-sqlite3').Database} db - The better-sqlite3 database instance.
- * @param {import('../config/types.js').CollectionConfig} config - The schema for the table.
- * @param {string} tableName - The name of the table to be created or replaced.
+ * @param {import('../config/types.js').ValidatedCollectionConfig} config - The schema for the table.
  */
-export function createTableFromSchema(db, config, tableName) {
+export function createTableFromSchema(db, config) {
 	db.transaction(() => {
-		db.prepare(`DROP TABLE IF EXISTS ${tableName}`).run();
+		db.prepare(`DROP TABLE IF EXISTS ${config.name}`).run();
 
 		let columns = [];
 		for (const [key, value] of Object.entries(config.schema.data || {})) {
@@ -74,9 +73,91 @@ export function createTableFromSchema(db, config, tableName) {
 			columns.push(columnDef);
 		}
 
-		const createTableSQL = `CREATE TABLE ${tableName} (${columns.join(', ')})`;
+		const createTableSQL = `CREATE TABLE ${config.name} (${columns.join(
+			', ',
+		)})`;
 		db.prepare(createTableSQL).run();
 	})();
+}
+
+/**
+ * Inserts data into a SQLite table based on a schema.
+ *
+ * @param {import('better-sqlite3').Database} db - The better-sqlite3 database instance.
+ * @param {import('../config/types.js').ValidatedCollectionConfig} config - The schema for the table.
+ * @param {Object} data - The data to insert, as a JSON object that matches the schema.data columns.
+ */
+export function insertIntoTable(db, config, data) {
+	const columnNames = [];
+	const placeholders = [];
+	const values = [];
+
+	for (const [key, fieldConfig] of Object.entries(config.schema.data)) {
+		if (fieldConfig.nullable !== true && !data.hasOwnProperty(key)) {
+			throw new Error(
+				`Non-nullable key "${key}" is missing in the data for table ${config.name}.`,
+			);
+		}
+	}
+
+	for (const [key, value] of Object.entries(data)) {
+		const fieldConfig = config.schema.data[key];
+		if (fieldConfig) {
+			validateValue(value, fieldConfig);
+			columnNames.push(`"${key}"`);
+			placeholders.push('?');
+			values.push(fieldConfig.type === 'json' ? JSON.stringify(value) : value);
+		}
+	}
+
+	const sql = `INSERT INTO ${config.name} (${columnNames.join(
+		', ',
+	)}) VALUES (${placeholders.join(', ')})`;
+
+	try {
+		db.prepare(sql).run(...values);
+	} catch (cause) {
+		const error = new Error(
+			`Failed to insert values: ${JSON.stringify(
+				values,
+				null,
+				4,
+			)} with schema: ${JSON.stringify(config.schema.data, null, 4)}`,
+		);
+		error.cause = cause;
+		throw error;
+	}
+}
+
+/**
+ * Validates a value based on its field configuration.
+ *
+ * @param {any} value - The value to validate.
+ * @param {import('../config/types.js').ColumnType} fieldConfig - The field configuration object.
+ */
+function validateValue(value, fieldConfig) {
+	switch (fieldConfig.type) {
+		case 'integer':
+			if (typeof value !== 'number' || !Number.isInteger(value)) {
+				throw new Error(`Invalid value for integer type: ${value}`);
+			}
+			return;
+		case 'text':
+			if (typeof value !== 'string') {
+				throw new Error(`Invalid value for text type: ${value}`);
+			}
+			return;
+		case 'json':
+			try {
+				JSON.stringify(value); // will throw an error if value cannot be stringified
+			} catch (e) {
+				throw new Error(`Invalid value for json type: ${value}`);
+			}
+			return;
+		default:
+			// @ts-expect-error
+			throw new Error(`Unsupported type: ${fieldConfig.type}`);
+	}
 }
 
 /**

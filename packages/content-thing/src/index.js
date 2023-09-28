@@ -26,13 +26,19 @@ export function content() {
 			outputDir = path.join(root, '.svelte-kit/content-thing');
 			const dbPath = path.join(outputDir, 'sqlite.db');
 			const generatedDir = path.join(outputDir, 'generated');
+			const collectionsOutput = path.join(generatedDir, 'collections');
+			const dbClientPath = path.join(generatedDir, 'db.js');
+			const schemaPath = path.join(generatedDir, 'schema.js');
 
 			thing.dispatch('configure', {
 				collectionsDir,
+				collectionsOutput,
+				dbClientPath,
 				dbPath,
 				generatedDir,
 				outputDir,
 				root,
+				schemaPath,
 			});
 		},
 		configureServer(vite) {
@@ -41,7 +47,11 @@ export function content() {
 			});
 		},
 		async buildStart() {
-			thing.dispatch('build');
+			if (config.command === 'build') {
+				thing.dispatch('build');
+			} else {
+				thing.dispatch('watch');
+			}
 		},
 		resolveId(id) {
 			if (id.endsWith('sqlite.db')) {

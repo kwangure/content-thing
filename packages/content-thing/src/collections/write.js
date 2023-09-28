@@ -4,45 +4,28 @@ import path from 'node:path';
 import { write } from '@content-thing/internal-utils/filesystem';
 
 /**
- * @param {import('../config/types.js').MarkdownConfig} config
- * @param {import('./types.js').CollectionInfo} collection
+ * @param {import('../config/types.js').ValidatedCollectionConfig} config
  */
-export async function writeMarkdownSchema(config, collection) {
+export function writeSchema(config) {
 	let schemaCode = '';
 	if (config.relations) {
-		schemaCode += generateRelationImports(config.relations, collection.output);
+		schemaCode += generateRelationImports(
+			config.relations,
+			config.paths.outputDir,
+		);
 	}
-	schemaCode += generateSchema(config.schema, collection.name);
+	schemaCode += generateSchema(config.schema, config.name);
 	if (config.relations) {
 		schemaCode += `\n`;
-		schemaCode += generateRelations(config.relations, collection.name);
+		schemaCode += `${generateRelations(config.relations, config.name)}\n\n`;
 	}
 
-	writeValidator(collection.name, collection.output);
-	write(path.join(collection.output, 'schema.config.js'), schemaCode);
-}
-
-/**
- * @param {import('../config/types.js').YamlConfig} config
- * @param {import('./types.js').CollectionInfo} collection
- */
-export function writeYamlSchema(config, collection) {
-	let schemaCode = '';
-	if (config.relations) {
-		schemaCode += generateRelationImports(config.relations, collection.output);
-	}
-	schemaCode += generateSchema(config.schema, collection.name);
-	if (config.relations) {
-		schemaCode += `\n`;
-		schemaCode += `${generateRelations(config.relations, collection.name)}\n\n`;
-	}
-
-	write(path.join(collection.output, 'schema.config.js'), schemaCode);
+	write(config.paths.schema, schemaCode);
 }
 
 /**
  * @param {string} dbClientPath
- * @param {string[]} collections
+ * @param {Set<string>} collections
  */
 export function writeDBClient(dbClientPath, collections) {
 	let result = `import { Database } from 'content-thing/better-sqlite3';\n`;
@@ -88,9 +71,9 @@ export function writeFileErrors(object, schema, directory) {
 
 /**
  * @param {string} output
- * @param {string[]} collections
+ * @param {Set<string>} collections
  */
-export function writeSchemaExporter(output, collections) {
+export function writeSchemaExports(output, collections) {
 	let result = '';
 	for (const collection of collections) {
 		result += `export * from './collections/${collection}/schema.config.js';\n`;
@@ -99,14 +82,13 @@ export function writeSchemaExporter(output, collections) {
 }
 
 /**
- * @param {string} name
- * @param {string} filepath
+ * @param {import('../config/types.js').ValidatedCollectionConfig} config
  */
-export function writeValidator(name, filepath) {
+export function writeValidator(config) {
 	let result = `import { createInsertSchema } from 'content-thing/drizzle-zod';\n`;
-	result += `import { ${name} } from './schema.config.js'\n`;
+	result += `import { ${config.name} } from './schema.config.js'\n`;
 	result += `\n`;
-	result += `export const insert = createInsertSchema(${name});\n`;
+	result += `export const insert = createInsertSchema(${config.name});\n`;
 
-	write(path.join(filepath, 'validate.js'), result);
+	write(config.paths.validator, result);
 }

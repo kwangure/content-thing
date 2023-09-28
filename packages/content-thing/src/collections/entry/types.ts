@@ -1,10 +1,6 @@
 import type { MarkdownEntry } from './markdown.js';
 import type { YamlEntry } from './yaml.js';
 
-export interface EntryOptions {
-	collectionsDir: string;
-}
-
 export interface EntryRecord {
 	_id: string;
 	[x: string]: any;

@@ -163,13 +163,31 @@ export const configSchema = z.discriminatedUnion('type', [
 	yamlConfig,
 ]);
 
-/** @param {string} directory */
-export function loadCollectionConfig(directory) {
-	const configPath = path.join(directory, 'collection.config.json');
+/**
+ * @param {string} rootDir
+ * @param {string} collectionsOutput
+ * @return {import('./types').ValidatedCollectionConfig}
+ */
+export function loadCollectionConfig(rootDir, collectionsOutput) {
+	const configPath = path.join(rootDir, 'collection.config.json');
+	const name = path.basename(rootDir);
+	const outputDir = path.join(collectionsOutput, name);
+	const schemaPath = path.join(outputDir, 'schema.config.js');
+	const validatorPath = path.join(outputDir, 'validate.js');
 	try {
 		const configContent = fs.readFileSync(configPath, 'utf-8');
 		const configJSON = JSON.parse(configContent);
-		return configSchema.parse(configJSON);
+		return {
+			...configSchema.parse(configJSON),
+			name,
+			paths: {
+				config: configPath,
+				schema: schemaPath,
+				validator: validatorPath,
+				rootDir,
+				outputDir,
+			},
+		};
 	} catch (_error) {
 		if (/** @type {any} */ (_error).code === 'ENOENT') {
 			const error = new Error(
