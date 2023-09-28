@@ -3,7 +3,7 @@ import { walk } from '@content-thing/internal-utils/filesystem';
 import { YamlEntry } from './entry/yaml.js';
 
 /**
- * @param {import('../config/types.js').ValidatedCollectionConfig} collection
+ * @param {import('../config/types.js').CollectionConfig} collection
  */
 export function getMarkdownCollectionEntries(collection) {
 	/** @type {MarkdownEntry[]} */
@@ -18,9 +18,9 @@ export function getMarkdownCollectionEntries(collection) {
 }
 
 /**
- * @param {import('../config/types.js').ValidatedCollectionConfig} collection
+ * @param {import('../config/types.js').CollectionConfig} collection
  */
-export function getYamlCollectionInputs(collection) {
+export function getYamlCollectionEntries(collection) {
 	/** @type {YamlEntry[]} */
 	const collectionManifest = [];
 	walk(collection.paths.rootDir, (file) => {

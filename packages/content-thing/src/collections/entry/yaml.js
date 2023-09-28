@@ -1,5 +1,4 @@
 import { BaseEntry } from './base.js';
-import { write } from '@content-thing/internal-utils/filesystem';
 import yaml from 'js-yaml';
 
 export class YamlEntry extends BaseEntry {
@@ -11,8 +10,5 @@ export class YamlEntry extends BaseEntry {
 			...json,
 			_id: this.id,
 		});
-	}
-	writeOutput() {
-		write(this.output, JSON.stringify(this.getRecord(), null, 4));
 	}
 }

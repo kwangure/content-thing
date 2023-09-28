@@ -1,11 +1,7 @@
-import {
-	createTableFromSchema,
-	insertIntoTable,
-	loadSQLiteDB,
-} from '../db/io.js';
+import { createTableFromSchema, insertIntoTable } from '../db/io.js';
 import {
 	getMarkdownCollectionEntries,
-	getYamlCollectionInputs,
+	getYamlCollectionEntries,
 } from '../collections/collect.js';
 import { handler, state } from 'hine';
 import { loadCollectionConfig } from '../config/load.js';
@@ -36,6 +32,7 @@ const configSchema = z.object({
 });
 
 export const thing = state({
+	name: 'thing',
 	context: {
 		config: configSchema.parse,
 		controller: (x) => /** @type {AbortController} */ (x),
@@ -54,7 +51,7 @@ export const thing = state({
 			},
 		}),
 		build: state({
-			entry: [handler({ run: ['clearGeneratedFiles', 'runBuild'] })],
+			entry: [handler({ run: ['clearGeneratedFiles'] })],
 			exit: [handler({ run: ['terminateBuild'] })],
 			on: {
 				build: [handler({ if: 'isCollectionItem', goto: 'build' })],
@@ -69,7 +66,7 @@ export const thing = state({
 				initializing: state({
 					entry: [
 						handler({
-							run: ['clearGeneratedFiles', 'runBuild'],
+							run: ['clearGeneratedFiles'],
 						}),
 					],
 					on: {
@@ -117,60 +114,6 @@ thing.resolve({
 
 			rimraf(generatedDir);
 			mkdirp(generatedDir);
-		},
-		async runBuild({ ownerState }) {
-			const { context } = ownerState;
-			const {
-				collectionsDir,
-				collectionsOutput,
-				dbClientPath,
-				dbPath,
-				schemaPath,
-			} = context.get('config');
-
-			const db = new Database(dbPath);
-			db.pragma('journal_mode = WAL');
-
-			const controller = new AbortController();
-			const { signal } = controller;
-			context.update('controller', controller);
-
-			/** @type {string[]} */
-			const collectionRootDirs = [];
-			const collectionNames = context.get('collectionNames');
-			if (fs.existsSync(collectionsDir)) {
-				const entries = fs.readdirSync(collectionsDir, {
-					withFileTypes: true,
-				});
-				for (const entry of entries) {
-					if (entry.isDirectory()) {
-						collectionRootDirs.push(path.join(collectionsDir, entry.name));
-						collectionNames.add(entry.name);
-					}
-				}
-			}
-			/** @type {import('../collections/entry/types.js').CollectionEntry[]} */
-			const collectionEntries = [];
-			for (const dir of collectionRootDirs) {
-				if (signal.aborted) return;
-				const config = loadCollectionConfig(dir, collectionsOutput);
-				if (config.type === 'markdown') {
-					const markdownEntries = getMarkdownCollectionEntries(config);
-					collectionEntries.push(...markdownEntries);
-				} else if (config.type === 'yaml') {
-					const yamlEntries = getYamlCollectionInputs(config);
-					collectionEntries.push(...yamlEntries);
-				}
-				writeSchema(config);
-				writeValidator(config);
-				createTableFromSchema(db, config);
-			}
-
-			writeSchemaExports(schemaPath, collectionNames);
-			writeDBClient(dbClientPath, collectionNames);
-			await loadSQLiteDB(db, collectionEntries, signal);
-			context.update('collectionNames', collectionNames);
-			ownerState.dispatch('buildDone');
 		},
 		updateConfig({ ownerState, event }) {
 			const { context } = ownerState;
@@ -254,6 +197,69 @@ thing.resolve({
 			},
 		},
 	},
+});
+
+thing.subscribe((thing) => {
+	if (
+		!thing.matches('thing.build') &&
+		!thing.matches('thing.watch.initializing')
+	) {
+		return;
+	}
+	const { context } = thing;
+	const {
+		collectionsDir,
+		collectionsOutput,
+		dbClientPath,
+		dbPath,
+		schemaPath,
+	} = context.get('config');
+
+	const db = new Database(dbPath);
+	db.pragma('journal_mode = WAL');
+
+	const controller = new AbortController();
+	const { signal } = controller;
+	context.update('controller', controller);
+
+	/** @type {string[]} */
+	const collectionRootDirs = [];
+	const collectionNames = context.get('collectionNames');
+	if (fs.existsSync(collectionsDir)) {
+		const entries = fs.readdirSync(collectionsDir, {
+			withFileTypes: true,
+		});
+		for (const entry of entries) {
+			if (entry.isDirectory()) {
+				collectionRootDirs.push(path.join(collectionsDir, entry.name));
+				collectionNames.add(entry.name);
+			}
+		}
+	}
+	for (const dir of collectionRootDirs) {
+		if (signal.aborted) return;
+		const config = loadCollectionConfig(dir, collectionsOutput);
+		/** @type {import('../collections/entry/types.js').CollectionEntry[]} */
+		let entries = [];
+		if (config.type === 'markdown') {
+			entries = getMarkdownCollectionEntries(config);
+		} else if (config.type === 'yaml') {
+			entries = getYamlCollectionEntries(config);
+		}
+		writeSchema(config);
+		writeValidator(config);
+		createTableFromSchema(db, config);
+		for (const entry of entries) {
+			if (signal.aborted) return;
+			const data = entry.getRecord();
+			insertIntoTable(db, config, data);
+		}
+	}
+
+	writeSchemaExports(schemaPath, collectionNames);
+	writeDBClient(dbClientPath, collectionNames);
+	context.update('collectionNames', collectionNames);
+	thing.dispatch('buildDone');
 });
 
 /**

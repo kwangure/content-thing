@@ -166,7 +166,7 @@ export const configSchema = z.discriminatedUnion('type', [
 /**
  * @param {string} rootDir
  * @param {string} collectionsOutput
- * @return {import('./types').ValidatedCollectionConfig}
+ * @return {import('./types').CollectionConfig}
  */
 export function loadCollectionConfig(rootDir, collectionsOutput) {
 	const configPath = path.join(rootDir, 'collection.config.json');

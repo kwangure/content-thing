@@ -1,51 +1,8 @@
-import { cwd } from 'node:process';
-import { drizzle } from 'drizzle-orm/better-sqlite3';
-import path from 'node:path';
-import { writeFileErrors } from '../collections/write.js';
-
-/**
- * Loads the JSON output of collection files into the databse
- *
- * @param {import('better-sqlite3').Database} sqlite - The better-sqlite3 database instance.
- * @param {import('../collections/entry/types.js').CollectionEntry[]} entries
- * @param {AbortSignal} signal
- */
-export async function loadSQLiteDB(sqlite, entries, signal) {
-	/** @type {Record<string, any>} */
-	const schema = {};
-	for (const entry of entries) {
-		Object.assign(schema, await entry.getSchemas());
-	}
-
-	const outputDir = path.join(cwd(), './.svelte-kit/content-thing/generated');
-	const db = drizzle(sqlite, { schema });
-
-	for (const entry of entries) {
-		if (signal.aborted) return;
-		const data = entry.getRecord();
-		const validator = await entry.getValidators().then(({ insert }) => insert);
-		const validatedJson = writeFileErrors(
-			data,
-			validator,
-			path.join(outputDir, 'collections', entry.collection, entry.id),
-		);
-		if (validatedJson) {
-			await db
-				.insert(schema[entry.collection])
-				.values(validatedJson)
-				.onConflictDoUpdate({
-					target: schema[entry.collection]._id,
-					set: validatedJson,
-				});
-		}
-	}
-}
-
 /**
  * Create a SQLite table based on a schema.
  *
  * @param {import('better-sqlite3').Database} db - The better-sqlite3 database instance.
- * @param {import('../config/types.js').ValidatedCollectionConfig} config - The schema for the table.
+ * @param {import('../config/types.js').CollectionConfig} config - The schema for the table.
  */
 export function createTableFromSchema(db, config) {
 	db.transaction(() => {
@@ -84,8 +41,8 @@ export function createTableFromSchema(db, config) {
  * Inserts data into a SQLite table based on a schema.
  *
  * @param {import('better-sqlite3').Database} db - The better-sqlite3 database instance.
- * @param {import('../config/types.js').ValidatedCollectionConfig} config - The schema for the table.
- * @param {Object} data - The data to insert, as a JSON object that matches the schema.data columns.
+ * @param {import('../config/types.js').CollectionConfig} config - The schema for the table.
+ * @param {Record<string, any>} data - The data to insert, as a JSON object that matches the schema.data columns.
  */
 export function insertIntoTable(db, config, data) {
 	const columnNames = [];

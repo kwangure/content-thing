@@ -1,10 +1,9 @@
 import { generateRelationImports, generateRelations } from '../db/relations.js';
 import { generateSchema } from '../db/schema.js';
-import path from 'node:path';
 import { write } from '@content-thing/internal-utils/filesystem';
 
 /**
- * @param {import('../config/types.js').ValidatedCollectionConfig} config
+ * @param {import('../config/types.js').CollectionConfig} config
  */
 export function writeSchema(config) {
 	let schemaCode = '';
@@ -51,25 +50,6 @@ export function writeDBClient(dbClientPath, collections) {
 }
 
 /**
- * @param {any} object
- * @param {import('zod').ZodSchema} schema
- * @param {string} directory
- */
-export function writeFileErrors(object, schema, directory) {
-	const parsed = schema.safeParse(object);
-	let errors = { _errors: /** @type {string[]} */ ([]) };
-	let result = null;
-	if (parsed.success) {
-		result = parsed.data;
-	} else {
-		errors = parsed.error.format();
-	}
-	const errorFilePath = path.join(directory, 'errors.json');
-	write(errorFilePath, JSON.stringify(errors, null, 4));
-	return result;
-}
-
-/**
  * @param {string} output
  * @param {Set<string>} collections
  */
@@ -82,7 +62,7 @@ export function writeSchemaExports(output, collections) {
 }
 
 /**
- * @param {import('../config/types.js').ValidatedCollectionConfig} config
+ * @param {import('../config/types.js').CollectionConfig} config
  */
 export function writeValidator(config) {
 	let result = `import { createInsertSchema } from 'content-thing/drizzle-zod';\n`;

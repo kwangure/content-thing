@@ -41,11 +41,6 @@ export function content() {
 				schemaPath,
 			});
 		},
-		configureServer(vite) {
-			vite.watcher.on('all', (event, filepath) => {
-				thing.dispatch('build', { event, filepath });
-			});
-		},
 		async buildStart() {
 			if (config.command === 'build') {
 				thing.dispatch('build');

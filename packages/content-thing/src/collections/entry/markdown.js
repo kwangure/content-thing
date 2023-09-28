@@ -8,7 +8,6 @@ import remarkStringify from 'remark-stringify';
 import { remarkTableOfContents } from '@content-thing/remark-toc';
 import { remarkYamlParse } from '@content-thing/remark-yaml-parse';
 import { unified } from 'unified';
-import { write } from '@content-thing/internal-utils/filesystem';
 
 const processor = unified()
 	.use(remarkParse)
@@ -21,6 +20,13 @@ const processor = unified()
 	.use(remarkTableOfContents);
 
 export class MarkdownEntry extends BaseEntry {
+	/**
+	 * Make `unified` to treat `BaseEntry` like a `VFile`
+	 * @type {any}
+	 */
+	messages = [];
+	// Make `unified` to treat `BaseEntry` like a `VFile`
+	message() {}
 	type = 'markdown';
 	/**
 	 * A property used by Rehype plugins to output arbitrary data
@@ -38,8 +44,5 @@ export class MarkdownEntry extends BaseEntry {
 			_id: this.id,
 			_headingTree: this.data.tableOfContents,
 		});
-	}
-	writeOutput() {
-		write(this.output, JSON.stringify(this.getRecord(), null, 4));
 	}
 }

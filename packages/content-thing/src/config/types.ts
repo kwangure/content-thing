@@ -20,9 +20,7 @@ export type CollectionSchema = MarkdownSchema | YamlSchema;
 
 export type MarkdownConfig = z.output<typeof markdownConfig>;
 export type YamlConfig = z.output<typeof yamlConfig>;
-export type CollectionConfig = MarkdownConfig | YamlConfig;
-
-export type ValidatedCollectionConfig = CollectionConfig & {
+export type CollectionConfig = (MarkdownConfig | YamlConfig) & {
 	name: string;
 	paths: {
 		// Files
