@@ -3,8 +3,8 @@ import assert from 'node:assert';
 import {
 	generateTextColumnCode,
 	generateIntegerColumnCode,
-	generateMarkdownSchema,
-	generateYamlSchema,
+	generateJsonColumnCode,
+	generateSchema,
 } from '../src/db/schema.js';
 
 describe('generateTextColumnCode', () => {
@@ -160,84 +160,143 @@ describe('generateIntegerColumnCode', () => {
 	});
 });
 
-describe('generateMarkdownSchema', () => {
-	it('should generate markdown schema', () => {
-		/** @type {import('../src/db/types.js').CTMarkdownSchema} */
-		const config = {
-			data: {
-				title: {
-					type: 'text',
-				},
-				age: {
-					type: 'integer',
-				},
-			},
-		};
-		const tableName = 'testTable';
-		const expected =
-			"import { json } from 'content-thing/db';\n" +
-			`import { integer, sqliteTable, text } from 'content-thing/drizzle-orm/sqlite-core';\n\n` +
-			`export const testTable = sqliteTable('testTable', {\n` +
-			`\tid: text('id').primaryKey(),\n` +
-			`\tdata_title: text('data_title').notNull(),\n` +
-			`\tdata_age: integer('data_age').notNull(),\n` +
-			"\theadingTree: /** @type {ReturnType<typeof json<import('content-thing').TocEntry[], 'headingTree'>>} */(json('headingTree')).notNull(),\n" +
-			"\tcontent: /** @type {ReturnType<typeof json<import('content-thing/mdast').Root, 'content'>>} */(json('content')).notNull(),\n" +
-			`});\n`;
-		assert.strictEqual(generateMarkdownSchema(config, tableName), expected);
-	});
-	it('throws error for unsupported column types', () => {
-		/** @type {import('../src/db/types.js').CTMarkdownSchema} */
-		const config = {
-			data: {
-				title: {
-					// @ts-expect-error
-					type: 'unsupported',
-				},
-			},
-		};
-		assert.throws(
-			() => generateMarkdownSchema(config, 'MyTable'),
-			/Unsupported column type in schema/,
+describe('generateJsonColumnCode', () => {
+	it('generates code for JSON column with no options', () => {
+		const result = generateJsonColumnCode(
+			'data',
+			/** @type {import('../src/config/types.js').JsonColumn} */ ({
+				type: 'json',
+			}),
 		);
+		assert.strictEqual(result, "json('data').notNull()");
+	});
+
+	it('generates code for JSON column with JSDoc type', () => {
+		const result = generateJsonColumnCode(
+			'data',
+			/** @type {import('../src/config/types.js').JsonColumn} */ ({
+				type: 'json',
+				jsDocType: 'SomeType',
+			}),
+		);
+		assert.strictEqual(
+			result,
+			"/** @type {ReturnType<typeof json<SomeType, 'data'>>} */(json('data')).notNull()",
+		);
+	});
+
+	it('generates code for JSON column with default value', () => {
+		const result = generateJsonColumnCode(
+			'data',
+			/** @type {import('../src/config/types.js').JsonColumn} */ ({
+				type: 'json',
+				defaultValue: '{"key": "value"}',
+			}),
+		);
+		assert.strictEqual(
+			result,
+			`json('data').notNull().default("{\\"key\\": \\"value\\"}")`,
+		);
+	});
+
+	it('generates code for JSON column as primary key', () => {
+		const result = generateJsonColumnCode(
+			'data',
+			/** @type {import('../src/config/types.js').JsonColumn} */ ({
+				type: 'json',
+				primaryKey: true,
+			}),
+		);
+		assert.strictEqual(result, "json('data').notNull().primaryKey()");
+	});
+
+	it('generates code for nullable JSON column', () => {
+		const result = generateJsonColumnCode(
+			'data',
+			/** @type {import('../src/config/types.js').JsonColumn} */ ({
+				type: 'json',
+				nullable: true,
+			}),
+		);
+		assert.strictEqual(result, "json('data')");
+	});
+
+	it('generates code for unique JSON column', () => {
+		const result = generateJsonColumnCode(
+			'data',
+			/** @type {import('../src/config/types.js').JsonColumn} */ ({
+				type: 'json',
+				unique: 'unique_data',
+			}),
+		);
+		assert.strictEqual(result, `json('data').notNull().unique("unique_data")`);
+	});
+
+	it('should generate JSON column code with all options', () => {
+		const key = 'data';
+		/** @type {import('../src/config/types.js').JsonColumn} */
+		const column = {
+			type: 'json',
+			jsDocType: 'SomeType',
+			defaultValue: '{"key": "value"}',
+			primaryKey: true,
+			nullable: true,
+			unique: true,
+		};
+		const expected = `/** @type {ReturnType<typeof json<SomeType, 'data'>>} */(json('data')).unique().default("{\\"key\\": \\"value\\"}").primaryKey()`;
+		assert.strictEqual(generateJsonColumnCode(key, column), expected);
+	});
+
+	it('should generate JSON column code with minimal options', () => {
+		const key = 'data';
+		const column = /** @type {import('../src/config/types.js').JsonColumn} */ ({
+			type: 'json',
+		});
+		const expected = `json('data').notNull()`;
+		assert.strictEqual(generateJsonColumnCode(key, column), expected);
 	});
 });
 
-describe('generateYamlSchema', () => {
-	it('should generate yaml schema', () => {
-		/** @type {import('../src/db/types.js').CTYamlSchema} */
+describe('generateSchema', () => {
+	it('should generate markdown schema', () => {
 		const config = {
 			data: {
-				title: {
+				name: {
 					type: 'text',
 				},
 				age: {
 					type: 'integer',
 				},
+				preferences: {
+					type: 'json',
+				},
 			},
 		};
 		const tableName = 'testTable';
 		const expected =
-			`import { sqliteTable, integer, text } from 'content-thing/drizzle-orm/sqlite-core';\n\n` +
+			`import { integer, sqliteTable, text } from 'content-thing/drizzle-orm/sqlite-core';\n` +
+			"import { json } from 'content-thing/db';\n" +
+			'\n' +
 			`export const testTable = sqliteTable('testTable', {\n` +
-			`\tid: text('id').primaryKey(),\n` +
-			`\tdata_title: text('data_title').notNull(),\n` +
-			`\tdata_age: integer('data_age').notNull(),\n` +
+			`\tname: text('name').notNull(),\n` +
+			`\tage: integer('age').notNull(),\n` +
+			`\tpreferences: json('preferences').notNull(),\n` +
 			`});\n`;
-		assert.strictEqual(generateYamlSchema(config, tableName), expected);
+		assert.strictEqual(
+			generateSchema(/** @type {any} */ (config), tableName),
+			expected,
+		);
 	});
-	it('throws error for unsupported YAML column type', () => {
-		/** @type {import('../src/db/types.js').CTYamlSchema} */
+	it('throws error for unsupported column types', () => {
 		const config = {
 			data: {
 				title: {
-					// @ts-expect-error
 					type: 'unsupported',
 				},
 			},
 		};
 		assert.throws(
-			() => generateYamlSchema(config, 'MyTable'),
+			() => generateSchema(/** @type {any} */ (config), 'MyTable'),
 			/Unsupported column type in schema/,
 		);
 	});

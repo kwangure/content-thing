@@ -16,7 +16,7 @@ const processor = unified()
 
 describe('remark-variables', async () => {
 	it('replaces variables', async () => {
-		const input = '---\nfoo: bar\n---\n{{ frontmatter.foo }}';
+		const input = '---\nfoo: bar\n---\n{% frontmatter.foo %}';
 		const parsed = processor.parse(input);
 		const transformed = await processor.run(parsed);
 		visit(transformed, 'text', (node) => {

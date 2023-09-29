@@ -165,9 +165,11 @@
 		"@content-thing/remark-yaml-parse": "^0.0.0",
 		"@types/mdast": "^3.0.12",
 		"better-sqlite3": "^8.5.2",
+		"chokidar": "^3.5.3",
 		"drizzle-orm": "^0.28.5",
 		"drizzle-zod": "^0.5.1",
 		"glob": "^10.3.3",
+		"hine": "^0.0.19",
 		"js-yaml": "^4.1.0",
 		"remark-frontmatter": "^4.0.1",
 		"remark-parse": "^10.0.2",
@@ -181,7 +183,6 @@
 		"@types/better-sqlite3": "^7.6.4",
 		"@types/js-yaml": "^4.0.5",
 		"@types/node": "^20.4.10",
-		"drizzle-kit": "^0.19.13",
 		"eslint": "^8.47.0",
 		"eslint-config": "workspace:*",
 		"prettier": "^3.0.2",
@@ -192,8 +193,7 @@
 		"zod-to-json-schema": "^3.21.4"
 	},
 	"peerDependencies": {
-		"@sveltejs/kit": "^1.22.0",
-		"drizzle-kit": "^0.19.13"
+		"@sveltejs/kit": "^1.22.0"
 	},
 	"files": [
 		"src",

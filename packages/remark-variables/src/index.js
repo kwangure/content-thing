@@ -16,7 +16,7 @@ export function remarkVariables() {
 		const replacements = { ...tree.data };
 		visit(tree, (node) => {
 			if (!hasValue(node)) return;
-			for (const match of node.value.matchAll(/{{\s*([0-9\w.]+)\s*}}/g)) {
+			for (const match of node.value.matchAll(/{%\s*([0-9\w.]+)\s*%}/g)) {
 				const path = match[1];
 				const value = delve(replacements, path);
 				if (value === undefined) {
