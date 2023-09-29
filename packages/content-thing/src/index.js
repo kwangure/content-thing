@@ -17,6 +17,11 @@ export function content() {
 
 	return {
 		name: 'vite-plugin-content',
+		config() {
+			return {
+				customLogger: thing.context.get('logger'),
+			};
+		},
 		configResolved(_config) {
 			config = _config;
 
