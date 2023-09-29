@@ -1,5 +1,11 @@
 # content-thing
 
+## 0.0.3
+
+### Patch Changes
+
+- eae31dc: Do not error on malformed documents in watch mode
+
 ## 0.0.2
 
 ### Patch Changes
