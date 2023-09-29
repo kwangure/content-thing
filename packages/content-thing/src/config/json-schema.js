@@ -1,6 +1,5 @@
 import {
 	drizzleIntegerColumn,
-	drizzlePrimaryKeyConfig,
 	drizzleTextColumn,
 	markdownConfig,
 	yamlConfig,
@@ -25,7 +24,6 @@ const jsonSchema = zodToJsonSchema(configSchema, {
 	definitions: {
 		markdownConfig: markdownConfig,
 		yamlConfig: yamlConfig,
-		fieldPrimaryKey: drizzlePrimaryKeyConfig,
 		integerField: drizzleIntegerColumn,
 		textField: drizzleTextColumn,
 	},
