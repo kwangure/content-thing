@@ -1,6 +1,6 @@
 {
 	"name": "content-thing",
-	"version": "0.0.1",
+	"version": "0.0.2",
 	"scripts": {
 		"check": "wireit",
 		"format": "wireit",
@@ -161,7 +161,7 @@
 		"@content-thing/remark-attributes": "^0.0.0",
 		"@content-thing/remark-rich-attributes": "^0.0.0",
 		"@content-thing/remark-toc": "^0.0.0",
-		"@content-thing/remark-variables": "^0.0.0",
+		"@content-thing/remark-variables": "^0.0.1",
 		"@content-thing/remark-yaml-parse": "^0.0.0",
 		"@types/mdast": "^3.0.12",
 		"better-sqlite3": "^8.5.2",

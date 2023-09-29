@@ -33,7 +33,7 @@ importers:
         specifier: ^0.0.0
         version: link:../remark-toc
       '@content-thing/remark-variables':
-        specifier: ^0.0.0
+        specifier: ^0.0.1
         version: link:../remark-variables
       '@content-thing/remark-yaml-parse':
         specifier: ^0.0.0
