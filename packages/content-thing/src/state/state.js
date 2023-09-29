@@ -1,4 +1,8 @@
-import { createTableFromSchema, insertIntoTable } from '../db/io.js';
+import {
+	createTableFromSchema,
+	deleteFromTable,
+	insertIntoTable,
+} from '../db/io.js';
 import {
 	getMarkdownCollectionEntries,
 	getYamlCollectionEntries,
@@ -251,7 +255,12 @@ thing.subscribe((thing) => {
 		createTableFromSchema(db, config);
 		for (const entry of entries) {
 			if (signal.aborted) return;
+			// TODO: Split `insertIntoTable` into a prepare and runner to
+			// reuse the same prepare statement for the whole collection
 			const data = entry.getRecord();
+
+			// TODO: Make this a transaction?
+			deleteFromTable(db, config, { _id: data._id });
 			insertIntoTable(db, config, data);
 		}
 	}
@@ -303,6 +312,9 @@ function createCollectionState(collectionDir, db, collectionsOutput) {
 					if (filepath.endsWith('readme.md')) {
 						const entry = new MarkdownEntry(filepath);
 						const data = entry.getRecord();
+						// TODO: Make this a transaction?
+						// Delete to avoid conflicts on unique columns
+						deleteFromTable(db, config, { _id: data._id });
 						insertIntoTable(db, config, data);
 					}
 					// TODO: else get dependent readmes and update them
@@ -310,6 +322,9 @@ function createCollectionState(collectionDir, db, collectionsOutput) {
 					if (filepath.endsWith('data.yaml')) {
 						const entry = new YamlEntry(filepath);
 						const data = entry.getRecord();
+						// TODO: Make this a transaction?
+						// Delete to avoid conflicts on unique columns
+						deleteFromTable(db, config, { _id: data._id });
 						insertIntoTable(db, config, data);
 					}
 				}

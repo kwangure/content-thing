@@ -87,6 +87,42 @@ export function insertIntoTable(db, config, data) {
 }
 
 /**
+ * Deletes rows from a SQLite table based on provided criteria.
+ *
+ * @param {import('better-sqlite3').Database} db - The better-sqlite3 database instance.
+ * @param {import('../config/types.js').CollectionConfig} config - The schema for the table.
+ * @param {Record<string, any>} data - Criteria to match rows for deletion, as a JSON object that matches the schema.data columns.
+ */
+export function deleteFromTable(db, config, data) {
+	const conditions = [];
+	const values = [];
+
+	for (const [key, value] of Object.entries(data)) {
+		const fieldConfig = config.schema.data[key];
+		if (fieldConfig) {
+			if (fieldConfig.type === 'json') {
+				conditions.push(`"${key}" = ?`);
+				values.push(JSON.stringify(value));
+			} else {
+				conditions.push(`"${key}" = ?`);
+				values.push(value);
+			}
+		} else {
+			throw new Error(
+				`Key "${key}" is not defined in the schema for table ${config.name}.`,
+			);
+		}
+	}
+
+	if (conditions.length === 0) {
+		throw new Error('No valid conditions provided for deletion.');
+	}
+
+	const sql = `DELETE FROM ${config.name} WHERE ${conditions.join(' AND ')}`;
+	db.prepare(sql).run(...values);
+}
+
+/**
  * Validates a value based on its field configuration.
  *
  * @param {any} value - The value to validate.
