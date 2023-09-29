@@ -3,7 +3,10 @@ import { visit } from 'unist-util-visit';
 
 const ATTRIBUTE_BLOCK_RE = /^\s*(\{.*?\})(\s+|$)/;
 
-/** @type {import('unified').Plugin<void[], import('mdast').Root>} */
+/**
+ * @this {import('unified').Processor<void, import('mdast').Root>}
+ * @type {import('unified').Plugin<void[], import('mdast').Root>}
+ */
 export function remarkAttributes() {
 	return (tree) => {
 		visit(tree, (node, index, parent) => {

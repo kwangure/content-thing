@@ -10,7 +10,10 @@ function hasValue(thing) {
 	return 'value' in thing;
 }
 
-/** @type {import('unified').Plugin<void[], import('mdast').Root>} */
+/**
+ * @this {import('unified').Processor<void, import('mdast').Root>}
+ * @type {import('unified').Plugin<void[], import('mdast').Root>}
+ */
 export function remarkVariables() {
 	return (tree) => {
 		const replacements = { ...tree.data };

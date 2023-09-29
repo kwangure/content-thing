@@ -3,7 +3,10 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { visit } from 'unist-util-visit';
 
-/** @type {import('unified').Plugin<void[], import('mdast').Root>} */
+/**
+ * @this {import('unified').Processor<void, import('mdast').Root>}
+ * @type {import('unified').Plugin<void[], import('mdast').Root>}
+ */
 export function remarkRichAttributes() {
 	return (tree, vfile) => {
 		/** @type {import('mdast').Code[]} */
