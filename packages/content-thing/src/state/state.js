@@ -17,6 +17,7 @@ import {
 	writeValidator,
 } from '../collections/write.js';
 import chokidar from 'chokidar';
+import { createLogger } from 'vite';
 import Database from 'better-sqlite3';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -41,6 +42,7 @@ export const thing = state({
 		config: configSchema.parse,
 		controller: (x) => /** @type {AbortController} */ (x),
 		collectionNames: (x) => /** @type {Set<string>} */ (x),
+		logger: (x) => /** @type {import('vite').Logger} */ (x),
 	},
 	children: {
 		uninitialized: state({
@@ -110,6 +112,7 @@ thing.resolve({
 		},
 		controller: new AbortController(),
 		collectionNames: new Set(),
+		logger: createLogger(),
 	},
 	actions: {
 		clearGeneratedFiles({ ownerState }) {
@@ -179,6 +182,7 @@ thing.resolve({
 					const { collectionsDir, collectionsOutput, dbPath } =
 						context.get('config');
 					const collectionNames = context.get('collectionNames');
+					const logger = context.get('logger');
 
 					const db = new Database(dbPath);
 					db.pragma('journal_mode = WAL');
@@ -191,6 +195,7 @@ thing.resolve({
 							collectionRoot,
 							db,
 							collectionsOutput,
+							logger,
 						);
 					}
 				},
@@ -275,8 +280,9 @@ thing.subscribe((thing) => {
  * @param {string} collectionDir
  * @param {import('better-sqlite3').Database} db
  * @param {string} collectionsOutput
+ * @param {import('vite').Logger} logger
  */
-function createCollectionState(collectionDir, db, collectionsOutput) {
+function createCollectionState(collectionDir, db, collectionsOutput, logger) {
 	const collectionState = state({
 		context: {
 			watcher: (x) => /** @type {import('chokidar').FSWatcher} */ (x),
@@ -308,25 +314,32 @@ function createCollectionState(collectionDir, db, collectionsOutput) {
 					event?.value
 				);
 
-				if (config.type === 'markdown') {
-					if (filepath.endsWith('readme.md')) {
-						const entry = new MarkdownEntry(filepath);
-						const data = entry.getRecord();
-						// TODO: Make this a transaction?
-						// Delete to avoid conflicts on unique columns
-						deleteFromTable(db, config, { _id: data._id });
-						insertIntoTable(db, config, data);
+				// Ignore possibly malformed files being edited actively
+				try {
+					if (config.type === 'markdown') {
+						if (filepath.endsWith('readme.md')) {
+							const entry = new MarkdownEntry(filepath);
+							const data = entry.getRecord();
+							// TODO: Make this a transaction?
+							// Delete to avoid conflicts on unique columns
+							deleteFromTable(db, config, { _id: data._id });
+							insertIntoTable(db, config, data);
+						}
+						// TODO: else get dependent readmes and update them
+					} else if (config.type === 'yaml') {
+						if (filepath.endsWith('data.yaml')) {
+							const entry = new YamlEntry(filepath);
+							const data = entry.getRecord();
+							// TODO: Make this a transaction?
+							// Delete to avoid conflicts on unique columns
+							deleteFromTable(db, config, { _id: data._id });
+							insertIntoTable(db, config, data);
+						}
 					}
-					// TODO: else get dependent readmes and update them
-				} else if (config.type === 'yaml') {
-					if (filepath.endsWith('data.yaml')) {
-						const entry = new YamlEntry(filepath);
-						const data = entry.getRecord();
-						// TODO: Make this a transaction?
-						// Delete to avoid conflicts on unique columns
-						deleteFromTable(db, config, { _id: data._id });
-						insertIntoTable(db, config, data);
-					}
+				} catch (error) {
+					logger.error(
+						`[content-thing] Malformed document at ${filepath}. ${error}`,
+					);
 				}
 			},
 			createWatcher({ ownerState }) {
