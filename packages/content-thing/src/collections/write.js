@@ -29,21 +29,21 @@ export function writeSchema(config) {
 export function writeDBClient(dbClientPath, collections) {
 	let result = `import { Database } from 'content-thing/better-sqlite3';\n`;
 	result += `import { drizzle } from 'content-thing/drizzle-orm/better-sqlite3';\n`;
+	result += `// @ts-ignore\n`;
+	result += `import dbPath from './sqlite.db';\n`;
 	for (const collection of collections) {
 		result += `import * as ${collection} from './collections/${collection}/schema.config.js';\n`;
 	}
-	result += `import path from 'node:path';\n`;
-	result += `\n`;
-	result += `const __filename = new URL(import.meta.url).pathname;\n`;
-	result += `const __dirname = path.dirname(__filename);\n`;
-	result += `const dbPath = path.join(__dirname, '../sqlite.db');\n`;
+
 	result += `\nconst schema = {\n`;
 	for (const collection of collections) {
 		result += `\t...${collection},\n`;
 	}
 	result += `};\n`;
 	result += `\n`;
-	result += `const sqlite = new Database(dbPath);\n`;
+	result += `// Vite prepends file:// in production\n`;
+	result += `const normalizedDBPath = dbPath.replace(/^[a-zA-Z]+:\\/\\//, '');\n`;
+	result += `const sqlite = new Database(normalizedDBPath);\n`;
 	result += `export const collections = drizzle(sqlite, { schema });\n`;
 
 	write(dbClientPath, result);

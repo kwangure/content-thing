@@ -60,9 +60,10 @@ export function content() {
 		},
 		load(id) {
 			if (!id.endsWith('sqlite.db')) return;
-			if (config.command !== 'build') return;
-
 			const dbPath = path.join(outputDir, 'sqlite.db');
+			if (config.command === 'serve') {
+				return `export default ${JSON.stringify(dbPath)}`;
+			}
 			const referenceId = this.emitFile({
 				type: 'asset',
 				name: 'sqlite.db',
