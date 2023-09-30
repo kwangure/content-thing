@@ -1,5 +1,11 @@
 # content-thing
 
+## 0.0.5
+
+### Patch Changes
+
+- b25aecf: Bundle SQLite data
+
 ## 0.0.4
 
 ### Patch Changes
