@@ -269,7 +269,7 @@ describe('generateTextColumn', () => {
 				length: 50,
 				enum: ['A', 'B'],
 				defaultValue: 'A',
-				primaryKey: { autoIncrement: false },
+				primaryKey: true,
 				nullable: false,
 				unique: true,
 			},

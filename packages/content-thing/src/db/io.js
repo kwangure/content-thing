@@ -217,14 +217,6 @@ export function generateJsonColumn(config, columnName) {
 
 	if (config.primaryKey) {
 		columnDef += ' PRIMARY KEY';
-		if (typeof config.primaryKey === 'object') {
-			if (config.primaryKey.autoIncrement) {
-				columnDef += ' AUTOINCREMENT';
-			}
-			if (config.primaryKey.onConflict) {
-				columnDef += ` ON CONFLICT ${config.primaryKey.onConflict.toUpperCase()}`;
-			}
-		}
 	}
 
 	if (config.defaultValue) {
@@ -264,14 +256,6 @@ export function generateTextColumn(config, columnName) {
 
 	if (config.primaryKey) {
 		columnDef += ' PRIMARY KEY';
-		if (typeof config.primaryKey === 'object') {
-			if (config.primaryKey.autoIncrement) {
-				columnDef += ' AUTOINCREMENT';
-			}
-			if (config.primaryKey.onConflict) {
-				columnDef += ` ON CONFLICT ${config.primaryKey.onConflict.toUpperCase()}`;
-			}
-		}
 	}
 
 	if (config.defaultValue) {

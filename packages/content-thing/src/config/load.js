@@ -2,20 +2,10 @@ import { z } from 'zod';
 import fs from 'node:fs';
 import path from 'node:path';
 
-export const drizzlePrimaryKeyConfig = z
-	.object({
-		autoIncrement: z.boolean().optional(),
-		onConflict: z
-			.enum(['abort', 'fail', 'ignore', 'replace', 'rollback'])
-			.optional(),
-	})
-	.strict()
-	.or(z.boolean());
-
 export const drizzleColumn = z
 	.object({
 		nullable: z.boolean().default(false),
-		primaryKey: drizzlePrimaryKeyConfig.optional(),
+		primaryKey: z.boolean().optional(),
 		unique: z.string().or(z.boolean()).optional(),
 	})
 	.strict();
@@ -25,6 +15,16 @@ export const drizzleIntegerColumn = drizzleColumn
 		type: z.literal('integer'),
 		mode: z.enum(['boolean', 'number', 'timestamp', 'timestamp_ms']).optional(),
 		defaultValue: z.number().optional(),
+		primaryKey: z
+			.object({
+				autoIncrement: z.boolean().optional(),
+				onConflict: z
+					.enum(['abort', 'fail', 'ignore', 'replace', 'rollback'])
+					.optional(),
+			})
+			.strict()
+			.or(z.boolean())
+			.optional(),
 	})
 	.strict();
 
@@ -90,9 +90,7 @@ export const markdownSchema = z
 			...value.data,
 			_id: drizzleTextColumn.parse({
 				type: 'text',
-				primaryKey: {
-					onConflict: 'replace',
-				},
+				primaryKey: true,
 			}),
 			_headingTree: drizzleJsonColumn.parse({
 				type: 'json',
@@ -137,9 +135,7 @@ export const yamlSchema = z
 			...value.data,
 			_id: drizzleTextColumn.parse({
 				type: 'text',
-				primaryKey: {
-					onConflict: 'replace',
-				},
+				primaryKey: true,
 			}),
 		};
 		return value;

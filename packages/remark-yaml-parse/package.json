@@ -102,21 +102,21 @@
 	},
 	"dependencies": {
 		"js-yaml": "^4.1.0",
-		"unist-util-visit": "^4.0.0"
+		"unist-util-visit": "^5.0.0"
 	},
 	"devDependencies": {
 		"@types/js-yaml": "^4.0.5",
-		"@types/mdast": "^3.0.12",
+		"@types/mdast": "^4.0.1",
 		"@types/node": "^20.4.10",
 		"eslint": "^8.47.0",
 		"eslint-config": "workspace:*",
 		"prettier": "^3.0.2",
 		"prettier-config": "workspace:*",
 		"publint": "^0.2.2",
-		"remark-frontmatter": "^4.0.1",
-		"remark-parse": "^10.0.2",
+		"remark-frontmatter": "^5.0.0",
+		"remark-parse": "^11.0.0",
 		"typescript": "^5.1.6",
-		"unified": "^10.1.2"
+		"unified": "^11.0.3"
 	},
 	"prettier": "prettier-config",
 	"license": "MIT",

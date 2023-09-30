@@ -6,8 +6,8 @@ const NON_ALPHA_NUMERIC_RE = /[^a-z0-9]+/g;
 const TRAILING_DASH_RE = /-+$/;
 
 /**
- * @this {import('unified').Processor}
- * @type {import('unified').Plugin<void[], import('mdast').Root, import('mdast').Root>}
+ * @this {import('unified').Processor<void, import('mdast').Root>}
+ * @type {import('unified').Plugin<void[], import('mdast').Root>}
  */
 export function remarkTableOfContents() {
 	return (tree, vfile) => {

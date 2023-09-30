@@ -59,9 +59,6 @@ export const thing = state({
 		build: state({
 			entry: [handler({ run: ['clearGeneratedFiles'] })],
 			exit: [handler({ run: ['terminateBuild'] })],
-			on: {
-				build: [handler({ if: 'isCollectionItem', goto: 'build' })],
-			},
 		}),
 		watch: state({
 			context: {
@@ -208,6 +205,7 @@ thing.resolve({
 	},
 });
 
+// This feels wrong. Hine is missing something to enable this
 thing.subscribe((thing) => {
 	if (
 		!thing.matches('thing.build') &&
@@ -273,7 +271,10 @@ thing.subscribe((thing) => {
 	writeSchemaExports(schemaPath, collectionNames);
 	writeDBClient(dbClientPath, collectionNames);
 	context.update('collectionNames', collectionNames);
-	thing.dispatch('buildDone');
+
+	if (thing.matches('thing.watch.initializing')) {
+		thing.dispatch('buildDone');
+	}
 });
 
 /**
