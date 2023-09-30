@@ -1,5 +1,18 @@
 # content-thing
 
+## 0.0.4
+
+### Patch Changes
+
+- 3751ae8: Upgrade remark packages
+- 3751ae8: Fix infinite loop during build
+- Updated dependencies [3751ae8]
+  - @content-thing/remark-rich-attributes@0.0.1
+  - @content-thing/remark-attributes@0.0.1
+  - @content-thing/remark-yaml-parse@0.0.1
+  - @content-thing/remark-variables@0.0.2
+  - @content-thing/remark-toc@0.0.1
+
 ## 0.0.3
 
 ### Patch Changes

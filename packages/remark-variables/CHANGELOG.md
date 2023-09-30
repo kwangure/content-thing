@@ -1,5 +1,11 @@
 # @content-thing/remark-variables
 
+## 0.0.2
+
+### Patch Changes
+
+- 3751ae8: Upgrade remark packages
+
 ## 0.0.1
 
 ### Patch Changes

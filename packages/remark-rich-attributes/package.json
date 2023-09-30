@@ -1,6 +1,6 @@
 {
 	"name": "@content-thing/remark-rich-attributes",
-	"version": "0.0.0",
+	"version": "0.0.1",
 	"scripts": {
 		"check": "wireit",
 		"format": "wireit",
@@ -107,7 +107,7 @@
 	},
 	"devDependencies": {
 		"@content-thing/internal-utils": "workspace:^0.0.0",
-		"@content-thing/remark-attributes": "workspace:^0.0.0",
+		"@content-thing/remark-attributes": "workspace:^0.0.1",
 		"@types/mdast": "^4.0.1",
 		"@types/node": "^20.4.10",
 		"eslint": "^8.47.0",
