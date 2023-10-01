@@ -1,5 +1,11 @@
 # content-thing
 
+## 0.0.6
+
+### Patch Changes
+
+- Fix issue deploying db to Vercel
+
 ## 0.0.5
 
 ### Patch Changes

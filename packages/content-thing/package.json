@@ -1,6 +1,6 @@
 {
 	"name": "content-thing",
-	"version": "0.0.5",
+	"version": "0.0.6",
 	"scripts": {
 		"check": "wireit",
 		"format": "wireit",

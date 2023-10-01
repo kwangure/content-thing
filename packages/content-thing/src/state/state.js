@@ -182,7 +182,6 @@ thing.resolve({
 					const logger = context.get('logger');
 
 					const db = new Database(dbPath);
-					db.pragma('journal_mode = WAL');
 
 					/** @type {Record<string, import('hine').StateNode>} */
 					const collectionStates = {};
@@ -223,7 +222,6 @@ thing.subscribe((thing) => {
 	} = context.get('config');
 
 	const db = new Database(dbPath);
-	db.pragma('journal_mode = WAL');
 
 	const controller = new AbortController();
 	const { signal } = controller;
