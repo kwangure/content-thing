@@ -1,5 +1,11 @@
 # content-thing
 
+## 0.0.7
+
+### Patch Changes
+
+- Update Hine
+
 ## 0.0.6
 
 ### Patch Changes
