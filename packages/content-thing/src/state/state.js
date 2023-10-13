@@ -142,17 +142,17 @@ thing.resolve({
 			context.update('collectionNames', collectionNames);
 		},
 		clearGeneratedFiles({ context }) {
-			const { generatedDir } = context.get('config');
+			const { dbPath, generatedDir } = context.get('config');
 
 			rimraf(generatedDir);
 			mkdirp(generatedDir);
+			context.update('db', new Database(dbPath));
 		},
 		updateConfig({ context, event }) {
 			const { value } = /** @type {{ value: z.infer<typeof configSchema> }} */ (
 				event || {}
 			);
 			context.update('config', value);
-			context.update('db', new Database(value.dbPath));
 		},
 	},
 	children: {
