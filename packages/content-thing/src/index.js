@@ -47,9 +47,8 @@ export function content() {
 			});
 		},
 		async buildStart() {
-			if (config.command === 'build') {
-				thing.dispatch('build');
-			} else {
+			thing.dispatch('build');
+			if (config.command === 'serve') {
 				thing.dispatch('watch');
 			}
 		},
