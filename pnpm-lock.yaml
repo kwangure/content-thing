@@ -54,8 +54,8 @@ importers:
         specifier: ^0.5.1
         version: 0.5.1(drizzle-orm@0.28.5)(zod@3.22.2)
       hine:
-        specifier: ^0.0.19
-        version: 0.0.19
+        specifier: ^0.0.20
+        version: 0.0.20
       js-yaml:
         specifier: ^4.1.0
         version: 4.1.0
@@ -2265,8 +2265,8 @@ packages:
       function-bind: 1.1.1
     dev: true
 
-  /hine@0.0.19:
-    resolution: {integrity: sha512-2BtolyIc1D9p4mTrxAV2geRlY3Z5uYPqre8L2I3HpEZcIlrUwLf6WOmvAzctGKA/QkuK2/Rnz8NAOlQUfCWUXA==}
+  /hine@0.0.20:
+    resolution: {integrity: sha512-cZRjRm60PdpTgnhMPFQuWcFW+Usb/YMdxFTNRfsiV2kCqx3lZpVsa+OMKuMwXhfqeQ9wrd4lXeg1k1GS2M3gzg==}
     dev: false
 
   /hosted-git-info@2.8.9:
