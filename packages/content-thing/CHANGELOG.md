@@ -1,5 +1,11 @@
 # content-thing
 
+## 0.0.8
+
+### Patch Changes
+
+- 811c44e: Fix out of order DB creation
+
 ## 0.0.7
 
 ### Patch Changes
