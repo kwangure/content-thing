@@ -11,7 +11,7 @@ export type ThingContext = {
 };
 
 export type CollectionContext = {
-	config: ReturnType<typeof loadCollectionConfig>;
+	collectionConfig: ReturnType<typeof loadCollectionConfig>;
 	watcher: FSWatcher;
 };
 

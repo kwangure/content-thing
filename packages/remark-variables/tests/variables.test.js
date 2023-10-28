@@ -14,7 +14,7 @@ const processor = unified()
 	.use(remarkVariables)
 	.freeze();
 
-describe('remark-variables', async () => {
+describe('remark-variables', () => {
 	it('replaces variables', async () => {
 		const input = '---\nfoo: bar\n---\n{% frontmatter.foo %}';
 		const parsed = processor.parse(input);
