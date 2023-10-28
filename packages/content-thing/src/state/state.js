@@ -90,6 +90,10 @@ thing.resolve({
 	actions: {
 		buildCollections(ownerState) {
 			const { context } = ownerState;
+
+			const logger = context.get('logger');
+			logger.info('Starting collection build...', { timestamp: true });
+
 			const {
 				collectionsDir,
 				collectionsOutput,
@@ -183,7 +187,14 @@ thing.resolve({
 				},
 				watchCollectionsDir(ownerState) {
 					const { context } = ownerState;
-					const { collectionsDir } = context.get('config');
+					const { collectionsDir, root } = context.get('config');
+					const logger = context.get('logger');
+					logger.info(
+						`Watching top-level files in '${collectionsDir.slice(
+							root.length + 1,
+						)}'`,
+						{ timestamp: true },
+					);
 					const watcher = chokidar.watch(collectionsDir, {
 						depth: 0,
 						ignoreInitial: true,
@@ -194,53 +205,63 @@ thing.resolve({
 					});
 				},
 				watchCollections(ownerState) {
-					const { context } = ownerState;
-					const { collectionsDir, collectionsOutput } = context.get('config');
-					const collectionNames = context.get('collectionNames');
+					queueMicrotask(() => {
+						const { context } = ownerState;
+						const { collectionsDir, collectionsOutput, root } =
+							context.get('config');
+						const collectionNames = context.get('collectionNames');
+						const logger = context.get('logger');
 
-					for (const collection of collectionNames) {
-						const collectionRoot = path.join(collectionsDir, collection);
+						for (const collection of collectionNames) {
+							const collectionRoot = path.join(collectionsDir, collection);
+							logger.info(
+								`Watching collection files in '${collectionRoot.slice(
+									root.length + 1,
+								)}'`,
+								{ timestamp: true },
+							);
 
-						ownerState.append(
-							{
-								[collection]: atomic({
-									types: {
-										context:
-											/** @type {import('./types.js').CollectionContext} */ ({}),
-									},
-									entry: { run: ['createWatcher'] },
-									on: {
-										fileAdded: { run: ['updateFile'] },
-										fileChanged: { run: ['updateFile'] },
-									},
-								}),
-							},
-							{
-								[collection]: {
-									context: {
-										config: loadCollectionConfig(
-											collectionRoot,
-											collectionsOutput,
-										),
-										watcher: chokidar.watch(collectionRoot, {
-											ignoreInitial: true,
-										}),
-									},
-									conditions: {
-										isConfigFile({ event }) {
-											return /** @type {{ filepath: string }} */ (
-												event.value
-											).filepath.endsWith('/collection.config.json');
+							ownerState.append(
+								{
+									[collection]: atomic({
+										types: {
+											context:
+												/** @type {import('./types.js').CollectionContext} */ ({}),
+										},
+										entry: { run: ['createWatcher'] },
+										on: {
+											fileAdded: { run: ['updateFile'] },
+											fileChanged: { run: ['updateFile'] },
+										},
+									}),
+								},
+								{
+									[collection]: {
+										context: {
+											collectionConfig: loadCollectionConfig(
+												collectionRoot,
+												collectionsOutput,
+											),
+											watcher: chokidar.watch(collectionRoot, {
+												ignoreInitial: true,
+											}),
+										},
+										conditions: {
+											isConfigFile({ event }) {
+												return /** @type {{ filepath: string }} */ (
+													event.value
+												).filepath.endsWith('/collection.config.json');
+											},
+										},
+										actions: {
+											createWatcher,
+											updateFile,
 										},
 									},
-									actions: {
-										createWatcher,
-										updateFile,
-									},
 								},
-							},
-						);
-					}
+							);
+						}
+					});
 				},
 			},
 		},
@@ -254,17 +275,22 @@ thing.resolve({
 function createWatcher(state) {
 	const { context } = state;
 	const watcher = context.get('watcher');
+	const logger = context.get('logger');
+	const { root } = context.get('config');
 
-	watcher.on('add', (filepath) =>
-		state.dispatch('fileAdded', {
-			filepath,
-		}),
-	);
-	watcher.on('change', (filepath) =>
-		state.dispatch('fileChanged', {
-			filepath,
-		}),
-	);
+	watcher.on('add', (filepath) => {
+		logger.info(`File added '${filepath.slice(root.length + 1)}'`, {
+			timestamp: true,
+		});
+		state.dispatch('fileAdded', { filepath });
+	});
+
+	watcher.on('change', (filepath) => {
+		logger.info(`File changed '${filepath.slice(root.length + 1)}'`, {
+			timestamp: true,
+		});
+		state.dispatch('fileChanged', { filepath });
+	});
 }
 
 /**
@@ -272,10 +298,13 @@ function createWatcher(state) {
  * @type {import('./types.js').AtomicAction<import('./types.js').CollectionConfig, typeof thing, 'thing.watch'>}
  */
 function updateFile({ context, event }) {
-	const config = context.get('config');
+	const config = context.get('collectionConfig');
 	const db = context.get('db');
 	const logger = context.get('logger');
-	const { filepath } = /** @type {{ filepath: string; }} */ (event.value);
+
+	const { filepath } = /** @type {{ name: string, filepath: string; }} */ (
+		event.value
+	);
 
 	// Ignore possibly malformed files being edited actively
 	try {
@@ -300,6 +329,9 @@ function updateFile({ context, event }) {
 			}
 		}
 	} catch (error) {
-		logger.error(`[content-thing] Malformed document at ${filepath}. ${error}`);
+		logger.error(
+			`[content-thing] Malformed document at ${filepath}. ${error}`,
+			{ timestamp: true },
+		);
 	}
 }
