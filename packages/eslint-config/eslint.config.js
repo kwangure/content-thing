@@ -27,6 +27,14 @@ const config = [
 		},
 		rules: {
 			...js.configs.recommended.rules,
+			'no-unused-vars': [
+				'error',
+				{
+					argsIgnorePattern: '^_',
+					args: 'all',
+				},
+			],
+			'require-await': 'error',
 			...prettier.rules,
 		},
 	},
