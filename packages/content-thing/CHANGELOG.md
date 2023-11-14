@@ -1,5 +1,11 @@
 # content-thing
 
+## 0.0.9
+
+### Patch Changes
+
+- 155e968: Export all drizzle-orm APIs for usage
+
 ## 0.0.8
 
 ### Patch Changes
