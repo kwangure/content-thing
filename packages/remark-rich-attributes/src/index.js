@@ -9,19 +9,16 @@ import { visit } from 'unist-util-visit';
  */
 export function remarkRichAttributes() {
 	return (tree, vfile) => {
-		/** @type {import('mdast').Code[]} */
+		/** @type {(import('mdast').Code | import('mdast').InlineCode)[]} */
 		const codeBlocks = [];
-		visit(tree, 'code', (node) => {
+		visit(tree, (node) => {
+			if (node.type !== 'code' && node.type !== 'inlineCode') return;
 			codeBlocks.push(node);
 		});
 		for (const node of codeBlocks) {
-			if (!node.data) return;
-			const file = /** @type {{ file: string | undefined }} */ (
-				node.data.attributes
-			).file;
-			if (!file) continue;
+			if (!node.data?.attributes.file) continue;
 
-			let { filepath, start, end } = parseFileMeta(file);
+			let { filepath, start, end } = parseFileMeta(node.data.attributes.file);
 			const { dirname } = vfile;
 
 			if (filepath[0] !== '/' && dirname) {

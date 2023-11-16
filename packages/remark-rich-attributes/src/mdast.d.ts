@@ -6,4 +6,9 @@ declare module 'mdast' {
 			file?: string;
 		};
 	}
+	interface InlineCodeData {
+		attributes: {
+			file?: string;
+		};
+	}
 }
