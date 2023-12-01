@@ -1,1 +1,1 @@
-export { drizzle } from 'drizzle-orm/better-sqlite3';
+export * from 'drizzle-orm/better-sqlite3';

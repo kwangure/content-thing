@@ -58,6 +58,7 @@ describe('remarkRichAttributes', () => {
 		});
 	});
 
+	// TODO: Add error to VFile
 	it('leaves code block unchanged when file does not exist', async () => {
 		const input = `\`\`\`js {file=/non/existing/path.js}\n\`\`\``;
 		const parsed = processor.parse(input);
@@ -68,7 +69,7 @@ describe('remarkRichAttributes', () => {
 		});
 	});
 
-	it('extracts specific lines based on start attributes', async () => {
+	it('extracts specific lines based on start attributes in code blocks', async () => {
 		const tempFilePath = createTempJsFile(
 			'Line 1\nLine 2\nLine 3\nLine 4',
 			'lines.js',
@@ -82,7 +83,7 @@ describe('remarkRichAttributes', () => {
 		});
 	});
 
-	it('extracts specific lines based on start and end attributes', async () => {
+	it('extracts specific lines based on start and end attributes in code blocks', async () => {
 		const tempFilePath = createTempJsFile(
 			'Line 1\nLine 2\nLine 3\nLine 4',
 			'lines.js',
@@ -92,6 +93,48 @@ describe('remarkRichAttributes', () => {
 		const transformed = await processor.run(parsed);
 
 		visit(transformed, 'code', (node) => {
+			assert.strictEqual(node.value, 'Line 2\nLine 3');
+		});
+	});
+
+	it('replaces inline code block content based on file attribute', async () => {
+		const tempFilePath = createTempJsFile(
+			'console.log("Hello, world!");',
+			'hello.js',
+		);
+		const input = `\` \`{file=${tempFilePath}}`;
+		const parsed = processor.parse(input);
+		const transformed = await processor.run(parsed);
+
+		visit(transformed, 'inlineCode', (node) => {
+			assert.strictEqual(node.value, 'console.log("Hello, world!");');
+		});
+	});
+
+	it('extracts specific lines based on start attributes in code blocks', async () => {
+		const tempFilePath = createTempJsFile(
+			'Line 1\nLine 2\nLine 3\nLine 4',
+			'lines.js',
+		);
+		const input = `\` \`{file=${tempFilePath}#L2}\n\`\`\``;
+		const parsed = processor.parse(input);
+		const transformed = await processor.run(parsed);
+
+		visit(transformed, 'inlineCode', (node) => {
+			assert.strictEqual(node.value, 'Line 2');
+		});
+	});
+
+	it('extracts specific lines based on start and end attributes in inline code blocks', async () => {
+		const tempFilePath = createTempJsFile(
+			'Line 1\nLine 2\nLine 3\nLine 4',
+			'lines.js',
+		);
+		const input = `\` \`{file=${tempFilePath}#L2-3}`;
+		const parsed = processor.parse(input);
+		const transformed = await processor.run(parsed);
+
+		visit(transformed, 'inlineCode', (node) => {
 			assert.strictEqual(node.value, 'Line 2\nLine 3');
 		});
 	});
