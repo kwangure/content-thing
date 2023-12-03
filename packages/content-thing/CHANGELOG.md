@@ -1,5 +1,15 @@
 # content-thing
 
+## 0.0.10
+
+### Patch Changes
+
+- a6baf2a: Add file attribute to inline code
+- Updated dependencies [8c2c984]
+- Updated dependencies [a6baf2a]
+  - @content-thing/remark-attributes@0.0.2
+  - @content-thing/remark-rich-attributes@0.0.2
+
 ## 0.0.9
 
 ### Patch Changes
