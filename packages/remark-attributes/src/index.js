@@ -1,7 +1,7 @@
 import mdAttributes from 'md-attr-parser';
 import { visit } from 'unist-util-visit';
 
-const ATTRIBUTE_BLOCK_RE = /^\s*(\{.*?\})(\s+|$)/;
+const ATTRIBUTE_BLOCK_RE = /^\s*(\{.*?\})/;
 
 /**
  * @this {import('unified').Processor<void, import('mdast').Root>}

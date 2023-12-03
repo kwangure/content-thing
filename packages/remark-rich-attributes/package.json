@@ -87,6 +87,9 @@
 				"src/**/*.js",
 				"tests/**/*.js"
 			],
+			"dependencies": [
+				"../remark-attributes:package"
+			],
 			"output": []
 		}
 	},
