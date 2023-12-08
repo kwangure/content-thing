@@ -1,14 +1,16 @@
 {
+	"extends": "../../config/tsconfig.base.json",
 	"compilerOptions": {
-		"allowJs": true,
-		"checkJs": true,
-		"noEmit": true,
-		"module": "esnext",
-		"moduleResolution": "bundler",
-		"resolveJsonModule": true,
-		"skipLibCheck": true,
-		"strict": true,
-		"target": "esnext"
+		"noEmit": true
 	},
-	"include": ["src", "tests"]
+	"references": [
+		{
+			"path": "src"
+		},
+		{
+			"path": "tests"
+		}
+	],
+	// Exclude references and emitted output
+	"exclude": ["src", "tests", "types"]
 }

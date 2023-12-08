@@ -2,66 +2,28 @@
 	"name": "@content-thing/remark-toc",
 	"version": "0.0.1",
 	"scripts": {
-		"check": "wireit",
-		"format": "wireit",
-		"lint": "wireit",
-		"package": "wireit",
-		"publint": "wireit",
+		"build": "wireit",
 		"pre-commit": "wireit",
+		"publint": "wireit",
+		"release": "wireit",
 		"test": "wireit"
 	},
 	"wireit": {
-		"check": {
-			"command": "tsc",
+		"build": {
+			"command": "tsc -b",
 			"files": [
 				"src/**/*.{js,ts}",
 				"tests/**/*.{js,ts}",
-				"tsconfig.json"
-			],
-			"output": []
-		},
-		"format": {
-			"command": "prettier . --write --cache",
-			"files": [
-				"**/*.{css,html,js,json,md,ts,svelte}",
-				"!types/**",
-				".prettierignore"
-			],
-			"output": []
-		},
-		"lint": {
-			"command": "eslint \"**/*.{js,svelte}\" --color --cache --fix",
-			"files": [
-				"**/*.{js,svelte}",
-				".eslintignore",
-				"eslint.config.js"
-			],
-			"output": []
-		},
-		"package": {
-			"command": "tsc --project tsconfig.build.json",
-			"files": [
-				"src/**/*.{js,ts}",
-				"tsconfig.build.json",
 				"tsconfig.json"
 			],
 			"output": [
 				"types"
 			]
 		},
-		"pre-commit": {
-			"dependencies": [
-				"check",
-				"format",
-				"lint",
-				"publint",
-				"test"
-			]
-		},
 		"publint": {
 			"command": "publint",
 			"dependencies": [
-				"package"
+				"build"
 			],
 			"files": [
 				"src/**",
@@ -70,11 +32,16 @@
 			],
 			"output": []
 		},
+		"pre-commit": {
+			"dependencies": [
+				"build",
+				"publint",
+				"test"
+			]
+		},
 		"release": {
 			"dependencies": [
-				"check",
-				"format",
-				"package",
+				"build",
 				"publint",
 				"test"
 			]
@@ -82,10 +49,16 @@
 		"test": {
 			"command": "node --test --test-reporter spec",
 			"files": [
-				"src/**/*.js",
-				"tests/**/*.js"
+				"src/**/*.{js,ts}",
+				"tests/**/*.{js,ts}"
 			],
 			"output": []
+		}
+	},
+	"exports": {
+		".": {
+			"types": "./types/index.d.ts",
+			"default": "./src/index.js"
 		}
 	},
 	"files": [
@@ -94,22 +67,12 @@
 		"!**/*.test.*",
 		"!**/*.spec.*"
 	],
-	"exports": {
-		".": {
-			"types": "./types/index.d.ts",
-			"default": "./src/index.js"
-		}
-	},
 	"dependencies": {
 		"unist-util-visit": "^5.0.0"
 	},
 	"devDependencies": {
 		"@types/mdast": "^4.0.1",
 		"@types/node": "^20.4.10",
-		"eslint": "^8.47.0",
-		"eslint-config": "workspace:*",
-		"prettier": "^3.0.2",
-		"prettier-config": "workspace:*",
 		"publint": "^0.2.2",
 		"remark-frontmatter": "^5.0.0",
 		"remark-parse": "^11.0.0",
@@ -118,7 +81,6 @@
 		"unified": "^11.0.3",
 		"vfile": "^6.0.1"
 	},
-	"prettier": "prettier-config",
 	"license": "MIT",
 	"type": "module"
 }

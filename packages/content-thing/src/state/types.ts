@@ -1,4 +1,4 @@
-import { Action, AtomicState, BaseState, StatePaths } from 'hine';
+import type { Action, AtomicState, BaseState, StatePaths } from 'hine';
 import { FSWatcher } from 'chokidar';
 import { loadCollectionConfig } from '../config/load.js';
 import { configSchema } from './state.js';
