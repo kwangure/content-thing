@@ -2,15 +2,17 @@
 	"compilerOptions": {
 		"allowJs": true,
 		"checkJs": true,
+		"composite": true,
 		"declaration": true,
-		"declarationDir": "types",
-		"emitDeclarationOnly": true,
+		"forceConsistentCasingInFileNames": true,
+		"isolatedModules": true,
+		"module": "esnext",
 		"moduleResolution": "bundler",
 		"resolveJsonModule": true,
 		"skipLibCheck": true,
+		"sourceMap": true,
 		"strict": true,
-		"target": "esnext"
-	},
-	"include": ["./prettier.config.mjs"],
-	"exclude": []
+		"target": "esnext",
+		"verbatimModuleSyntax": true
+	}
 }

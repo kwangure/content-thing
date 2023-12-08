@@ -5,77 +5,55 @@
 		"packages/*"
 	],
 	"scripts": {
-		"check": "wireit",
+		"build": "wireit",
 		"format": "wireit",
 		"lint": "wireit",
-		"package": "wireit",
 		"pre-commit": "wireit",
-		"prepare": "husky install",
 		"release": "wireit",
 		"test": "wireit",
 		"version": "wireit"
 	},
 	"wireit": {
-		"check": {
+		"build": {
 			"dependencies": [
-				"./packages/content-thing:check",
-				"./packages/internal-utils:check",
-				"./packages/remark-attributes:check",
-				"./packages/remark-rich-attributes:check",
-				"./packages/remark-toc:check",
-				"./packages/remark-variables:check",
-				"./packages/remark-yaml-parse:check"
+				"./packages/content-thing:build",
+				"./packages/internal-utils:build",
+				"./packages/remark-attributes:build",
+				"./packages/remark-rich-attributes:build",
+				"./packages/remark-toc:build",
+				"./packages/remark-variables:build",
+				"./packages/remark-yaml-parse:build"
 			]
 		},
 		"format": {
-			"dependencies": [
-				"./packages/content-thing:format",
-				"./packages/eslint-config:format",
-				"./packages/internal-utils:format",
-				"./packages/prettier-config:format",
-				"./packages/remark-attributes:format",
-				"./packages/remark-rich-attributes:format",
-				"./packages/remark-toc:format",
-				"./packages/remark-variables:format",
-				"./packages/remark-yaml-parse:format"
-			]
+			"command": "prettier . --write --cache --config ./config/prettier.config.mjs --ignore-path ./config/.prettierignore",
+			"files": [
+				"**/*.{css,html,js,json,md,ts,svelte}",
+				"!packages/*/dist/**",
+				"!packages/*/types/**",
+				"./config/prettier.config.mjs",
+				"./config/.prettierignore"
+			],
+			"output": []
 		},
 		"lint": {
-			"dependencies": [
-				"./packages/content-thing:lint",
-				"./packages/eslint-config:lint",
-				"./packages/internal-utils:lint",
-				"./packages/prettier-config:lint",
-				"./packages/remark-attributes:lint",
-				"./packages/remark-rich-attributes:lint",
-				"./packages/remark-toc:lint",
-				"./packages/remark-variables:lint",
-				"./packages/remark-yaml-parse:lint"
-			]
-		},
-		"package": {
-			"dependencies": [
-				"./packages/content-thing:package",
-				"./packages/eslint-config:package",
-				"./packages/internal-utils:package",
-				"./packages/prettier-config:package",
-				"./packages/remark-attributes:package",
-				"./packages/remark-rich-attributes:package",
-				"./packages/remark-toc:package",
-				"./packages/remark-variables:package",
-				"./packages/remark-yaml-parse:package"
-			]
+			"command": "eslint \"**/*.{js,svelte}\" --color --cache --fix",
+			"files": [
+				"**/*.{js,svelte}",
+				"!packages/*/dist/**",
+				"!packages/*/types/**",
+				"./config/eslint.config.js"
+			],
+			"output": []
 		},
 		"pre-commit": {
 			"dependencies": [
 				"./packages/content-thing:pre-commit",
-				"./packages/eslint-config:pre-commit",
 				"./packages/internal-utils:pre-commit",
-				"./packages/prettier-config:pre-commit",
 				"./packages/remark-attributes:pre-commit",
 				"./packages/remark-rich-attributes:pre-commit",
 				"./packages/remark-toc:pre-commit",
-				"./packages/remark-variables:lint",
+				"./packages/remark-variables:pre-commit",
 				"./packages/remark-yaml-parse:pre-commit"
 			]
 		},
@@ -118,7 +96,6 @@
 	},
 	"devDependencies": {
 		"@changesets/cli": "^2.26.2",
-		"husky": "^8.0.3",
 		"wireit": "^0.10.0"
 	}
 }

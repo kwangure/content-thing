@@ -1,59 +1,44 @@
 {
 	"name": "content-thing",
 	"version": "0.0.10",
+	"description": "A CMS for SvelteKit apps",
 	"scripts": {
-		"check": "wireit",
-		"format": "wireit",
-		"lint": "wireit",
-		"package": "wireit",
+		"build": "wireit",
+		"pre-commit": "wireit",
+		"publint": "wireit",
+		"release": "wireit",
 		"test": "wireit"
 	},
 	"wireit": {
-		"check": {
-			"command": "tsc",
+		"build": {
+			"dependencies": [
+				"build:config",
+				"build:lib"
+			]
+		},
+		"build:lib": {
+			"command": "tsc -b",
 			"files": [
 				"src/**/*.{js,ts}",
 				"tests/**/*.{js,ts}",
 				"tsconfig.json"
 			],
 			"dependencies": [
-				"../internal-utils:package",
-				"../remark-attributes:package",
-				"../remark-rich-attributes:package",
-				"../remark-toc:package",
-				"../remark-variables:package",
-				"../remark-yaml-parse:package"
+				"../internal-utils:build",
+				"../remark-attributes:build",
+				"../remark-rich-attributes:build",
+				"../remark-toc:build",
+				"../remark-variables:build",
+				"../remark-yaml-parse:build"
 			],
-			"output": []
-		},
-		"format": {
-			"command": "prettier . --write --cache",
-			"files": [
-				"**/*.{css,html,js,json,md,ts,svelte}",
-				"!types/**",
-				".prettierignore"
-			],
-			"output": []
-		},
-		"lint": {
-			"command": "eslint \"**/*.{js,svelte}\" --color --cache --fix",
-			"files": [
-				"**/*.{js,svelte}",
-				".eslintignore",
-				"eslint.config.js"
-			],
-			"output": []
-		},
-		"package": {
-			"dependencies": [
-				"package:config",
-				"package:lib"
+			"output": [
+				"types"
 			]
 		},
-		"package:config": {
+		"build:config": {
 			"command": "node ./src/config/json-schema.js",
 			"dependencies": [
-				"../internal-utils:package"
+				"../internal-utils:build"
 			],
 			"files": [
 				"./src/config/*.js"
@@ -62,37 +47,10 @@
 				"./config/schema.json"
 			]
 		},
-		"package:lib": {
-			"command": "tsc --project tsconfig.build.json",
-			"dependencies": [
-				"../internal-utils:package",
-				"../remark-attributes:package",
-				"../remark-rich-attributes:package",
-				"../remark-toc:package",
-				"../remark-variables:package",
-				"../remark-yaml-parse:package"
-			],
-			"files": [
-				"src/**/*.{js,ts}",
-				"tsconfig.build.json",
-				"tsconfig.json"
-			],
-			"output": [
-				"types"
-			]
-		},
-		"pre-commit": {
-			"dependencies": [
-				"check",
-				"format",
-				"publint",
-				"test"
-			]
-		},
 		"publint": {
 			"command": "publint",
 			"dependencies": [
-				"package"
+				"build"
 			],
 			"files": [
 				"src/**",
@@ -101,11 +59,16 @@
 			],
 			"output": []
 		},
+		"pre-commit": {
+			"dependencies": [
+				"build",
+				"publint",
+				"test"
+			]
+		},
 		"release": {
 			"dependencies": [
-				"check",
-				"format",
-				"package",
+				"build",
 				"publint",
 				"test"
 			]
@@ -113,8 +76,8 @@
 		"test": {
 			"command": "node --test --test-reporter spec",
 			"files": [
-				"src/**/*.js",
-				"tests/**/*.js"
+				"src/**/*.{js,ts}",
+				"tests/**/*.{js,ts}"
 			],
 			"output": []
 		}
@@ -181,10 +144,6 @@
 		"@types/better-sqlite3": "^7.6.4",
 		"@types/js-yaml": "^4.0.5",
 		"@types/node": "^20.4.10",
-		"eslint": "^8.47.0",
-		"eslint-config": "workspace:*",
-		"prettier": "^3.0.2",
-		"prettier-config": "workspace:*",
 		"publint": "^0.2.2",
 		"typescript": "^5.1.6",
 		"vite": "^4.4.9",
@@ -200,7 +159,6 @@
 		"!**/*.test.*",
 		"!**/*.spec.*"
 	],
-	"prettier": "prettier-config",
 	"license": "MIT",
 	"type": "module"
 }
