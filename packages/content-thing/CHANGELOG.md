@@ -1,5 +1,11 @@
 # content-thing
 
+## 0.0.11
+
+### Patch Changes
+
+- fd830b7: Require SvelteKit 2.0
+
 ## 0.0.10
 
 ### Patch Changes
