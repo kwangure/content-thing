@@ -9,6 +9,7 @@
 		"format": "wireit",
 		"lint": "wireit",
 		"pre-commit": "wireit",
+		"prepare": "command -v git >/dev/null 2>&1 && git config core.hooksPath git-hooks || true",
 		"release": "wireit",
 		"test": "wireit",
 		"version": "wireit"
