@@ -24,6 +24,8 @@ export function extendSvelteConfig(config) {
 	const __config = config.kit.typescript.config;
 	config.kit.typescript.config = (config) => {
 		__config?.(config);
+
+		// TypeScript requires relative URLs is baseUrl is not provided
 		for (const entries of Object.values(config.compilerOptions.paths)) {
 			for (let i = 0; i < entries.length; i++) {
 				const entry = entries[i];
@@ -32,6 +34,8 @@ export function extendSvelteConfig(config) {
 				}
 			}
 		}
+
+		config.include.push('./content-thing/**/*.js', './content-thing/**/*.ts');
 	};
 
 	return config;
