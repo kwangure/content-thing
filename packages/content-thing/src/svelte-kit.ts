@@ -1,9 +1,11 @@
+import type { Config } from '@sveltejs/kit';
+
 /**
  * Adds 'thing:data' and 'thing:schema' keys to the alias object inside the kit object of a given Config.
  *
- * @param {import("@sveltejs/kit").Config} config - The configuration object to update.
+ * @param config - The configuration object to update.
  */
-export function extendSvelteConfig(config) {
+export function extendSvelteConfig(config: Config) {
 	if (!config.kit) {
 		config.kit = {};
 	}
@@ -26,7 +28,8 @@ export function extendSvelteConfig(config) {
 		__config?.(config);
 
 		// TypeScript requires relative URLs is baseUrl is not provided
-		for (const entries of Object.values(config.compilerOptions.paths)) {
+		const pathEntries: string[][] = Object.values(config.compilerOptions.paths);
+		for (const entries of pathEntries) {
 			for (let i = 0; i < entries.length; i++) {
 				const entry = entries[i];
 				if (entry.startsWith('content-thing')) {

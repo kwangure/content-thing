@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import fs from 'node:fs';
 import path from 'node:path';
+import type { CollectionConfig } from './types';
 
 export const drizzleColumn = z
 	.object({
@@ -159,12 +160,10 @@ export const configSchema = z.discriminatedUnion('type', [
 	yamlConfig,
 ]);
 
-/**
- * @param {string} rootDir
- * @param {string} collectionsOutput
- * @return {import('./types').CollectionConfig}
- */
-export function loadCollectionConfig(rootDir, collectionsOutput) {
+export function loadCollectionConfig(
+	rootDir: string,
+	collectionsOutput: string,
+): CollectionConfig {
 	const configPath = path.join(rootDir, 'collection.config.json');
 	const name = path.basename(rootDir);
 	const outputDir = path.join(collectionsOutput, name);
@@ -185,7 +184,7 @@ export function loadCollectionConfig(rootDir, collectionsOutput) {
 			},
 		};
 	} catch (_error) {
-		if (/** @type {any} */ (_error).code === 'ENOENT') {
+		if ((_error as any).code === 'ENOENT') {
 			const error = new Error(
 				`Could not find a config file at ${configPath}. All collections must have one.`,
 			);

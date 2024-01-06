@@ -1,19 +1,17 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { thing } from './state/state.js';
+import type { Plugin, ResolvedConfig } from 'vite';
 
+export { createCollection } from './better-sqlite/index.js';
 export { extendSvelteConfig } from './svelte-kit.js';
 
 /**
  * A Vite plugin to handle static content
- *
- * @returns {import('vite').Plugin}
  */
-export function content() {
-	/** @type {import('vite').ResolvedConfig} */
-	let config;
-	/** @type {string} */
-	let outputDir;
+export function content(): Plugin {
+	let config: ResolvedConfig;
+	let outputDir: string;
 
 	return {
 		name: 'vite-plugin-content',
@@ -73,6 +71,4 @@ export function content() {
 	};
 }
 
-/**
- * @typedef {import('./types.js').TocEntry} TocEntry
- */
+export type { TocEntry } from './types.js';

@@ -10,14 +10,14 @@
 	},
 	"wireit": {
 		"build": {
-			"command": "tsc -b",
+			"command": "tsc --build",
 			"files": [
 				"src/**/*.{js,ts}",
 				"tests/**/*.{js,ts}",
 				"tsconfig.json"
 			],
 			"output": [
-				"types"
+				"dist"
 			]
 		},
 		"publint": {
@@ -57,17 +57,16 @@
 	},
 	"exports": {
 		"./filesystem": {
-			"types": "./types/filesystem.d.ts",
-			"default": "./src/filesystem.js"
+			"types": "./dist/filesystem.d.ts",
+			"default": "./dist/filesystem.js"
 		},
 		"./vite": {
-			"types": "./types/vite.d.ts",
-			"default": "./src/vite.js"
+			"types": "./dist/vite.d.ts",
+			"default": "./dist/vite.js"
 		}
 	},
 	"files": [
-		"src",
-		"types",
+		"dist",
 		"!**/*.test.*",
 		"!**/*.spec.*"
 	],

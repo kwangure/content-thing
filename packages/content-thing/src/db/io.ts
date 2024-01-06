@@ -1,10 +1,19 @@
+import type {
+	CollectionConfig,
+	ColumnType,
+	IntegerColumn,
+	JsonColumn,
+	TextColumn,
+} from '../config/types.js';
+import { type Database } from 'better-sqlite3';
+
 /**
  * Create a SQLite table based on a schema.
  *
- * @param {import('better-sqlite3').Database} db - The better-sqlite3 database instance.
- * @param {import('../config/types.js').CollectionConfig} config - The schema for the table.
+ * @param db - The better-sqlite3 database instance.
+ * @param config - The schema for the table.
  */
-export function createTableFromSchema(db, config) {
+export function createTableFromSchema(db: Database, config: CollectionConfig) {
 	db.transaction(() => {
 		db.prepare(`DROP TABLE IF EXISTS ${config.name}`).run();
 
@@ -22,9 +31,7 @@ export function createTableFromSchema(db, config) {
 					columnDef = generateTextColumn(value, key);
 					break;
 				default:
-					throw new Error(
-						`Unsupported column type: ${/** @type {any} */ (value)?.type}`,
-					);
+					throw new Error(`Unsupported column type: ${(value as any)?.type}`);
 			}
 
 			columns.push(columnDef);
@@ -40,11 +47,15 @@ export function createTableFromSchema(db, config) {
 /**
  * Inserts data into a SQLite table based on a schema.
  *
- * @param {import('better-sqlite3').Database} db - The better-sqlite3 database instance.
- * @param {import('../config/types.js').CollectionConfig} config - The schema for the table.
- * @param {Record<string, any>} data - The data to insert, as a JSON object that matches the schema.data columns.
+ * @param db - The better-sqlite3 database instance.
+ * @param config - The schema for the table.
+ * @param data - The data to insert, as a JSON object that matches the schema.data columns.
  */
-export function insertIntoTable(db, config, data) {
+export function insertIntoTable(
+	db: Database,
+	config: CollectionConfig,
+	data: Record<string, any>,
+) {
 	const columnNames = [];
 	const placeholders = [];
 	const values = [];
@@ -89,11 +100,15 @@ export function insertIntoTable(db, config, data) {
 /**
  * Deletes rows from a SQLite table based on provided criteria.
  *
- * @param {import('better-sqlite3').Database} db - The better-sqlite3 database instance.
- * @param {import('../config/types.js').CollectionConfig} config - The schema for the table.
- * @param {Record<string, any>} data - Criteria to match rows for deletion, as a JSON object that matches the schema.data columns.
+ * @param db - The better-sqlite3 database instance.
+ * @param config - The schema for the table.
+ * @param data - Criteria to match rows for deletion, as a JSON object that matches the schema.data columns.
  */
-export function deleteFromTable(db, config, data) {
+export function deleteFromTable(
+	db: Database,
+	config: CollectionConfig,
+	data: Record<string, any>,
+) {
 	const conditions = [];
 	const values = [];
 
@@ -125,10 +140,10 @@ export function deleteFromTable(db, config, data) {
 /**
  * Validates a value based on its field configuration.
  *
- * @param {any} value - The value to validate.
- * @param {import('../config/types.js').ColumnType} fieldConfig - The field configuration object.
+ * @param value - The value to validate.
+ * @param fieldConfig - The field configuration object.
  */
-function validateValue(value, fieldConfig) {
+function validateValue(value: any, fieldConfig: ColumnType) {
 	switch (fieldConfig.type) {
 		case 'integer':
 			if (typeof value !== 'number' || !Number.isInteger(value)) {
@@ -153,11 +168,10 @@ function validateValue(value, fieldConfig) {
 	}
 }
 
-/**
- * @param {import('../config/types.js').IntegerColumn} config
- * @param {string} columnName
- */
-export function generateIntegerColumn(config, columnName) {
+export function generateIntegerColumn(
+	config: IntegerColumn,
+	columnName: string,
+) {
 	let columnDef = `"${columnName}" INTEGER`;
 
 	if (config.nullable !== true) {
@@ -191,16 +205,9 @@ export function generateIntegerColumn(config, columnName) {
 	return columnDef;
 }
 
-/**
- * @param {string} str
- */
-const safelyQuoteString = (str) => str.replace(/'/g, "''");
+const safelyQuoteString = (str: string) => str.replace(/'/g, "''");
 
-/**
- * @param {import('../config/types.js').JsonColumn} config
- * @param {string} columnName
- */
-export function generateJsonColumn(config, columnName) {
+export function generateJsonColumn(config: JsonColumn, columnName: string) {
 	let columnDef = `"${columnName}" TEXT`;
 
 	if (config.nullable !== true) {
@@ -226,11 +233,7 @@ export function generateJsonColumn(config, columnName) {
 	return columnDef;
 }
 
-/**
- * @param {import('../config/types.js').TextColumn} config
- * @param {string} columnName
- */
-export function generateTextColumn(config, columnName) {
+export function generateTextColumn(config: TextColumn, columnName: string) {
 	let columnDef = `"${columnName}" TEXT`;
 
 	if (config.length) {

@@ -1,14 +1,15 @@
 import { BaseEntry } from './base.js';
 import yaml from 'js-yaml';
+import type { EntryRecord } from './types.js';
 
 export class YamlEntry extends BaseEntry {
 	type = 'yaml';
 	getRecord() {
-		const json = /** @type {Record<string, any>} */ (yaml.load(this.value));
+		const json = yaml.load(this.value) as Record<string, any>;
 
-		return /** @type {import('./types.js').EntryRecord} */ ({
+		return {
 			...json,
 			_id: this.id,
-		});
+		} as EntryRecord;
 	}
 }

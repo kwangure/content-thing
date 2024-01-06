@@ -1,11 +1,9 @@
+import type { CollectionConfig } from '../config/types.js';
 import { generateRelationImports, generateRelations } from '../db/relations.js';
 import { generateSchema } from '../db/schema.js';
 import { write } from '@content-thing/internal-utils/filesystem';
 
-/**
- * @param {import('../config/types.js').CollectionConfig} config
- */
-export function writeSchema(config) {
+export function writeSchema(config: CollectionConfig) {
 	let schemaCode = '';
 	if (config.relations) {
 		schemaCode += generateRelationImports(
@@ -22,13 +20,8 @@ export function writeSchema(config) {
 	write(config.paths.schema, schemaCode);
 }
 
-/**
- * @param {string} dbClientPath
- * @param {Set<string>} collections
- */
-export function writeDBClient(dbClientPath, collections) {
-	let result = `import { Database } from 'content-thing/better-sqlite3';\n`;
-	result += `import { drizzle } from 'content-thing/drizzle-orm/better-sqlite3';\n`;
+export function writeDBClient(dbClientPath: string, collections: Set<string>) {
+	let result = `import { createCollection } from 'content-thing';\n`;
 	result += `// @ts-ignore\n`;
 	result += `import dbPath from './sqlite.db';\n`;
 	for (const collection of collections) {
@@ -40,20 +33,12 @@ export function writeDBClient(dbClientPath, collections) {
 		result += `\t...${collection},\n`;
 	}
 	result += `};\n`;
-	result += `\n`;
-	result += `// Vite prepends file:// in production\n`;
-	result += `const normalizedDBPath = dbPath.replace(/^[a-zA-Z]+:\\/\\//, '');\n`;
-	result += `export const sqlite = new Database(normalizedDBPath);\n`;
-	result += `export const collections = drizzle(sqlite, { schema });\n`;
+	result += `export const collections = createCollection(dbPath, { schema });\n`;
 
 	write(dbClientPath, result);
 }
 
-/**
- * @param {string} output
- * @param {Set<string>} collections
- */
-export function writeSchemaExports(output, collections) {
+export function writeSchemaExports(output: string, collections: Set<string>) {
 	let result = '';
 	for (const collection of collections) {
 		result += `export * from './collections/${collection}/schema.config.js';\n`;
@@ -61,10 +46,7 @@ export function writeSchemaExports(output, collections) {
 	write(output, result);
 }
 
-/**
- * @param {import('../config/types.js').CollectionConfig} config
- */
-export function writeValidator(config) {
+export function writeValidator(config: CollectionConfig) {
 	let result = `import { createInsertSchema } from 'content-thing/drizzle-zod';\n`;
 	result += `import { ${config.name} } from './schema.config.js'\n`;
 	result += `\n`;

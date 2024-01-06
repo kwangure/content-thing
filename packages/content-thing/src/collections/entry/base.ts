@@ -3,10 +3,11 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 export class BaseEntry {
-	/**
-	 * @param {string} filepath
-	 */
-	constructor(filepath) {
+	__basename: string;
+	__collection: string;
+	__filepath: string;
+	__id: string;
+	constructor(filepath: string) {
 		const { collection, entry } = BaseEntry.parseFilepath(filepath);
 
 		this.__collection = collection.name;
@@ -23,10 +24,7 @@ export class BaseEntry {
 	get id() {
 		return this.__id;
 	}
-	/**
-	 * @param {string} filepath
-	 */
-	static parseFilepath(filepath) {
+	static parseFilepath(filepath: string) {
 		const matcher = new RegExp(
 			`${cwd()}/src/thing/collections/([^/]+)/(.+)/([^/]+)$`,
 		);
@@ -40,11 +38,11 @@ export class BaseEntry {
 				name: collection,
 				filepath: path.join(cwd(), '/src/thing/collections/', collection),
 			},
-			entry: /** @type {import('./types').BaseEntryConfig} */ ({
+			entry: {
 				filepath,
 				id,
 				basename,
-			}),
+			},
 		};
 	}
 	toString() {

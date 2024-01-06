@@ -16,14 +16,9 @@ const processor = unified()
 	.use(remarkAttributes)
 	.use(remarkRichAttributes);
 
-/** @type {string} */
 let tempDir = path.join(__dirname, 'temp');
 
-/**
- * @param {string} content
- * @param {string} filename
- */
-function createTempJsFile(content, filename) {
+function createTempJsFile(content: string, filename: string) {
 	const tempFilePath = path.join(tempDir, filename);
 	write(tempFilePath, content);
 	return tempFilePath;

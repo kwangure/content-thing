@@ -1,14 +1,10 @@
 export class StructuredID {
-	/** @type {string} */
-	#fragment;
-	/** @type {URLSearchParams} */
-	#query;
-	/** @param {string} path */
-	constructor(path) {
-		/** @type {string} */
-		let queryString;
-		/** @type {string} */
-		let fragment;
+	#fragment: string;
+	#query: URLSearchParams;
+	path: string;
+	constructor(path: string) {
+		let queryString: string;
+		let fragment: string;
 
 		[path, queryString = ''] = path.split('?');
 		[path, fragment = ''] = path.split('#');

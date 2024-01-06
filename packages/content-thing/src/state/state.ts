@@ -24,6 +24,13 @@ import path from 'node:path';
 import { z } from 'zod';
 import { MarkdownEntry } from '../collections/entry/markdown.js';
 import { YamlEntry } from '../collections/entry/yaml.js';
+import type { CollectionEntry } from '../collections/entry/types.js';
+import type {
+	AtomicAction,
+	CollectionConfig,
+	CollectionContext,
+	ThingContext,
+} from './types.js';
 
 export const configSchema = z.object({
 	collectionsDir: z.string(),
@@ -39,7 +46,7 @@ export const configSchema = z.object({
 export const thing = compound({
 	name: 'thing',
 	types: {
-		context: /** @type {import('./types.js').ThingContext} */ ({}),
+		context: {} as ThingContext,
 	},
 	children: {
 		uninitialized: atomic({
@@ -104,8 +111,7 @@ thing.resolve({
 
 			const db = new Database(dbPath);
 
-			/** @type {string[]} */
-			const collectionRootDirs = [];
+			const collectionRootDirs: string[] = [];
 			const collectionNames = context.get('collectionNames');
 			if (fs.existsSync(collectionsDir)) {
 				const entries = fs.readdirSync(collectionsDir, {
@@ -120,8 +126,7 @@ thing.resolve({
 			}
 			for (const dir of collectionRootDirs) {
 				const config = loadCollectionConfig(dir, collectionsOutput);
-				/** @type {import('../collections/entry/types.js').CollectionEntry[]} */
-				let entries = [];
+				let entries: CollectionEntry[] = [];
 				if (config.type === 'markdown') {
 					entries = getMarkdownCollectionEntries(config);
 				} else if (config.type === 'yaml') {
@@ -153,9 +158,9 @@ thing.resolve({
 			context.update('db', new Database(dbPath));
 		},
 		updateConfig({ context, event }) {
-			const { value } = /** @type {{ value: z.infer<typeof configSchema> }} */ (
-				event || {}
-			);
+			const { value } = (event || {}) as {
+				value: z.infer<typeof configSchema>;
+			};
 			context.update('config', value);
 		},
 	},
@@ -164,9 +169,7 @@ thing.resolve({
 			conditions: {
 				isCollectionItem({ context, event }) {
 					const { collectionsDir } = context.get('config');
-					const { filepath } = /** @type {{ filepath: string }} */ (
-						event?.value || {}
-					);
+					const { filepath } = (event?.value || {}) as { filepath: string };
 					return filepath.startsWith(collectionsDir);
 				},
 			},
@@ -174,9 +177,7 @@ thing.resolve({
 		watch: {
 			actions: {
 				addCollection({ context, event }) {
-					const { filepath } = /** @type {{ filepath: string; }} */ (
-						event.value
-					);
+					const { filepath } = event.value as { filepath: string };
 					const collectionNames = context.get('collectionNames');
 					const collection = path.basename(filepath);
 					collectionNames.add(collection);
@@ -225,8 +226,7 @@ thing.resolve({
 								{
 									[collection]: atomic({
 										types: {
-											context:
-												/** @type {import('./types.js').CollectionContext} */ ({}),
+											context: {} as CollectionContext,
 										},
 										entry: { run: ['createWatcher'] },
 										on: {
@@ -248,8 +248,8 @@ thing.resolve({
 										},
 										conditions: {
 											isConfigFile({ event }) {
-												return /** @type {{ filepath: string }} */ (
-													event.value
+												return (
+													event.value as { filepath: string }
 												).filepath.endsWith('/collection.config.json');
 											},
 										},
@@ -268,11 +268,11 @@ thing.resolve({
 	},
 });
 
-/**
- *
- * @type {import('./types.js').AtomicAction<import('./types.js').CollectionConfig, typeof thing, 'thing.watch'>}
- */
-function createWatcher(state) {
+const createWatcher: AtomicAction<
+	CollectionConfig,
+	typeof thing,
+	'thing.watch'
+> = (state) => {
 	const { context } = state;
 	const watcher = context.get('watcher');
 	const logger = context.get('logger');
@@ -291,20 +291,18 @@ function createWatcher(state) {
 		});
 		state.dispatch('fileChanged', { filepath });
 	});
-}
+};
 
-/**
- *
- * @type {import('./types.js').AtomicAction<import('./types.js').CollectionConfig, typeof thing, 'thing.watch'>}
- */
-function updateFile({ context, event }) {
+const updateFile: AtomicAction<
+	CollectionConfig,
+	typeof thing,
+	'thing.watch'
+> = ({ context, event }) => {
 	const config = context.get('collectionConfig');
 	const db = context.get('db');
 	const logger = context.get('logger');
 
-	const { filepath } = /** @type {{ name: string, filepath: string; }} */ (
-		event.value
-	);
+	const { filepath } = event.value as { name: string; filepath: string };
 
 	// Ignore possibly malformed files being edited actively
 	try {
@@ -334,4 +332,4 @@ function updateFile({ context, event }) {
 			{ timestamp: true },
 		);
 	}
-}
+};

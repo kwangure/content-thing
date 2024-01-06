@@ -10,14 +10,15 @@
 	},
 	"wireit": {
 		"build": {
-			"command": "tsc -b",
+			"command": "tsc --build",
 			"files": [
 				"src/**/*.{js,ts}",
 				"tests/**/*.{js,ts}",
-				"tsconfig.json"
+				"tsconfig.json",
+				"../../config/tsconfig.base.json"
 			],
 			"output": [
-				"types"
+				"dist"
 			]
 		},
 		"publint": {
@@ -27,7 +28,7 @@
 			],
 			"files": [
 				"src/**",
-				"types/**",
+				"dist/**",
 				"package.json"
 			],
 			"output": []
@@ -57,13 +58,12 @@
 	},
 	"exports": {
 		".": {
-			"types": "./types/index.d.ts",
-			"default": "./src/index.js"
+			"types": "./dist/index.d.ts",
+			"default": "./dist/index.js"
 		}
 	},
 	"files": [
-		"src",
-		"types",
+		"dist",
 		"!**/*.test.*",
 		"!**/*.spec.*"
 	],
@@ -78,6 +78,7 @@
 		"publint": "^0.2.2",
 		"remark-frontmatter": "^5.0.0",
 		"remark-parse": "^11.0.0",
+		"tsx": "^4.7.0",
 		"typescript": "^5.1.6",
 		"unified": "^11.0.3"
 	},

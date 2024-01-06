@@ -1,13 +1,11 @@
 import mdAttributes from 'md-attr-parser';
+import type { Code, InlineCode, Parent, Root } from 'mdast';
+import type { Plugin } from 'unified';
 import { visit } from 'unist-util-visit';
 
 const ATTRIBUTE_BLOCK_RE = /^\s*(\{.*?\})/;
 
-/**
- * @this {import('unified').Processor<void, import('mdast').Root>}
- * @type {import('unified').Plugin<void[], import('mdast').Root>}
- */
-export function remarkAttributes() {
+export const remarkAttributes: Plugin<void[], Root> = () => {
 	return (tree) => {
 		visit(tree, (node, index, parent) => {
 			switch (node.type) {
@@ -18,7 +16,7 @@ export function remarkAttributes() {
 					parseInlineCode(
 						node,
 						index ?? undefined,
-						/** @type {import("mdast").Parent} */ (parent ?? undefined),
+						/** @type {import("mdast").Parent} */ parent ?? undefined,
 					);
 					break;
 				default:
@@ -26,14 +24,11 @@ export function remarkAttributes() {
 			}
 		});
 	};
-}
+};
 
 export default remarkAttributes;
 
-/**
- * @param {import("mdast").Code} code
- */
-function parseCode(code) {
+function parseCode(code: Code) {
 	code.data = {
 		...code.data,
 		attributes: {},
@@ -50,12 +45,11 @@ function parseCode(code) {
 	code.meta = code.meta.replace(match[0].trimEnd(), '');
 }
 
-/**
- * @param {import("mdast").InlineCode} inlineCode
- * @param {number} [index]
- * @param {import("mdast").Parent} [parent]
- */
-function parseInlineCode(inlineCode, index, parent) {
+function parseInlineCode(
+	inlineCode: InlineCode,
+	index?: number,
+	parent?: Parent,
+) {
 	inlineCode.data = {
 		...inlineCode.data,
 		attributes: {},
@@ -75,10 +69,7 @@ function parseInlineCode(inlineCode, index, parent) {
 		(nextSibling.value = nextSibling.value.replace(match[0].trimEnd(), ''));
 }
 
-/**
- * @param {{} | null} value
- */
-function isNonEmptyObject(value) {
+function isNonEmptyObject(value: {} | null) {
 	return (
 		typeof value === 'object' && value !== null && Object.keys(value).length > 0
 	);

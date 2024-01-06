@@ -1,13 +1,17 @@
 import path from 'node:path';
 import { cwd } from 'node:process';
+import type { CTOneRelation, CTRelations } from './types.js';
 
 /**
  * Generates the code for the one relation
  *
- * @param {string} table - The name of the table
- * @param {import("./types").CTOneRelation} relation - The relation configuration for one type
+ * @param table - The name of the table
+ * @param relation - The relation configuration for one type
  */
-export function generateOneRelationCode(table, relation) {
+export function generateOneRelationCode(
+	table: string,
+	relation: CTOneRelation,
+) {
 	let relationCode = `one(${relation.collection}, {\n`;
 	relationCode += `\t\tfields: [${table}.${relation.field}],\n`;
 	relationCode += `\t\treferences: [${relation.collection}.${relation.reference}],\n`;
@@ -16,11 +20,7 @@ export function generateOneRelationCode(table, relation) {
 	return relationCode;
 }
 
-/**
- * @param {import("./types").CTRelations} relations
- * @param {string} tableName - The name of the table
- */
-export function generateRelations(relations, tableName) {
+export function generateRelations(relations: CTRelations, tableName: string) {
 	const types = [
 		...new Set(Object.values(relations).map(({ type }) => type)),
 	].sort();
@@ -43,10 +43,13 @@ export function generateRelations(relations, tableName) {
 }
 
 /**
- * @param {import("./types").CTRelations} relations
- * @param {string} output The output directory of the current collection
+ * @param relations
+ * @param output The output directory of the current collection
  */
-export function generateRelationImports(relations, output) {
+export function generateRelationImports(
+	relations: CTRelations,
+	output: string,
+) {
 	let imports = `import { relations } from 'content-thing/drizzle-orm';\n`;
 	const relatedCollections = new Set(
 		Object.values(relations).map(({ collection }) => collection),

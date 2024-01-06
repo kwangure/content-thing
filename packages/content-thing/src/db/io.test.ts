@@ -5,13 +5,14 @@ import {
 	generateTextColumn,
 } from './io.js';
 import assert from 'node:assert';
+import type { IntegerColumn, JsonColumn, TextColumn } from '../config/types.js';
 
 describe('generateIntegerColumn', () => {
 	it('should generate code for an integer column with no options', () => {
 		const result = generateIntegerColumn(
-			/** @type {import('../config/types.js').IntegerColumn} */ ({
+			{
 				type: 'integer',
-			}),
+			} as IntegerColumn,
 			'id',
 		);
 		assert.strictEqual(result, '"id" INTEGER NOT NULL');
@@ -19,10 +20,10 @@ describe('generateIntegerColumn', () => {
 
 	it('should generate code for a nullable integer column', () => {
 		const result = generateIntegerColumn(
-			/** @type {import('../config/types.js').IntegerColumn} */ ({
+			{
 				type: 'integer',
 				nullable: true,
-			}),
+			},
 			'id',
 		);
 		assert.strictEqual(result, '"id" INTEGER');
@@ -30,10 +31,10 @@ describe('generateIntegerColumn', () => {
 
 	it('should generate code for a unique integer column with custom constraint name', () => {
 		const result = generateIntegerColumn(
-			/** @type {import('../config/types.js').IntegerColumn} */ ({
+			{
 				type: 'integer',
 				unique: 'unique_id',
-			}),
+			} as IntegerColumn,
 			'id',
 		);
 		assert.strictEqual(
@@ -44,10 +45,10 @@ describe('generateIntegerColumn', () => {
 
 	it('should generate code for a unique integer column without custom constraint name', () => {
 		const result = generateIntegerColumn(
-			/** @type {import('../config/types.js').IntegerColumn} */ ({
+			{
 				type: 'integer',
 				unique: true,
-			}),
+			} as IntegerColumn,
 			'id',
 		);
 		assert.strictEqual(result, '"id" INTEGER NOT NULL UNIQUE');
@@ -55,10 +56,10 @@ describe('generateIntegerColumn', () => {
 
 	it('should generate code for an integer column as primary key', () => {
 		const result = generateIntegerColumn(
-			/** @type {import('../config/types.js').IntegerColumn} */ ({
+			{
 				type: 'integer',
 				primaryKey: true,
-			}),
+			} as IntegerColumn,
 			'id',
 		);
 		assert.strictEqual(result, '"id" INTEGER NOT NULL PRIMARY KEY');
@@ -66,10 +67,10 @@ describe('generateIntegerColumn', () => {
 
 	it('should generate code for an integer column with default value', () => {
 		const result = generateIntegerColumn(
-			/** @type {import('../config/types.js').IntegerColumn} */ ({
+			{
 				type: 'integer',
 				defaultValue: 1,
-			}),
+			} as IntegerColumn,
 			'id',
 		);
 		assert.strictEqual(result, '"id" INTEGER NOT NULL DEFAULT 1');
@@ -77,13 +78,13 @@ describe('generateIntegerColumn', () => {
 
 	it('should generate code for an integer column with all options', () => {
 		const result = generateIntegerColumn(
-			/** @type {import('../config/types.js').IntegerColumn} */ ({
+			{
 				type: 'integer',
 				primaryKey: true,
 				unique: 'unique_id',
 				defaultValue: 1,
 				nullable: false,
-			}),
+			},
 			'id',
 		);
 		assert.strictEqual(
@@ -96,7 +97,7 @@ describe('generateIntegerColumn', () => {
 describe('generateJsonColumn', () => {
 	it('should generate code for a JSON column with no options', () => {
 		const result = generateJsonColumn(
-			/** @type {import('../config/types.js').JsonColumn} */ ({ type: 'json' }),
+			{ type: 'json' } as JsonColumn,
 			'json_data',
 		);
 		assert.strictEqual(result, '"json_data" TEXT NOT NULL');
@@ -104,10 +105,10 @@ describe('generateJsonColumn', () => {
 
 	it('should generate code for a nullable JSON column', () => {
 		const result = generateJsonColumn(
-			/** @type {import('../config/types.js').JsonColumn} */ ({
+			{
 				type: 'json',
 				nullable: true,
-			}),
+			} as JsonColumn,
 			'json_data',
 		);
 		assert.strictEqual(result, '"json_data" TEXT');
@@ -115,10 +116,10 @@ describe('generateJsonColumn', () => {
 
 	it('should generate code for a unique JSON column', () => {
 		const result = generateJsonColumn(
-			/** @type {import('../config/types.js').JsonColumn} */ ({
+			{
 				type: 'json',
 				unique: true,
-			}),
+			} as JsonColumn,
 			'json_data',
 		);
 		assert.strictEqual(result, '"json_data" TEXT NOT NULL UNIQUE');
@@ -126,10 +127,10 @@ describe('generateJsonColumn', () => {
 
 	it('should generate code for a unique JSON column with constraint name', () => {
 		const result = generateJsonColumn(
-			/** @type {import('../config/types.js').JsonColumn} */ ({
+			{
 				type: 'json',
 				unique: 'unique_json',
-			}),
+			} as JsonColumn,
 			'json_data',
 		);
 		assert.strictEqual(
@@ -140,10 +141,10 @@ describe('generateJsonColumn', () => {
 
 	it('should generate code for a JSON column as primary key', () => {
 		const result = generateJsonColumn(
-			/** @type {import('../config/types.js').JsonColumn} */ ({
+			{
 				type: 'json',
 				primaryKey: true,
-			}),
+			} as JsonColumn,
 			'json_data',
 		);
 		assert.strictEqual(result, '"json_data" TEXT NOT NULL PRIMARY KEY');
@@ -151,10 +152,10 @@ describe('generateJsonColumn', () => {
 
 	it('should generate code for a JSON column with a default value', () => {
 		const result = generateJsonColumn(
-			/** @type {import('../config/types.js').JsonColumn} */ ({
+			{
 				type: 'json',
 				defaultValue: JSON.stringify({ key: 'value' }),
-			}),
+			} as JsonColumn,
 			'json_data',
 		);
 		assert.strictEqual(
@@ -165,13 +166,13 @@ describe('generateJsonColumn', () => {
 
 	it('should generate code for a JSON column with all options', () => {
 		const result = generateJsonColumn(
-			/** @type {import('../config/types.js').JsonColumn} */ ({
+			{
 				type: 'json',
 				primaryKey: true,
 				nullable: false,
 				unique: 'unique_json',
 				defaultValue: JSON.stringify({ key: 'value' }),
-			}),
+			} as JsonColumn,
 			'json_data',
 		);
 		assert.strictEqual(
@@ -183,19 +184,16 @@ describe('generateJsonColumn', () => {
 
 describe('generateTextColumn', () => {
 	it('should generate code for a text column with no additional options', () => {
-		const result = generateTextColumn(
-			/** @type {import('../config/types.js').TextColumn} */ ({ type: 'text' }),
-			'name',
-		);
+		const result = generateTextColumn({ type: 'text' } as TextColumn, 'name');
 		assert.strictEqual(result, '"name" TEXT NOT NULL');
 	});
 
 	it('should generate code for a text column with length', () => {
 		const result = generateTextColumn(
-			/** @type {import('../config/types.js').TextColumn} */ ({
+			{
 				type: 'text',
 				length: 50,
-			}),
+			} as TextColumn,
 			'name',
 		);
 		assert.strictEqual(result, '"name" TEXT(50) NOT NULL');
@@ -203,10 +201,10 @@ describe('generateTextColumn', () => {
 
 	it('should generate code for a text column with enum', () => {
 		const result = generateTextColumn(
-			/** @type {import('../config/types.js').TextColumn} */ ({
+			{
 				type: 'text',
 				enum: ['A', 'B'],
-			}),
+			} as TextColumn,
 			'name',
 		);
 		assert.strictEqual(
@@ -217,10 +215,10 @@ describe('generateTextColumn', () => {
 
 	it('should generate code for a text column with a default value', () => {
 		const result = generateTextColumn(
-			/** @type {import('../config/types.js').TextColumn} */ ({
+			{
 				type: 'text',
 				defaultValue: 'abc',
-			}),
+			} as TextColumn,
 			'name',
 		);
 		assert.strictEqual(result, '"name" TEXT NOT NULL DEFAULT \'abc\'');
@@ -228,10 +226,10 @@ describe('generateTextColumn', () => {
 
 	it('should generate code for a text column as a primary key', () => {
 		const result = generateTextColumn(
-			/** @type {import('../config/types.js').TextColumn} */ ({
+			{
 				type: 'text',
 				primaryKey: true,
-			}),
+			} as TextColumn,
 			'name',
 		);
 		assert.strictEqual(result, '"name" TEXT NOT NULL PRIMARY KEY');
@@ -239,10 +237,10 @@ describe('generateTextColumn', () => {
 
 	it('should generate code for a nullable text column', () => {
 		const result = generateTextColumn(
-			/** @type {import('../config/types.js').TextColumn} */ ({
+			{
 				type: 'text',
 				nullable: true,
-			}),
+			} as TextColumn,
 			'name',
 		);
 		assert.strictEqual(result, '"name" TEXT');
@@ -250,10 +248,10 @@ describe('generateTextColumn', () => {
 
 	it('should generate code for a unique text column', () => {
 		const result = generateTextColumn(
-			/** @type {import('../config/types.js').TextColumn} */ ({
+			{
 				type: 'text',
 				unique: 'unique_name',
-			}),
+			} as TextColumn,
 			'name',
 		);
 		assert.strictEqual(
@@ -283,10 +281,10 @@ describe('generateTextColumn', () => {
 
 	it('handles single quotes in default value', () => {
 		const result = generateTextColumn(
-			/** @type {import('../config/types.js').TextColumn} */ ({
+			{
 				type: 'text',
 				defaultValue: "O'Reilly",
-			}),
+			} as TextColumn,
 			'name',
 		);
 		assert.strictEqual(result, `"name" TEXT NOT NULL DEFAULT 'O''Reilly'`);
@@ -294,10 +292,10 @@ describe('generateTextColumn', () => {
 
 	it('handles double quotes in default value', () => {
 		const result = generateTextColumn(
-			/** @type {import('../config/types.js').TextColumn} */ ({
+			{
 				type: 'text',
 				defaultValue: 'The book is called "JavaScript"',
-			}),
+			} as TextColumn,
 			'name',
 		);
 		assert.strictEqual(
@@ -308,10 +306,10 @@ describe('generateTextColumn', () => {
 
 	it('handles both single and double quotes in default value', () => {
 		const result = generateTextColumn(
-			/** @type {import('../config/types.js').TextColumn} */ ({
+			{
 				type: 'text',
 				defaultValue: `O'Reilly's book is called "JavaScript"`,
-			}),
+			} as TextColumn,
 			'name',
 		);
 		assert.strictEqual(
@@ -322,10 +320,10 @@ describe('generateTextColumn', () => {
 
 	it('handles quotes in enum values', () => {
 		const result = generateTextColumn(
-			/** @type {import('../config/types.js').TextColumn} */ ({
+			{
 				type: 'text',
 				enum: ["O'Reilly", 'The "Best" Book'],
-			}),
+			} as TextColumn,
 			'name',
 		);
 		assert.strictEqual(

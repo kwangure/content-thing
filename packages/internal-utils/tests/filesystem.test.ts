@@ -116,8 +116,7 @@ describe('write', () => {
 });
 
 describe('walk', () => {
-	/** @type {string} */
-	let tempDir;
+	let tempDir: string;
 
 	before(() => {
 		tempDir = path.join(__dirname, 'temp');
@@ -144,8 +143,7 @@ describe('walk', () => {
 	});
 
 	it('should call visitor for each file and directory', () => {
-		/** @type {string[]} */
-		const visited = [];
+		const visited: string[] = [];
 		walk(tempDir, (info) => {
 			visited.push(info.basePath);
 		});
@@ -163,22 +161,19 @@ describe('walk', () => {
 	});
 
 	it('should correctly recurse into subdirectories', () => {
-		/** @type {string[]} */
-		const visitedSubdirs = [];
+		const visitedSubdirs: string[] = [];
 		walk(tempDir, (info) => {
 			if (info.isDirectory()) {
 				visitedSubdirs.push(info.basePath);
 			}
 		});
 
-		/** @type {string[]} */
 		const expectedSubdirs = ['empty', 'subdir1', 'subdir2'];
 		assert.deepStrictEqual(visitedSubdirs, expectedSubdirs);
 	});
 
 	it('should provide correct WalkEntry objects to the visitor', () => {
-		/** @type {any[]} */
-		const receivedEntries = [];
+		const receivedEntries: any[] = [];
 		walk(tempDir, (info) => {
 			receivedEntries.push({
 				baseDir: info.baseDir,

@@ -17,11 +17,12 @@
 			]
 		},
 		"build:lib": {
-			"command": "tsc -b",
+			"command": "tsc --build",
 			"files": [
 				"src/**/*.{js,ts}",
 				"tests/**/*.{js,ts}",
-				"tsconfig.json"
+				"tsconfig.json",
+				"../../config/tsconfig.base.json"
 			],
 			"dependencies": [
 				"../internal-utils:build",
@@ -32,16 +33,16 @@
 				"../remark-yaml-parse:build"
 			],
 			"output": [
-				"types"
+				"dist"
 			]
 		},
 		"build:config": {
-			"command": "node ./src/config/json-schema.js",
+			"command": "tsx ./src/config/json-schema.ts",
 			"dependencies": [
 				"../internal-utils:build"
 			],
 			"files": [
-				"./src/config/*.js"
+				"./src/config/*.ts"
 			],
 			"output": [
 				"./config/schema.json"
@@ -54,7 +55,7 @@
 			],
 			"files": [
 				"src/**",
-				"types/**",
+				"dist/**",
 				"package.json"
 			],
 			"output": []
@@ -74,7 +75,7 @@
 			]
 		},
 		"test": {
-			"command": "node --test --test-reporter spec",
+			"command": "tsx --test --test-reporter spec",
 			"files": [
 				"src/**/*.{js,ts}",
 				"tests/**/*.{js,ts}"
@@ -84,39 +85,39 @@
 	},
 	"exports": {
 		".": {
-			"types": "./types/index.d.ts",
-			"default": "./src/index.js"
+			"types": "./dist/index.d.ts",
+			"default": "./dist/index.js"
 		},
 		"./config": {
 			"default": "./config/schema.json"
 		},
 		"./db": {
-			"types": "./types/db/index.d.ts",
-			"default": "./src/db/index.js"
+			"types": "./dist/db/index.d.ts",
+			"default": "./dist/db/index.js"
 		},
 		"./better-sqlite3": {
-			"types": "./types/packages/better-sqlite3/index.d.ts",
-			"default": "./src/packages/better-sqlite3/index.js"
+			"types": "./dist/packages/better-sqlite3/index.d.ts",
+			"default": "./dist/packages/better-sqlite3/index.js"
 		},
 		"./drizzle-orm": {
-			"types": "./types/packages/drizzle-orm/index.d.ts",
-			"default": "./src/packages/drizzle-orm/index.js"
+			"types": "./dist/packages/drizzle-orm/index.d.ts",
+			"default": "./dist/packages/drizzle-orm/index.js"
 		},
 		"./drizzle-orm/better-sqlite3": {
-			"types": "./types/packages/drizzle-orm/better-sqlite3.d.ts",
-			"default": "./src/packages/drizzle-orm/better-sqlite3.js"
+			"types": "./dist/packages/drizzle-orm/better-sqlite3.d.ts",
+			"default": "./dist/packages/drizzle-orm/better-sqlite3.js"
 		},
 		"./drizzle-orm/sqlite-core": {
-			"types": "./types/packages/drizzle-orm/sqlite.d.ts",
-			"default": "./src/packages/drizzle-orm/sqlite.js"
+			"types": "./dist/packages/drizzle-orm/sqlite.d.ts",
+			"default": "./dist/packages/drizzle-orm/sqlite.js"
 		},
 		"./drizzle-zod": {
-			"types": "./types/packages/drizzle-zod.d.ts",
-			"default": "./src/packages/drizzle-zod.js"
+			"types": "./dist/packages/drizzle-zod.d.ts",
+			"default": "./dist/packages/drizzle-zod.js"
 		},
 		"./mdast": {
-			"types": "./types/packages/mdast.d.ts",
-			"default": "./src/packages/mdast.js"
+			"types": "./dist/packages/mdast.d.ts",
+			"default": "./dist/packages/mdast.js"
 		}
 	},
 	"dependencies": {
@@ -126,6 +127,7 @@
 		"@content-thing/remark-toc": "^0.0.1",
 		"@content-thing/remark-variables": "^0.0.2",
 		"@content-thing/remark-yaml-parse": "^0.0.1",
+		"@signalapp/better-sqlite3": "^8.6.0",
 		"@types/mdast": "^4.0.1",
 		"better-sqlite3": "^8.5.2",
 		"chokidar": "^3.5.3",
@@ -145,6 +147,7 @@
 		"@types/js-yaml": "^4.0.5",
 		"@types/node": "^20.4.10",
 		"publint": "^0.2.2",
+		"tsx": "^4.7.0",
 		"typescript": "^5.1.6",
 		"vite": "^5.0.9",
 		"zod-to-json-schema": "^3.21.4"
@@ -153,8 +156,7 @@
 		"@sveltejs/kit": "^2.0.0"
 	},
 	"files": [
-		"src",
-		"types",
+		"dist",
 		"config",
 		"!**/*.test.*",
 		"!**/*.spec.*"

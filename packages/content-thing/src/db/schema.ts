@@ -1,12 +1,15 @@
+import type { CollectionSchema, JsonColumn } from '../config/types';
+import type { CTInteger, CTText } from './types';
+
 /**
  * Generates the column code for text type
  *
- * @param {string} key - The key or name of the column
- * @param {import("./types").CTText} column - The column configuration for text type
- * @returns {string} - Generated code for text column
+ * @param key - The key or name of the column
+ * @param column - The column configuration for text type
+ * @returns Generated code for text column
  */
-export function generateTextColumnCode(key, column) {
-	const options = {};
+export function generateTextColumnCode(key: string, column: CTText) {
+	const options: Partial<CTText> = {};
 	if (column.length) {
 		options.length = column.length;
 	}
@@ -53,12 +56,12 @@ export function generateTextColumnCode(key, column) {
 /**
  * Generates the column code for integer type
  *
- * @param {string} key - The key or name of the column
- * @param {import("./types").CTInteger} column - The column configuration for integer type
- * @returns {string} - Generated code for integer column
+ * @param key The key or name of the column
+ * @param column The column configuration for integer type
+ * @returns Generated code for integer column
  */
-export function generateIntegerColumnCode(key, column) {
-	const options = {};
+export function generateIntegerColumnCode(key: string, column: CTInteger) {
+	const options: Partial<CTInteger> = {};
 	if (column.mode) {
 		options.mode = column.mode;
 	}
@@ -101,11 +104,11 @@ export function generateIntegerColumnCode(key, column) {
 /**
  * Generates the column code for JSON type
  *
- * @param {string} key - The key or name of the column
- * @param {import("../config/types.js").JsonColumn} column - The column configuration for JSON type
- * @returns {string} - Generated code for JSON column
+ * @param key The key or name of the column
+ * @param column The column configuration for JSON type
+ * @returns Generated code for JSON column
  */
-export function generateJsonColumnCode(key, column) {
+export function generateJsonColumnCode(key: string, column: JsonColumn) {
 	let columnCode = `json('${key}')`;
 
 	if (column.jsDocType) {
@@ -144,11 +147,11 @@ const CONTENT_THING_COLUMNS = ['json'];
 /**
  * Generates SQLite schema for Markdown type
  *
- * @param {import("../config/types.js").CollectionSchema} schema - The configuration for Markdown type
- * @param {string} tableName - The name of the table
- * @returns {string} - The generated SQLite schema
+ * @param schema The configuration for Markdown type
+ * @param tableName The name of the table
+ * @returns The generated SQLite schema
  */
-export function generateSchema(schema, tableName) {
+export function generateSchema(schema: CollectionSchema, tableName: string) {
 	const drizzleImports = new Set(['sqliteTable']);
 	const contentThingImports = new Set();
 
