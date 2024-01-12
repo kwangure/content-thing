@@ -57,7 +57,7 @@ export function generateRelationImports(
 
 	const collectionsOutput = path.join(
 		cwd(),
-		'./.svelte-kit/content-thing/generated/collections',
+		'./.svelte-kit/content-thing/collections',
 	);
 
 	for (const name of relatedCollections) {

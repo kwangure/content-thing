@@ -14,10 +14,8 @@ export function extendSvelteConfig(config: Config) {
 		config.kit.alias = {};
 	}
 
-	config.kit.alias['thing:data'] =
-		'./.svelte-kit/content-thing/generated/db.js';
-	config.kit.alias['thing:schema'] =
-		'./.svelte-kit/content-thing/generated/schema.js';
+	config.kit.alias['thing:data'] = './.svelte-kit/content-thing/db.js';
+	config.kit.alias['thing:schema'] = './.svelte-kit/content-thing/schema.js';
 
 	if (!config.kit.typescript) {
 		config.kit.typescript = {};

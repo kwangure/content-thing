@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { thing } from './state/state.js';
+import { createThing, logger } from './state/state.js';
 import type { Plugin, ResolvedConfig } from 'vite';
 
 export { createCollection } from './better-sqlite/index.js';
@@ -10,43 +10,30 @@ export { extendSvelteConfig } from './svelte-kit.js';
  * A Vite plugin to handle static content
  */
 export function content(): Plugin {
-	let config: ResolvedConfig;
+	let command: ResolvedConfig['command'];
 	let outputDir: string;
 
 	return {
 		name: 'vite-plugin-content',
 		config() {
 			return {
-				customLogger: thing.context.get('logger'),
+				customLogger: logger,
 			};
 		},
-		configResolved(_config) {
-			config = _config;
-
-			const root = _config.root || process.cwd();
-			const collectionsDir = path.join(root, 'src/thing/collections');
-
-			outputDir = path.join(root, '.svelte-kit/content-thing');
-			const dbPath = path.join(outputDir, 'sqlite.db');
-			const generatedDir = path.join(outputDir, 'generated');
-			const collectionsOutput = path.join(generatedDir, 'collections');
-			const dbClientPath = path.join(generatedDir, 'db.js');
-			const schemaPath = path.join(generatedDir, 'schema.js');
-
-			thing.dispatch('configure', {
-				collectionsDir,
-				collectionsOutput,
-				dbClientPath,
-				dbPath,
-				generatedDir,
+		configResolved(config) {
+			command = config.command;
+			outputDir = path.join(config.root, '.svelte-kit/content-thing');
+			const thing = createThing({
+				collectionsDir: path.join(config.root, 'src/thing/collections'),
+				collectionsOutput: path.join(outputDir, 'collections'),
+				dbClientPath: path.join(outputDir, 'db.js'),
+				dbPath: path.join(outputDir, 'sqlite.db'),
+				root: config.root,
+				schemaPath: path.join(outputDir, 'schema.js'),
 				outputDir,
-				root,
-				schemaPath,
 			});
-		},
-		async buildStart() {
 			thing.dispatch('build');
-			if (config.command === 'serve') {
+			if (command === 'serve') {
 				thing.dispatch('watch');
 			}
 		},
@@ -58,7 +45,7 @@ export function content(): Plugin {
 		load(id) {
 			if (!id.endsWith('sqlite.db')) return;
 			const dbPath = path.join(outputDir, 'sqlite.db');
-			if (config.command === 'serve') {
+			if (command === 'serve') {
 				return `export default ${JSON.stringify(dbPath)}`;
 			}
 			const referenceId = this.emitFile({
