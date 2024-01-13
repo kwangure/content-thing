@@ -1,13 +1,10 @@
 import { MarkdownEntry } from './entry/markdown.js';
 import { walk } from '@content-thing/internal-utils/filesystem';
 import { YamlEntry } from './entry/yaml.js';
+import type { CollectionConfig } from '../config/types.js';
 
-/**
- * @param {import('../config/types.js').CollectionConfig} collection
- */
-export function getMarkdownCollectionEntries(collection) {
-	/** @type {MarkdownEntry[]} */
-	const collectionManifest = [];
+export function getMarkdownCollectionEntries(collection: CollectionConfig) {
+	const collectionManifest: MarkdownEntry[] = [];
 	walk(collection.paths.rootDir, (file) => {
 		if (file.name.toLowerCase() !== 'readme.md') return;
 
@@ -17,12 +14,8 @@ export function getMarkdownCollectionEntries(collection) {
 	return collectionManifest;
 }
 
-/**
- * @param {import('../config/types.js').CollectionConfig} collection
- */
-export function getYamlCollectionEntries(collection) {
-	/** @type {YamlEntry[]} */
-	const collectionManifest = [];
+export function getYamlCollectionEntries(collection: CollectionConfig) {
+	const collectionManifest: YamlEntry[] = [];
 	walk(collection.paths.rootDir, (file) => {
 		if (file.name.toLowerCase() !== 'data.yaml') return;
 

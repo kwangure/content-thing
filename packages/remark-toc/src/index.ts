@@ -1,36 +1,32 @@
 import { visit } from 'unist-util-visit';
+import type { Plugin } from 'unified';
+import type { Root } from 'mdast';
+import type { TocEntry } from './types';
 
 const LEADING_DASH_RE = /^-+/;
 const LEADING_HASH_RE = /^#+\s*/;
 const NON_ALPHA_NUMERIC_RE = /[^a-z0-9]+/g;
 const TRAILING_DASH_RE = /-+$/;
 
-/**
- * @this {import('unified').Processor<void, import('mdast').Root>}
- * @type {import('unified').Plugin<void[], import('mdast').Root>}
- */
-export function remarkTableOfContents() {
+export const remarkTableOfContents: Plugin<void[], Root> = function () {
 	return (tree, vfile) => {
-		/** @type {{ children: import('./types.js').TocEntry[] }} */
-		const dummyRoot = { children: [] };
+		const dummyRoot: { children: TocEntry[] } = { children: [] };
 		const stack = [dummyRoot];
 
 		visit(tree, 'heading', (node) => {
 			if (node.depth !== 1 && node.depth !== 2 && node.depth !== 3) return;
 
-			const mdString = /** @type {string} */ (this.stringify(node));
+			const mdString = this?.stringify(node) as string;
 			const content =
-				/** @type {string} */ (node.data?.value) ||
-				mdString.replace(LEADING_HASH_RE, '');
+				(node.data?.value as string) || mdString.replace(LEADING_HASH_RE, '');
 			const id =
-				/** @type {string} */ (node.data?.id) ||
+				node.data?.id ||
 				content
 					.toLowerCase()
 					.replace(NON_ALPHA_NUMERIC_RE, '-')
 					.replace(LEADING_DASH_RE, '')
 					.replace(TRAILING_DASH_RE, '');
 
-			/** @type {import('./types.js').TocEntry} */
 			const tocEntry = {
 				depth: node.depth,
 				value: content,
@@ -55,6 +51,6 @@ export function remarkTableOfContents() {
 			tableOfContents: dummyRoot.children,
 		};
 	};
-}
+};
 
 export default remarkTableOfContents;

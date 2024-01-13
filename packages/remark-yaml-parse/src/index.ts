@@ -1,11 +1,9 @@
 import { EXIT, visit } from 'unist-util-visit';
 import yaml from 'js-yaml';
+import type { Plugin } from 'unified';
+import type { Root } from 'mdast';
 
-/**
- * @this {import('unified').Processor<void, import('mdast').Root>}
- * @type {import('unified').Plugin<void[], import('mdast').Root>}
- */
-export function remarkYamlParse() {
+export const remarkYamlParse: Plugin<void[], Root> = () => {
 	return (tree) => {
 		visit(tree, 'yaml', (node, index, parent) => {
 			const parsedYaml = yaml.load(node.value);
@@ -20,6 +18,6 @@ export function remarkYamlParse() {
 			return EXIT;
 		});
 	};
-}
+};
 
 export default remarkYamlParse;

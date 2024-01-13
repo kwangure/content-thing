@@ -17,7 +17,7 @@
 				"tsconfig.json"
 			],
 			"output": [
-				"types"
+				"dist"
 			]
 		},
 		"publint": {
@@ -27,7 +27,7 @@
 			],
 			"files": [
 				"src/**",
-				"types/**",
+				"dist/**",
 				"package.json"
 			],
 			"output": []
@@ -47,7 +47,7 @@
 			]
 		},
 		"test": {
-			"command": "node --test --test-reporter spec",
+			"command": "tsx --test --test-reporter spec",
 			"files": [
 				"src/**/*.{js,ts}",
 				"tests/**/*.{js,ts}"
@@ -60,13 +60,12 @@
 	},
 	"exports": {
 		".": {
-			"types": "./types/index.d.ts",
-			"default": "./src/index.js"
+			"types": "./dist/index.d.ts",
+			"default": "./dist/index.js"
 		}
 	},
 	"files": [
-		"src",
-		"types",
+		"dist",
 		"!**/*.test.*",
 		"!**/*.spec.*"
 	],
@@ -80,6 +79,7 @@
 		"@types/node": "^20.4.10",
 		"publint": "^0.2.2",
 		"remark-parse": "^11.0.0",
+		"tsx": "^4.7.0",
 		"typescript": "^5.1.6",
 		"unified": "^11.0.3"
 	},

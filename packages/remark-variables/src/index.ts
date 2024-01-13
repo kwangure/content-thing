@@ -1,20 +1,15 @@
 import delve from 'dlv';
 import { visit } from 'unist-util-visit';
+import type { Plugin } from 'unified';
+import type { Root } from 'mdast';
 
-/**
- * @template {Object} T
- * @param {T} thing
- * @returns {thing is Extract<T, { value: any }>}
- */
-function hasValue(thing) {
+function hasValue<T extends Object>(
+	thing: T,
+): thing is Extract<T, { value: any }> {
 	return 'value' in thing;
 }
 
-/**
- * @this {import('unified').Processor<void, import('mdast').Root>}
- * @type {import('unified').Plugin<void[], import('mdast').Root>}
- */
-export function remarkVariables() {
+export const remarkVariables: Plugin<void[], Root> = () => {
 	return (tree) => {
 		const replacements = { ...tree.data };
 		visit(tree, (node) => {
@@ -29,6 +24,6 @@ export function remarkVariables() {
 			}
 		});
 	};
-}
+};
 
 export default remarkVariables;

@@ -12,5 +12,5 @@
 		}
 	],
 	// Exclude references and emitted output
-	"exclude": ["src", "tests", "types"]
+	"exclude": ["src", "tests", "dist"]
 }

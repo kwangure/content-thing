@@ -1,16 +1,13 @@
+import type { Code, InlineCode, Root } from 'mdast';
+import type { Plugin } from 'unified';
 import { EOL } from 'node:os';
 import fs from 'node:fs';
 import path from 'node:path';
 import { visit } from 'unist-util-visit';
 
-/**
- * @this {import('unified').Processor<void, import('mdast').Root>}
- * @type {import('unified').Plugin<void[], import('mdast').Root>}
- */
-export function remarkRichAttributes() {
+export const remarkRichAttributes: Plugin<void[], Root> = () => {
 	return (tree, vfile) => {
-		/** @type {(import('mdast').Code | import('mdast').InlineCode)[]} */
-		const codeBlocks = [];
+		const codeBlocks: (Code | InlineCode)[] = [];
 		visit(tree, (node) => {
 			if (node.type !== 'code' && node.type !== 'inlineCode') return;
 			codeBlocks.push(node);
@@ -34,18 +31,14 @@ export function remarkRichAttributes() {
 			}
 		}
 	};
-}
+};
 
-/**
- * @param {string} meta
- */
-export function parseFileMeta(meta) {
+export function parseFileMeta(meta: string) {
 	const [filepath, lines] = meta.split('#L');
 
 	if (!lines) return { filepath };
 
-	/** @type {number[]} */
-	const [start, end = start] = lines.split('-').map(Number);
+	const [start, end = start]: number[] = lines.split('-').map(Number);
 	return { filepath, start, end };
 }
 
@@ -54,7 +47,7 @@ export function parseFileMeta(meta) {
  * @param {number} [start]
  * @param {number} [end]
  */
-export function extractLines(content, start, end) {
+export function extractLines(content: string, start?: number, end?: number) {
 	const lines = content.split(EOL);
 	if (!start) {
 		start = 1;

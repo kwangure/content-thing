@@ -8,6 +8,7 @@ import remarkStringify from 'remark-stringify';
 import { remarkTableOfContents } from '@content-thing/remark-toc';
 import { remarkYamlParse } from '@content-thing/remark-yaml-parse';
 import { unified } from 'unified';
+import type { EntryRecord } from './types.js';
 
 const processor = unified()
 	.use(remarkParse)
@@ -22,7 +23,6 @@ const processor = unified()
 export class MarkdownEntry extends BaseEntry {
 	/**
 	 * Make `unified` to treat `BaseEntry` like a `VFile`
-	 * @type {any}
 	 */
 	messages = [];
 	// Make `unified` to treat `BaseEntry` like a `VFile`
@@ -30,19 +30,17 @@ export class MarkdownEntry extends BaseEntry {
 	type = 'markdown';
 	/**
 	 * A property used by Rehype plugins to output arbitrary data
-	 *
-	 * @type {Record<string, any>}
 	 */
-	data = {};
+	data: Record<string, any> = {};
 	getRecord() {
-		const tree = processor.parse(/** @type {any} */ (this));
-		const transformedTree = processor.runSync(tree, /** @type {any} */ (this));
+		const tree = processor.parse(this as any);
+		const transformedTree = processor.runSync(tree, this as any);
 
-		return /** @type {import('./types.js').EntryRecord} */ ({
-			.../** @type {any} */ (transformedTree.data?.frontmatter),
+		return {
+			...transformedTree.data?.frontmatter,
 			_content: transformedTree,
 			_id: this.id,
 			_headingTree: this.data.tableOfContents,
-		});
+		} as EntryRecord;
 	}
 }

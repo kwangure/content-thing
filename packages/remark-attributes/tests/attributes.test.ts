@@ -4,6 +4,7 @@ import remarkAttributes from '../src/index.js';
 import remarkParse from 'remark-parse';
 import { unified } from 'unified';
 import { visit } from 'unist-util-visit';
+import type { Text } from 'mdast';
 
 const processor = unified().use(remarkParse).use(remarkAttributes);
 
@@ -84,10 +85,7 @@ describe('inlineCode', () => {
 				},
 			});
 
-			assert.strictEqual(
-				/** @type {import('mdast').Text} */ (nextSibling)?.value,
-				' abc',
-			);
+			assert.strictEqual((nextSibling as Text)?.value, ' abc');
 		});
 	});
 	it('allows preceeding whitespace', async () => {
@@ -104,10 +102,7 @@ describe('inlineCode', () => {
 				},
 			});
 
-			assert.strictEqual(
-				/** @type {import('mdast').Text} */ (nextSibling)?.value,
-				' abc',
-			);
+			assert.strictEqual((nextSibling as Text)?.value, ' abc');
 		});
 	});
 });
