@@ -17,7 +17,7 @@ import {
 	writeValidator,
 } from '../collections/write.js';
 import chokidar from 'chokidar';
-import { createLogger } from 'vite';
+import { createLogger, type LogErrorOptions, type LogOptions } from 'vite';
 import Database, { type Database as DB } from 'better-sqlite3';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -71,7 +71,7 @@ export function createThing(thingConfig: ThingConfig) {
 			build: {
 				actions: {
 					buildCollections() {
-						logger.info('Starting collection build...', { timestamp: true });
+						logInfo('Starting collection build...');
 						const {
 							collectionsDir,
 							collectionsOutput,
@@ -143,11 +143,10 @@ export function createThing(thingConfig: ThingConfig) {
 					},
 					watchCollectionsDir(ownerState) {
 						const { collectionsDir, root } = thingConfig;
-						logger.info(
+						logInfo(
 							`Watching top-level files in '${collectionsDir.slice(
 								root.length + 1,
 							)}'`,
-							{ timestamp: true },
 						);
 						const watcher = chokidar.watch(collectionsDir, {
 							depth: 0,
@@ -164,11 +163,10 @@ export function createThing(thingConfig: ThingConfig) {
 
 							for (const collection of collectionNames) {
 								const collectionRoot = path.join(collectionsDir, collection);
-								logger.info(
+								logInfo(
 									`Watching collection files in '${collectionRoot.slice(
 										root.length + 1,
 									)}'`,
-									{ timestamp: true },
 								);
 								ownerState.dispatch('collectionFound', collection);
 							}
@@ -185,11 +183,8 @@ export function createThing(thingConfig: ThingConfig) {
 						});
 
 						watcher.on('add', (filepath) => {
-							logger.info(
+							logInfo(
 								`File added '${filepath.slice(thingConfig.root.length + 1)}'`,
-								{
-									timestamp: true,
-								},
 							);
 							ownerState.dispatch('fileAdded', {
 								collection: event.value,
@@ -198,11 +193,8 @@ export function createThing(thingConfig: ThingConfig) {
 						});
 
 						watcher.on('change', (filepath) => {
-							logger.info(
+							logInfo(
 								`File changed '${filepath.slice(thingConfig.root.length + 1)}'`,
-								{
-									timestamp: true,
-								},
 							);
 							ownerState.dispatch('fileChanged', {
 								collection: event.value,
@@ -245,9 +237,8 @@ export function createThing(thingConfig: ThingConfig) {
 								}
 							}
 						} catch (error) {
-							logger.error(
+							logError(
 								`[content-thing] Malformed document at ${filepath}. ${error}`,
-								{ timestamp: true },
 							);
 						}
 					},
@@ -257,4 +248,18 @@ export function createThing(thingConfig: ThingConfig) {
 	});
 
 	return thing;
+}
+
+function logInfo(message: string, options: LogOptions = {}) {
+	if (!('timestamp' in options)) {
+		options.timestamp = true;
+	}
+	logger.info(message, options);
+}
+
+function logError(message: string, options: LogErrorOptions = {}) {
+	if (!('timestamp' in options)) {
+		options.timestamp = true;
+	}
+	logger.error(message, options);
 }
