@@ -2,6 +2,7 @@ import { z } from 'zod';
 import fs from 'node:fs';
 import path from 'node:path';
 import type { CollectionConfig } from './types';
+import { Err, Ok } from '../result.js';
 
 export const drizzleColumn = z
 	.object({
@@ -163,35 +164,50 @@ export const configSchema = z.discriminatedUnion('type', [
 export function loadCollectionConfig(
 	rootDir: string,
 	collectionsOutput: string,
-): CollectionConfig {
+) {
 	const configPath = path.join(rootDir, 'collection.config.json');
 	const name = path.basename(rootDir);
 	const outputDir = path.join(collectionsOutput, name);
 	const schemaPath = path.join(outputDir, 'schema.config.js');
 	const validatorPath = path.join(outputDir, 'validate.js');
+
+	let configContent;
 	try {
-		const configContent = fs.readFileSync(configPath, 'utf-8');
-		const configJSON = JSON.parse(configContent);
-		return {
-			...configSchema.parse(configJSON),
-			name,
-			paths: {
-				config: configPath,
-				schema: schemaPath,
-				validator: validatorPath,
-				rootDir,
-				outputDir,
-			},
-		};
+		configContent = fs.readFileSync(configPath, 'utf-8');
 	} catch (_error) {
-		if ((_error as any).code === 'ENOENT') {
-			const error = new Error(
-				`Could not find a config file at ${configPath}. All collections must have one.`,
-			);
-			error.cause = _error;
-			throw error;
-		} else {
-			throw _error;
-		}
+		let type =
+			(_error as any).code === 'ENOENT'
+				? ('file-not-found' as const)
+				: ('read-file-error' as const);
+		Object.assign(_error as any, { collection: name });
+		return Err(type, _error as Error & { collection: string });
 	}
+
+	let configJSON;
+	try {
+		configJSON = JSON.parse(configContent);
+	} catch (_error) {
+		Object.assign(_error as any, { collection: name });
+		return Err('json-parse-error', _error as Error & { collection: string });
+	}
+
+	let parseResult = configSchema.safeParse(configJSON);
+	let validatedJSON;
+	if (parseResult.success) {
+		validatedJSON = parseResult.data;
+	} else {
+		return Err('validation-error', parseResult.error);
+	}
+
+	return Ok({
+		...validatedJSON,
+		name,
+		paths: {
+			config: configPath,
+			schema: schemaPath,
+			validator: validatorPath,
+			rootDir,
+			outputDir,
+		},
+	} as CollectionConfig);
 }

@@ -80,6 +80,9 @@ importers:
       js-yaml:
         specifier: ^4.1.0
         version: 4.1.0
+      lil-match:
+        specifier: ^1.2.1
+        version: 1.2.1
       remark-frontmatter:
         specifier: ^5.0.0
         version: 5.0.0
@@ -2844,6 +2847,10 @@ packages:
     dependencies:
       prelude-ls: 1.2.1
       type-check: 0.4.0
+    dev: false
+
+  /lil-match@1.2.1:
+    resolution: {integrity: sha512-fudLGqwTfXD3c8WqCR78jsVc6L69BF3oYDBsMQWadgMAL8BmX+wSo4ZNTFRQTQs82/0XkoCKlJMnZPW0kyg1DQ==}
     dev: false
 
   /lilconfig@2.1.0:

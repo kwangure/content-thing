@@ -80,6 +80,9 @@
 				"src/**/*.{js,ts}",
 				"tests/**/*.{js,ts}"
 			],
+			"dependencies": [
+				"build"
+			],
 			"output": []
 		}
 	},
@@ -135,6 +138,7 @@
 		"drizzle-zod": "^0.5.1",
 		"hine": "^0.0.22",
 		"js-yaml": "^4.1.0",
+		"lil-match": "^1.2.1",
 		"remark-frontmatter": "^5.0.0",
 		"remark-parse": "^11.0.0",
 		"remark-stringify": "^11.0.0",

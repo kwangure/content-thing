@@ -1,3 +1,4 @@
+import { match } from 'lil-match';
 import {
 	createTableFromSchema,
 	deleteFromTable,
@@ -95,7 +96,10 @@ export function createThing(thingConfig: ThingConfig) {
 							}
 						}
 						for (const dir of collectionRootDirs) {
-							const config = loadCollectionConfig(dir, collectionsOutput);
+							const configResult = loadCollectionConfig(dir, collectionsOutput);
+							const config = unwrapCollectionConfigResult(configResult);
+							if (!config) continue;
+
 							let entries: CollectionEntry[] = [];
 							if (config.type === 'markdown') {
 								entries = getMarkdownCollectionEntries(config);
@@ -207,11 +211,12 @@ export function createThing(thingConfig: ThingConfig) {
 							thingConfig.collectionsDir,
 							(event.value as { collection: string }).collection,
 						);
-						const collectionConfig = loadCollectionConfig(
+						const configResult = loadCollectionConfig(
 							collectionRoot,
 							thingConfig.collectionsOutput,
 						);
-
+						const collectionConfig = unwrapCollectionConfigResult(configResult);
+						if (!collectionConfig) return;
 						const { filepath } = event.value as { filepath: string };
 
 						// Ignore possibly malformed files being edited actively
@@ -248,6 +253,32 @@ export function createThing(thingConfig: ThingConfig) {
 	});
 
 	return thing;
+}
+
+function unwrapCollectionConfigResult(
+	configResult: ReturnType<typeof loadCollectionConfig>,
+) {
+	return match(configResult)
+		.with({ ok: true }, ({ value }) => value)
+		.with({ type: 'file-not-found' }, ({ error: { collection } }) => {
+			logError(
+				`"collection.config.json" not found in "${collection}" collection. All collections must have a config file.`,
+			);
+		})
+		.with({ type: 'read-file-error' }, ({ error: { collection, message } }) => {
+			logError(
+				`Unable to read "collections/${collection}/collection.config.json". ${message}`,
+			);
+		})
+		.with({ type: 'json-parse-error' }, ({ error: { collection } }) => {
+			logError(
+				`Malformed JSON in "collections/${collection}/collection.config.json".`,
+			);
+		})
+		.with({ type: 'validation-error' }, ({ error }) => {
+			logError(`Invalid JSON Schema. ${error.format()}`);
+		})
+		.exhaustive('');
 }
 
 function logInfo(message: string, options: LogOptions = {}) {
