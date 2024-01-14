@@ -1,5 +1,12 @@
 # content-thing
 
+## 0.0.12
+
+### Patch Changes
+
+- 078431f: Run HMR in JS when collection data changes
+- 078431f: Re-seed DB when collection config changes
+
 ## 0.0.11
 
 ### Patch Changes
