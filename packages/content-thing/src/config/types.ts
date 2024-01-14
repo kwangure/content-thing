@@ -22,14 +22,4 @@ export type MarkdownConfig = z.output<typeof markdownConfig>;
 export type YamlConfig = z.output<typeof yamlConfig>;
 export type CollectionConfig = (MarkdownConfig | YamlConfig) & {
 	name: string;
-	paths: {
-		// Files
-		config: string;
-		schema: string;
-		validator: string;
-
-		// Directories
-		outputDir: string;
-		rootDir: string;
-	};
 };

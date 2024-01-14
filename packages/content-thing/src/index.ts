@@ -26,10 +26,7 @@ export function content(): Plugin {
 			const thing = createThing({
 				collectionsDir: path.join(config.root, 'src/thing/collections'),
 				collectionsOutput: path.join(outputDir, 'collections'),
-				dbClientPath: path.join(outputDir, 'db.js'),
-				dbPath: path.join(outputDir, 'sqlite.db'),
 				root: config.root,
-				schemaPath: path.join(outputDir, 'schema.js'),
 				outputDir,
 			});
 			thing.dispatch('build');

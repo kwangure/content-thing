@@ -28,14 +28,11 @@ import type { CollectionEntry } from '../collections/entry/types.js';
 
 export let logger = createLogger();
 
-interface ThingConfig {
+export interface ThingConfig {
 	collectionsDir: string;
 	collectionsOutput: string;
-	dbClientPath: string;
-	dbPath: string;
 	outputDir: string;
 	root: string;
-	schemaPath: string;
 }
 
 export function createThing(thingConfig: ThingConfig) {
@@ -73,14 +70,9 @@ export function createThing(thingConfig: ThingConfig) {
 				actions: {
 					buildCollections() {
 						logInfo('Starting collection build...');
-						const {
-							collectionsDir,
-							collectionsOutput,
-							dbClientPath,
-							dbPath,
-							schemaPath,
-						} = thingConfig;
+						const dbPath = path.join(thingConfig.outputDir, 'sqlite.db');
 						db = new Database(dbPath);
+						const { collectionsDir } = thingConfig;
 						const collectionRootDirs: string[] = [];
 						if (fs.existsSync(collectionsDir)) {
 							const entries = fs.readdirSync(collectionsDir, {
@@ -88,26 +80,27 @@ export function createThing(thingConfig: ThingConfig) {
 							});
 							for (const entry of entries) {
 								if (entry.isDirectory()) {
-									collectionRootDirs.push(
-										path.join(collectionsDir, entry.name),
-									);
+									collectionRootDirs.push(entry.name);
 									collectionNames.add(entry.name);
 								}
 							}
 						}
-						for (const dir of collectionRootDirs) {
-							const configResult = loadCollectionConfig(dir, collectionsOutput);
+						for (const collectionName of collectionRootDirs) {
+							const configResult = loadCollectionConfig(
+								thingConfig,
+								collectionName,
+							);
 							const config = unwrapCollectionConfigResult(configResult);
 							if (!config) continue;
 
 							let entries: CollectionEntry[] = [];
 							if (config.type === 'markdown') {
-								entries = getMarkdownCollectionEntries(config);
+								entries = getMarkdownCollectionEntries(thingConfig, config);
 							} else if (config.type === 'yaml') {
-								entries = getYamlCollectionEntries(config);
+								entries = getYamlCollectionEntries(thingConfig, config);
 							}
-							writeSchema(config);
-							writeValidator(config);
+							writeSchema(thingConfig, config);
+							writeValidator(thingConfig, config);
 							createTableFromSchema(db, config);
 							for (const entry of entries) {
 								// TODO: Split `insertIntoTable` into a prepare and runner to
@@ -120,8 +113,8 @@ export function createThing(thingConfig: ThingConfig) {
 							}
 						}
 
-						writeSchemaExports(schemaPath, collectionNames);
-						writeDBClient(dbClientPath, collectionNames);
+						writeSchemaExports(thingConfig, collectionNames);
+						writeDBClient(thingConfig, collectionNames);
 					},
 					clearGeneratedFiles() {
 						rimraf(thingConfig.outputDir);
@@ -142,8 +135,8 @@ export function createThing(thingConfig: ThingConfig) {
 						const collection = path.basename(filepath);
 						collectionNames.add(collection);
 
-						writeSchemaExports(thingConfig.schemaPath, collectionNames);
-						writeDBClient(thingConfig.dbClientPath, collectionNames);
+						writeSchemaExports(thingConfig, collectionNames);
+						writeDBClient(thingConfig, collectionNames);
 					},
 					watchCollectionsDir(ownerState) {
 						const { collectionsDir, root } = thingConfig;
@@ -178,8 +171,9 @@ export function createThing(thingConfig: ThingConfig) {
 					},
 					createWatcher(ownerState) {
 						const { event } = ownerState;
+						const { collectionsDir, root } = thingConfig;
 						const collectionRoot = path.join(
-							thingConfig.collectionsDir,
+							collectionsDir,
 							event.value as string,
 						);
 						const watcher = chokidar.watch(collectionRoot, {
@@ -187,9 +181,7 @@ export function createThing(thingConfig: ThingConfig) {
 						});
 
 						watcher.on('add', (filepath) => {
-							logInfo(
-								`File added '${filepath.slice(thingConfig.root.length + 1)}'`,
-							);
+							logInfo(`File added '${filepath.slice(root.length + 1)}'`);
 							ownerState.dispatch('fileAdded', {
 								collection: event.value,
 								filepath,
@@ -197,9 +189,7 @@ export function createThing(thingConfig: ThingConfig) {
 						});
 
 						watcher.on('change', (filepath) => {
-							logInfo(
-								`File changed '${filepath.slice(thingConfig.root.length + 1)}'`,
-							);
+							logInfo(`File changed '${filepath.slice(root.length + 1)}'`);
 							ownerState.dispatch('fileChanged', {
 								collection: event.value,
 								filepath,
@@ -207,13 +197,9 @@ export function createThing(thingConfig: ThingConfig) {
 						});
 					},
 					updateFile({ event }) {
-						const collectionRoot = path.join(
-							thingConfig.collectionsDir,
-							(event.value as { collection: string }).collection,
-						);
 						const configResult = loadCollectionConfig(
-							collectionRoot,
-							thingConfig.collectionsOutput,
+							thingConfig,
+							(event.value as { collection: string }).collection,
 						);
 						const collectionConfig = unwrapCollectionConfigResult(configResult);
 						if (!collectionConfig) return;

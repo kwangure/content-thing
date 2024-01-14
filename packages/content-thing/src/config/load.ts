@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import type { CollectionConfig } from './types';
 import { Err, Ok } from '../result.js';
+import type { ThingConfig } from '../state/state';
 
 export const drizzleColumn = z
 	.object({
@@ -162,14 +163,14 @@ export const configSchema = z.discriminatedUnion('type', [
 ]);
 
 export function loadCollectionConfig(
-	rootDir: string,
-	collectionsOutput: string,
+	thingConfig: ThingConfig,
+	collectionName: string,
 ) {
-	const configPath = path.join(rootDir, 'collection.config.json');
-	const name = path.basename(rootDir);
-	const outputDir = path.join(collectionsOutput, name);
-	const schemaPath = path.join(outputDir, 'schema.config.js');
-	const validatorPath = path.join(outputDir, 'validate.js');
+	const configPath = path.join(
+		thingConfig.collectionsDir,
+		collectionName,
+		'collection.config.json',
+	);
 
 	let configContent;
 	try {
@@ -179,7 +180,7 @@ export function loadCollectionConfig(
 			(_error as any).code === 'ENOENT'
 				? ('file-not-found' as const)
 				: ('read-file-error' as const);
-		Object.assign(_error as any, { collection: name });
+		Object.assign(_error as any, { collection: collectionName });
 		return Err(type, _error as Error & { collection: string });
 	}
 
@@ -187,7 +188,7 @@ export function loadCollectionConfig(
 	try {
 		configJSON = JSON.parse(configContent);
 	} catch (_error) {
-		Object.assign(_error as any, { collection: name });
+		Object.assign(_error as any, { collection: collectionName });
 		return Err('json-parse-error', _error as Error & { collection: string });
 	}
 
@@ -199,15 +200,5 @@ export function loadCollectionConfig(
 		return Err('validation-error', parseResult.error);
 	}
 
-	return Ok({
-		...validatedJSON,
-		name,
-		paths: {
-			config: configPath,
-			schema: schemaPath,
-			validator: validatorPath,
-			rootDir,
-			outputDir,
-		},
-	} as CollectionConfig);
+	return Ok({ ...validatedJSON, name: collectionName } as CollectionConfig);
 }

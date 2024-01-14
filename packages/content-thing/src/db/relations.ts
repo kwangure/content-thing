@@ -1,6 +1,8 @@
 import path from 'node:path';
 import { cwd } from 'node:process';
-import type { CTOneRelation, CTRelations } from './types.js';
+import type { CTOneRelation } from './types.js';
+import type { ThingConfig } from '../state/state.js';
+import type { CollectionConfig } from '../config/types.js';
 
 /**
  * Generates the code for the one relation
@@ -20,9 +22,10 @@ export function generateOneRelationCode(
 	return relationCode;
 }
 
-export function generateRelations(relations: CTRelations, tableName: string) {
+export function generateRelations(collectionConfig: CollectionConfig) {
+	const { relations, name: tableName } = collectionConfig;
 	const types = [
-		...new Set(Object.values(relations).map(({ type }) => type)),
+		...new Set(Object.values(relations ?? {}).map(({ type }) => type)),
 	].sort();
 	let relationCode = `export const ${tableName}Relations = relations(${tableName}, ({ ${types.join(
 		', ',
@@ -42,32 +45,30 @@ export function generateRelations(relations: CTRelations, tableName: string) {
 	return relationCode;
 }
 
-/**
- * @param relations
- * @param output The output directory of the current collection
- */
 export function generateRelationImports(
-	relations: CTRelations,
-	output: string,
+	thingConfig: ThingConfig,
+	collectionConfig: CollectionConfig,
 ) {
 	let imports = `import { relations } from 'content-thing/drizzle-orm';\n`;
+
 	const relatedCollections = new Set(
-		Object.values(relations).map(({ collection }) => collection),
+		Object.values(collectionConfig.relations ?? {}).map(
+			({ collection }) => collection,
+		),
 	);
 
-	const collectionsOutput = path.join(
-		cwd(),
-		'./.svelte-kit/content-thing/collections',
+	const collectionOutput = path.join(
+		thingConfig.collectionsOutput,
+		collectionConfig.name,
 	);
-
 	for (const name of relatedCollections) {
 		if (!relatedCollections.has(name)) continue;
 		const outputSchemaPath = path.join(
-			collectionsOutput,
+			thingConfig.collectionsOutput,
 			name,
 			'schema.config.js',
 		);
-		const relativePath = path.relative(output, outputSchemaPath);
+		const relativePath = path.relative(collectionOutput, outputSchemaPath);
 		imports += `import { ${name} } from '${relativePath}';\n`;
 	}
 
