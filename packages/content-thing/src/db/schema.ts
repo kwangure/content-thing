@@ -1,4 +1,4 @@
-import type { CollectionSchema, JsonColumn } from '../config/types';
+import type { CollectionConfig, JsonColumn } from '../config/types';
 import type { CTInteger, CTText } from './types';
 
 /**
@@ -151,10 +151,11 @@ const CONTENT_THING_COLUMNS = ['json'];
  * @param tableName The name of the table
  * @returns The generated SQLite schema
  */
-export function generateSchema(schema: CollectionSchema, tableName: string) {
+export function generateSchema(collectionConfig: CollectionConfig) {
 	const drizzleImports = new Set(['sqliteTable']);
 	const contentThingImports = new Set();
 
+	const { schema, name: tableName } = collectionConfig;
 	if (schema.data) {
 		const columns = Object.values(schema.data);
 		for (const column of columns) {

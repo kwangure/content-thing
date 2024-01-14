@@ -239,19 +239,21 @@ describe('generateJsonColumnCode', () => {
 describe('generateSchema', () => {
 	it('should generate markdown schema', () => {
 		const config = {
-			data: {
-				name: {
-					type: 'text',
-				},
-				age: {
-					type: 'integer',
-				},
-				preferences: {
-					type: 'json',
+			name: 'testTable',
+			schema: {
+				data: {
+					name: {
+						type: 'text',
+					},
+					age: {
+						type: 'integer',
+					},
+					preferences: {
+						type: 'json',
+					},
 				},
 			},
 		};
-		const tableName = 'testTable';
 		const expected =
 			`import { integer, sqliteTable, text } from 'content-thing/drizzle-orm/sqlite-core';\n` +
 			"import { json } from 'content-thing/db';\n" +
@@ -261,18 +263,21 @@ describe('generateSchema', () => {
 			`\tage: integer('age').notNull(),\n` +
 			`\tpreferences: json('preferences').notNull(),\n` +
 			`});\n`;
-		assert.strictEqual(generateSchema(config as any, tableName), expected);
+		assert.strictEqual(generateSchema(config as any), expected);
 	});
 	it('throws error for unsupported column types', () => {
 		const config = {
-			data: {
-				title: {
-					type: 'unsupported',
+			name: 'testTable',
+			schema: {
+				data: {
+					title: {
+						type: 'unsupported',
+					},
 				},
 			},
 		};
 		assert.throws(
-			() => generateSchema(config as any, 'MyTable'),
+			() => generateSchema(config as any),
 			/Unsupported column type in schema/,
 		);
 	});
