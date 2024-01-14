@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { createThing, logger } from './state/state.js';
+import { createThing, logger, type ThingConfig } from './state/state.js';
 import type { Plugin, ResolvedConfig } from 'vite';
 
 export { createCollection } from './better-sqlite/index.js';
@@ -12,6 +12,7 @@ export { extendSvelteConfig } from './svelte-kit.js';
 export function content(): Plugin {
 	let command: ResolvedConfig['command'];
 	let outputDir: string;
+	let thingConfig: ThingConfig;
 
 	return {
 		name: 'vite-plugin-content',
@@ -23,13 +24,14 @@ export function content(): Plugin {
 		configResolved(config) {
 			command = config.command;
 			outputDir = path.join(config.root, '.svelte-kit/content-thing');
-			const thing = createThing({
+			thingConfig = {
 				collectionsDir: path.join(config.root, 'src/thing/collections'),
 				collectionsOutput: path.join(outputDir, 'collections'),
 				root: config.root,
 				outputDir,
 				watch: command === 'serve',
-			});
+			};
+			const thing = createThing(thingConfig);
 			thing.dispatch('build');
 		},
 		resolveId(id) {
@@ -49,6 +51,26 @@ export function content(): Plugin {
 				source: fs.readFileSync(dbPath),
 			});
 			return `export default import.meta.ROLLUP_FILE_URL_${referenceId};\n`;
+		},
+		async handleHotUpdate(hmrContext) {
+			const { file, server, modules } = hmrContext;
+			if (!file.startsWith(thingConfig.collectionsDir)) return;
+
+			// HMR update files that import `"thing:data"` and `"thing:schema"`
+			// when collection data changes
+			const [dataModuleNode, schemaModuleNode] = await Promise.all([
+				server.moduleGraph.getModuleByUrl('/.svelte-kit/content-thing/db.js'),
+				server.moduleGraph.getModuleByUrl(
+					'/.svelte-kit/content-thing/schema.js',
+				),
+			]);
+			return Array.from(
+				new Set([
+					...modules,
+					...(dataModuleNode?.importers ?? []),
+					...(schemaModuleNode?.importers ?? []),
+				]),
+			);
 		},
 	};
 }
