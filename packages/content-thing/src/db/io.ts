@@ -101,7 +101,7 @@ export function insertIntoTable(
  * Deletes rows from a SQLite table based on provided criteria.
  *
  * @param db - The better-sqlite3 database instance.
- * @param config - The schema for the table.
+ * @param config - The collection config for the table.
  * @param data - Criteria to match rows for deletion, as a JSON object that matches the schema.data columns.
  */
 export function deleteFromTable(
@@ -135,6 +135,16 @@ export function deleteFromTable(
 
 	const sql = `DELETE FROM ${config.name} WHERE ${conditions.join(' AND ')}`;
 	db.prepare(sql).run(...values);
+}
+
+/**
+ * Removes a table from the database.
+ *
+ * @param db - The better-sqlite3 database instance.
+ * @param config - The collection config for the table.
+ */
+export function dropTable(db: Database, config: CollectionConfig) {
+	db.prepare(`DROP TABLE IF EXISTS ${config.name};`).run();
 }
 
 /**

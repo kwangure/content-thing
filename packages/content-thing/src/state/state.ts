@@ -2,6 +2,7 @@ import { match } from 'lil-match';
 import {
 	createTableFromSchema,
 	deleteFromTable,
+	dropTable,
 	insertIntoTable,
 } from '../db/io.js';
 import {
@@ -33,6 +34,7 @@ export interface ThingConfig {
 	collectionsOutput: string;
 	outputDir: string;
 	root: string;
+	watch: boolean;
 }
 
 export function createThing(thingConfig: ThingConfig) {
@@ -48,8 +50,9 @@ export function createThing(thingConfig: ThingConfig) {
 			}),
 			build: atomic({
 				entry: ['clearGeneratedFiles', 'buildCollections'],
-				on: {
-					watch: { goto: 'watch' },
+				always: {
+					if: 'shouldWatch',
+					goto: 'watch',
 				},
 			}),
 			watch: atomic({
@@ -57,8 +60,14 @@ export function createThing(thingConfig: ThingConfig) {
 				on: {
 					addCollection: { run: ['addCollection'] },
 					collectionFound: { run: ['createWatcher'] },
-					fileAdded: { run: ['updateFile'] },
-					fileChanged: { run: ['updateFile'] },
+					fileAdded: [
+						{ if: 'isCollectionConfig', run: ['seedCollection'] },
+						{ if: 'isNotCollectionConfig', run: ['updateFile'] },
+					],
+					fileChanged: [
+						{ if: 'isCollectionConfig', run: ['seedCollection'] },
+						{ if: 'isNotCollectionConfig', run: ['updateFile'] },
+					],
 				},
 			}),
 		},
@@ -85,32 +94,8 @@ export function createThing(thingConfig: ThingConfig) {
 								}
 							}
 						}
-						for (const collectionName of collectionRootDirs) {
-							const configResult = loadCollectionConfig(
-								thingConfig,
-								collectionName,
-							);
-							const config = unwrapCollectionConfigResult(configResult);
-							if (!config) continue;
-
-							let entries: CollectionEntry[] = [];
-							if (config.type === 'markdown') {
-								entries = getMarkdownCollectionEntries(thingConfig, config);
-							} else if (config.type === 'yaml') {
-								entries = getYamlCollectionEntries(thingConfig, config);
-							}
-							writeSchema(thingConfig, config);
-							writeValidator(thingConfig, config);
-							createTableFromSchema(db, config);
-							for (const entry of entries) {
-								// TODO: Split `insertIntoTable` into a prepare and runner to
-								// reuse the same prepare statement for the whole collection
-								const data = entry.getRecord();
-
-								// TODO: Make this a transaction?
-								deleteFromTable(db, config, { _id: data._id });
-								insertIntoTable(db, config, data);
-							}
+						for (const collectionName of collectionNames) {
+							seedCollection(thingConfig, collectionName, db);
 						}
 
 						writeSchemaExports(thingConfig, collectionNames);
@@ -126,6 +111,7 @@ export function createThing(thingConfig: ThingConfig) {
 						const { filepath } = (event?.value || {}) as { filepath: string };
 						return filepath.startsWith(thingConfig.collectionsDir);
 					},
+					shouldWatch: () => thingConfig.watch,
 				},
 			},
 			watch: {
@@ -181,7 +167,6 @@ export function createThing(thingConfig: ThingConfig) {
 						});
 
 						watcher.on('add', (filepath) => {
-							logInfo(`File added '${filepath.slice(root.length + 1)}'`);
 							ownerState.dispatch('fileAdded', {
 								collection: event.value,
 								filepath,
@@ -189,7 +174,6 @@ export function createThing(thingConfig: ThingConfig) {
 						});
 
 						watcher.on('change', (filepath) => {
-							logInfo(`File changed '${filepath.slice(root.length + 1)}'`);
 							ownerState.dispatch('fileChanged', {
 								collection: event.value,
 								filepath,
@@ -197,13 +181,19 @@ export function createThing(thingConfig: ThingConfig) {
 						});
 					},
 					updateFile({ event }) {
+						const { filepath } = event.value as { filepath: string };
+						const { root } = thingConfig;
+						logInfo(
+							`File ${
+								event.name === 'fileAdded' ? 'added' : 'changed'
+							} '${filepath.slice(root.length + 1)}'`,
+						);
 						const configResult = loadCollectionConfig(
 							thingConfig,
 							(event.value as { collection: string }).collection,
 						);
 						const collectionConfig = unwrapCollectionConfigResult(configResult);
 						if (!collectionConfig) return;
-						const { filepath } = event.value as { filepath: string };
 
 						// Ignore possibly malformed files being edited actively
 						try {
@@ -233,12 +223,68 @@ export function createThing(thingConfig: ThingConfig) {
 							);
 						}
 					},
+					seedCollection({ event }) {
+						const { root } = thingConfig;
+						const { collection: collectionName, filepath } = event.value as {
+							collection: string;
+							filepath: string;
+						};
+						logInfo(
+							`Config file ${
+								event.name === 'fileAdded' ? 'added' : 'changed'
+							} '${filepath.slice(
+								root.length + 1,
+							)}'. Seeding "${collectionName}" database table.`,
+						);
+						seedCollection(thingConfig, collectionName, db);
+					},
+				},
+				conditions: {
+					isCollectionConfig({ event }) {
+						const { filepath } = (event?.value || {}) as { filepath: string };
+						return filepath.endsWith('collection.config.json');
+					},
+					isNotCollectionConfig({ event }) {
+						const { filepath } = (event?.value || {}) as { filepath: string };
+						return !filepath.endsWith('collection.config.json');
+					},
 				},
 			},
 		},
 	});
 
 	return thing;
+}
+
+function seedCollection(
+	thingConfig: ThingConfig,
+	collectionName: string,
+	db: DB,
+) {
+	const configResult = loadCollectionConfig(thingConfig, collectionName);
+	const collectionConfig = unwrapCollectionConfigResult(configResult);
+	if (!collectionConfig) return;
+
+	let entries: CollectionEntry[] = [];
+	if (collectionConfig.type === 'markdown') {
+		entries = getMarkdownCollectionEntries(thingConfig, collectionConfig);
+	} else if (collectionConfig.type === 'yaml') {
+		entries = getYamlCollectionEntries(thingConfig, collectionConfig);
+	}
+	writeSchema(thingConfig, collectionConfig);
+	writeValidator(thingConfig, collectionConfig);
+
+	dropTable(db, collectionConfig);
+	createTableFromSchema(db, collectionConfig);
+	for (const entry of entries) {
+		// TODO: Split `insertIntoTable` into a prepare and runner to
+		// reuse the same prepare statement for the whole collection
+		const data = entry.getRecord();
+
+		// TODO: Make this a transaction?
+		deleteFromTable(db, collectionConfig, { _id: data._id });
+		insertIntoTable(db, collectionConfig, data);
+	}
 }
 
 function unwrapCollectionConfigResult(

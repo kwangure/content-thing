@@ -28,11 +28,9 @@ export function content(): Plugin {
 				collectionsOutput: path.join(outputDir, 'collections'),
 				root: config.root,
 				outputDir,
+				watch: command === 'serve',
 			});
 			thing.dispatch('build');
-			if (command === 'serve') {
-				thing.dispatch('watch');
-			}
 		},
 		resolveId(id) {
 			if (id.endsWith('sqlite.db')) {
