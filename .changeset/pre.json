@@ -1,0 +1,14 @@
+{
+	"mode": "pre",
+	"tag": "alpha",
+	"initialVersions": {
+		"content-thing": "0.0.12",
+		"@content-thing/internal-utils": "0.0.0",
+		"@content-thing/remark-attributes": "0.0.2",
+		"@content-thing/remark-rich-attributes": "0.0.2",
+		"@content-thing/remark-toc": "0.0.1",
+		"@content-thing/remark-variables": "0.0.2",
+		"@content-thing/remark-yaml-parse": "0.0.1"
+	},
+	"changesets": []
+}
