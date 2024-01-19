@@ -10,5 +10,5 @@
 		"@content-thing/remark-variables": "0.0.2",
 		"@content-thing/remark-yaml-parse": "0.0.1"
 	},
-	"changesets": []
+	"changesets": ["violet-rabbits-grow"]
 }
