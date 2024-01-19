@@ -1,6 +1,6 @@
 {
 	"name": "@content-thing/remark-rich-attributes",
-	"version": "0.0.2",
+	"version": "0.0.3",
 	"scripts": {
 		"build": "wireit",
 		"pre-commit": "wireit",
@@ -15,6 +15,9 @@
 				"src/**/*.{js,ts}",
 				"tests/**/*.{js,ts}",
 				"tsconfig.json"
+			],
+			"dependencies": [
+				"../remark-attributes:build"
 			],
 			"output": [
 				"dist"
@@ -73,8 +76,8 @@
 		"unist-util-visit": "^5.0.0"
 	},
 	"devDependencies": {
-		"@content-thing/internal-utils": "workspace:^0.0.0",
-		"@content-thing/remark-attributes": "workspace:^0.0.2",
+		"@content-thing/internal-utils": "workspace:^0.0.1",
+		"@content-thing/remark-attributes": "workspace:^0.0.3",
 		"@types/mdast": "^4.0.1",
 		"@types/node": "^20.4.10",
 		"publint": "^0.2.2",

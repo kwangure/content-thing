@@ -39,22 +39,22 @@ importers:
   packages/content-thing:
     dependencies:
       '@content-thing/internal-utils':
-        specifier: ^0.0.0
+        specifier: ^0.0.1
         version: link:../internal-utils
       '@content-thing/remark-attributes':
-        specifier: ^0.0.2
+        specifier: ^0.0.3
         version: link:../remark-attributes
       '@content-thing/remark-rich-attributes':
-        specifier: ^0.0.2
+        specifier: ^0.0.3
         version: link:../remark-rich-attributes
       '@content-thing/remark-toc':
-        specifier: ^0.0.1
+        specifier: ^0.0.2
         version: link:../remark-toc
       '@content-thing/remark-variables':
-        specifier: ^0.0.2
+        specifier: ^0.0.3
         version: link:../remark-variables
       '@content-thing/remark-yaml-parse':
-        specifier: ^0.0.1
+        specifier: ^0.0.2
         version: link:../remark-yaml-parse
       '@signalapp/better-sqlite3':
         specifier: ^8.6.0
@@ -171,10 +171,10 @@ importers:
         version: 5.0.0
     devDependencies:
       '@content-thing/internal-utils':
-        specifier: workspace:^0.0.0
+        specifier: workspace:^0.0.1
         version: link:../internal-utils
       '@content-thing/remark-attributes':
-        specifier: workspace:^0.0.2
+        specifier: workspace:^0.0.3
         version: link:../remark-attributes
       '@types/mdast':
         specifier: ^4.0.1

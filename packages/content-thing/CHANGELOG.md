@@ -1,5 +1,18 @@
 # content-thing
 
+## 0.0.13
+
+### Patch Changes
+
+- 41950c2: Export collecitons DB directly
+- Updated dependencies
+  - @content-thing/remark-rich-attributes@0.0.3
+  - @content-thing/remark-attributes@0.0.3
+  - @content-thing/remark-yaml-parse@0.0.2
+  - @content-thing/remark-variables@0.0.3
+  - @content-thing/internal-utils@0.0.1
+  - @content-thing/remark-toc@0.0.2
+
 ## 0.0.13-alpha.8
 
 ### Patch Changes

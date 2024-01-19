@@ -1,6 +1,6 @@
 {
 	"name": "@content-thing/internal-utils",
-	"version": "0.0.0",
+	"version": "0.0.1",
 	"scripts": {
 		"build": "wireit",
 		"pre-commit": "wireit",
