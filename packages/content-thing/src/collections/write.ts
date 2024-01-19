@@ -31,7 +31,8 @@ export function writeDBClient(
 	thingConfig: ThingConfig,
 	collections: Set<string>,
 ) {
-	let result = `import { createCollection } from 'content-thing';\n`;
+	let result = `import { Database } from 'content-thing/better-sqlite3';\n`;
+	result += `import { drizzle } from 'content-thing/drizzle-orm/better-sqlite3';\n`;
 	result += `// @ts-ignore\n`;
 	result += `import dbPath from './sqlite.db';\n`;
 	for (const collection of collections) {
@@ -43,7 +44,11 @@ export function writeDBClient(
 		result += `\t...${collection},\n`;
 	}
 	result += `};\n`;
-	result += `export const collections = createCollection(dbPath, { schema });\n`;
+	result += `\n`;
+	result += `// Vite prepends file:// in production\n`;
+	result += `const normalizedDBPath = dbPath.replace(/^[a-zA-Z]+:\\/\\//, '');\n`;
+	result += `const sqlite = new Database(normalizedDBPath);\n`;
+	result += `export const collections = drizzle(sqlite, { schema });\n`;
 
 	const dbClientPath = path.join(thingConfig.outputDir, 'db.js');
 	write(dbClientPath, result);
