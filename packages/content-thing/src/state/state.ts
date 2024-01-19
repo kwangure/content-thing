@@ -20,7 +20,7 @@ import {
 } from '../collections/write.js';
 import chokidar from 'chokidar';
 import { createLogger, type LogErrorOptions, type LogOptions } from 'vite';
-import Database, { type Database as DB } from 'better-sqlite3';
+import Database, { type Database as DB } from '@signalapp/better-sqlite3';
 import fs from 'node:fs';
 import path from 'node:path';
 import { MarkdownEntry } from '../collections/entry/markdown.js';

@@ -5,7 +5,7 @@ import type {
 	JsonColumn,
 	TextColumn,
 } from '../config/types.js';
-import { type Database } from 'better-sqlite3';
+import { type Database } from '@signalapp/better-sqlite3';
 
 /**
  * Create a SQLite table based on a schema.

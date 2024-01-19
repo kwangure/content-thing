@@ -1,5 +1,11 @@
 # content-thing
 
+## 0.0.13-alpha.8
+
+### Patch Changes
+
+- c846bd5: Export collecitons DB directly
+
 ## 0.0.12
 
 ### Patch Changes

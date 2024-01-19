@@ -3,7 +3,6 @@ import path from 'node:path';
 import { createThing, logger, type ThingConfig } from './state/state.js';
 import type { Plugin, ResolvedConfig } from 'vite';
 
-export { createCollection } from './better-sqlite/index.js';
 export { extendSvelteConfig } from './svelte-kit.js';
 
 /**
