@@ -5,10 +5,7 @@ import {
 	dropTable,
 	insertIntoTable,
 } from '../db/io.js';
-import {
-	getMarkdownCollectionEntries,
-	getYamlCollectionEntries,
-} from '../collections/collect.js';
+import { getCollectionEntries, isReadme } from '../collections/collect.js';
 import { atomic, compound } from 'hine';
 import { loadCollectionConfig } from '../config/load.js';
 import { mkdirp, rimraf } from '@content-thing/internal-utils/filesystem';
@@ -25,7 +22,6 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { MarkdownEntry } from '../collections/entry/markdown.js';
 import { YamlEntry } from '../collections/entry/yaml.js';
-import type { CollectionEntry } from '../collections/entry/types.js';
 
 export let logger = createLogger();
 
@@ -182,12 +178,8 @@ export function createThing(thingConfig: ThingConfig) {
 					},
 					updateFile({ event }) {
 						const { filepath } = event.value as { filepath: string };
-						const { root } = thingConfig;
-						logInfo(
-							`File ${
-								event.name === 'fileAdded' ? 'added' : 'changed'
-							} '${filepath.slice(root.length + 1)}'`,
-						);
+						const filename = path.basename(filepath);
+						if (!isReadme(filename)) return;
 						const configResult = loadCollectionConfig(
 							thingConfig,
 							(event.value as { collection: string }).collection,
@@ -197,25 +189,18 @@ export function createThing(thingConfig: ThingConfig) {
 
 						// Ignore possibly malformed files being edited actively
 						try {
-							if (collectionConfig.type === 'markdown') {
-								if (filepath.endsWith('readme.md')) {
-									const entry = new MarkdownEntry(filepath);
-									const data = entry.getRecord();
-									// TODO: Make this a transaction?
-									// Delete to avoid conflicts on unique columns
-									deleteFromTable(db, collectionConfig, { _id: data._id });
-									insertIntoTable(db, collectionConfig, data);
-								}
-								// TODO: else get dependent readmes and update them
-							} else if (collectionConfig.type === 'yaml') {
-								if (filepath.endsWith('data.yaml')) {
-									const entry = new YamlEntry(filepath);
-									const data = entry.getRecord();
-									// TODO: Make this a transaction?
-									// Delete to avoid conflicts on unique columns
-									deleteFromTable(db, collectionConfig, { _id: data._id });
-									insertIntoTable(db, collectionConfig, data);
-								}
+							let entry;
+							if (filename.endsWith('.md')) {
+								entry = new MarkdownEntry(filepath);
+							} else if (filepath.endsWith('.yaml')) {
+								entry = new YamlEntry(filepath);
+							}
+							if (entry) {
+								const data = entry.getRecord();
+								// TODO: Make this a transaction?
+								// Delete to avoid conflicts on unique columns
+								deleteFromTable(db, collectionConfig, { _id: data._id });
+								insertIntoTable(db, collectionConfig, data);
 							}
 						} catch (error) {
 							logError(
@@ -256,6 +241,10 @@ export function createThing(thingConfig: ThingConfig) {
 	return thing;
 }
 
+function isNonNullable<T>(value: T | null | undefined): value is T {
+	return value !== null && value !== undefined;
+}
+
 function seedCollection(
 	thingConfig: ThingConfig,
 	collectionName: string,
@@ -265,17 +254,17 @@ function seedCollection(
 	const collectionConfig = unwrapCollectionConfigResult(configResult);
 	if (!collectionConfig) return;
 
-	let entries: CollectionEntry[] = [];
-	if (collectionConfig.type === 'markdown') {
-		entries = getMarkdownCollectionEntries(thingConfig, collectionConfig);
-	} else if (collectionConfig.type === 'yaml') {
-		entries = getYamlCollectionEntries(thingConfig, collectionConfig);
-	}
 	writeSchema(thingConfig, collectionConfig);
 	writeValidator(thingConfig, collectionConfig);
 
 	dropTable(db, collectionConfig);
 	createTableFromSchema(db, collectionConfig);
+	const entries = getCollectionEntries(thingConfig, collectionConfig)
+		.map((entry) => {
+			if (entry.endsWith('.md')) return new MarkdownEntry(entry);
+			if (entry.endsWith('.yaml')) return new YamlEntry(entry);
+		})
+		.filter(isNonNullable);
 	for (const entry of entries) {
 		// TODO: Split `insertIntoTable` into a prepare and runner to
 		// reuse the same prepare statement for the whole collection
