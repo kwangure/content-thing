@@ -1,5 +1,11 @@
 # content-thing
 
+## 0.0.14
+
+### Patch Changes
+
+- 8936d0c: Implement JSON collections
+
 ## 0.0.13
 
 ### Patch Changes
