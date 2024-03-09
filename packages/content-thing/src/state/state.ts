@@ -20,6 +20,7 @@ import { createLogger, type LogErrorOptions, type LogOptions } from 'vite';
 import Database, { type Database as DB } from '@signalapp/better-sqlite3';
 import fs from 'node:fs';
 import path from 'node:path';
+import { JsonEntry } from '../collections/entry/json.js';
 import { MarkdownEntry } from '../collections/entry/markdown.js';
 import { YamlEntry } from '../collections/entry/yaml.js';
 
@@ -194,6 +195,8 @@ export function createThing(thingConfig: ThingConfig) {
 								entry = new MarkdownEntry(filepath);
 							} else if (filepath.endsWith('.yaml')) {
 								entry = new YamlEntry(filepath);
+							} else if (filepath.endsWith('.json')) {
+								entry = new JsonEntry(filepath);
 							}
 							if (entry) {
 								const data = entry.getRecord();
@@ -261,6 +264,7 @@ function seedCollection(
 	createTableFromSchema(db, collectionConfig);
 	const entries = getCollectionEntries(thingConfig, collectionConfig)
 		.map((entry) => {
+			if (entry.endsWith('.json')) return new JsonEntry(entry);
 			if (entry.endsWith('.md')) return new MarkdownEntry(entry);
 			if (entry.endsWith('.yaml')) return new YamlEntry(entry);
 		})

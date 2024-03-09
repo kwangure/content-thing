@@ -157,7 +157,44 @@ export const yamlConfig = z
 	})
 	.strict();
 
+export const jsonSchema = z
+	.object({
+		data: z.record(
+			dataPropertySchema,
+			z.discriminatedUnion('type', [
+				drizzleIntegerColumn,
+				drizzleJsonColumn,
+				drizzleTextColumn,
+			]),
+		),
+	})
+	.strict()
+	.transform((value) => {
+		value.data = {
+			...value.data,
+			_id: drizzleTextColumn.parse({
+				type: 'text',
+				primaryKey: true,
+			}),
+		};
+		return value;
+	});
+
+export const jsonConfig = z
+	.object({
+		$schema: z.string().optional(),
+		type: z.literal('json'),
+		schema: jsonSchema,
+		relations: z
+			.record(
+				z.discriminatedUnion('type', [drizzleOneRelation, drizzleManyRelation]),
+			)
+			.optional(),
+	})
+	.strict();
+
 export const configSchema = z.discriminatedUnion('type', [
+	jsonConfig,
 	markdownConfig,
 	yamlConfig,
 ]);
