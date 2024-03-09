@@ -1,4 +1,5 @@
 import type { MarkdownEntry } from './markdown.js';
+import type { JsonEntry } from './json.js';
 import type { YamlEntry } from './yaml.js';
 
 export interface EntryRecord {
@@ -12,4 +13,4 @@ export interface BaseEntryConfig {
 	id: string;
 }
 
-export type CollectionEntry = MarkdownEntry | YamlEntry;
+export type CollectionEntry = JsonEntry | MarkdownEntry | YamlEntry;
