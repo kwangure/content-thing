@@ -306,7 +306,9 @@ function unwrapCollectionConfigResult(
 			);
 		})
 		.with({ type: 'validation-error' }, ({ error }) => {
-			logError(`Invalid JSON Schema. ${error.format()}`);
+			logError(
+				`Invalid JSON Schema. ${JSON.stringify(error.format(), null, 4)}`,
+			);
 		})
 		.exhaustive('');
 }
