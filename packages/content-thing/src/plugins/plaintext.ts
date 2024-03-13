@@ -1,6 +1,6 @@
 import type { CollectionPlugin } from './types';
 import fs from 'node:fs';
-import { parseFilepath } from './util.js';
+import { parseFilepath } from '../helpers/filepath.js';
 
 export const plaintextPlugin: CollectionPlugin = {
 	name: 'collection-plugin-plaintext',

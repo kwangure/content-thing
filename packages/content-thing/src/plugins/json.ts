@@ -1,6 +1,6 @@
 import fs from 'node:fs/promises';
 import type { CollectionPlugin, OnLoadResult } from './types.js';
-import { parseFilepath } from './util.js';
+import { parseFilepath } from '../helpers/filepath.js';
 
 export const jsonPlugin: CollectionPlugin = {
 	name: 'collection-plugin-json',

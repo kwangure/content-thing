@@ -1,7 +1,7 @@
 import fs from 'node:fs/promises';
 import yaml from 'js-yaml';
 import type { CollectionPlugin, OnLoadResult } from './types.js';
-import { parseFilepath } from './util.js';
+import { parseFilepath } from '../helpers/filepath.js';
 
 export const yamlPlugin: CollectionPlugin = {
 	name: 'collection-plugin-yaml',

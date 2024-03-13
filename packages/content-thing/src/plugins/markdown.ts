@@ -12,7 +12,7 @@ import { visit } from 'unist-util-visit';
 import { toMarkdown } from 'mdast-util-to-markdown';
 import type { Root } from 'mdast';
 import type { TocEntry } from '../types.js';
-import { parseFilepath } from './util.js';
+import { parseFilepath } from '../helpers/filepath.js';
 
 export const markdownPlugin: CollectionPlugin = {
 	name: 'collection-plugin-markdown',
