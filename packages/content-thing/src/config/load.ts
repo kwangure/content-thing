@@ -121,6 +121,39 @@ export const markdownConfig = z
 	})
 	.strict();
 
+export const plaintextSchema = z
+	.object({
+		data: z.object({}).default({}),
+	})
+	.strict()
+	.transform((value) => {
+		value.data = {
+			_id: drizzleTextColumn.parse({
+				type: 'text',
+				primaryKey: true,
+			}),
+			_content: drizzleJsonColumn.parse({
+				type: 'json',
+				jsDocType: "import('content-thing/mdast').Root",
+			}),
+		};
+		return value;
+	});
+
+export const plaintextConfig = z
+	.object({
+		$schema: z.string().optional(),
+		type: z.literal('plaintext'),
+		schema: plaintextSchema.optional(),
+		relations: z
+			.record(
+				dataPropertySchema,
+				z.discriminatedUnion('type', [drizzleOneRelation, drizzleManyRelation]),
+			)
+			.optional(),
+	})
+	.strict();
+
 export const yamlSchema = z
 	.object({
 		data: z.record(
@@ -196,6 +229,7 @@ export const jsonConfig = z
 export const configSchema = z.discriminatedUnion('type', [
 	jsonConfig,
 	markdownConfig,
+	plaintextConfig,
 	yamlConfig,
 ]);
 
