@@ -3,6 +3,7 @@ import {
 	drizzleTextColumn,
 	jsonConfig,
 	markdownConfig,
+	plaintextConfig,
 	yamlConfig,
 } from './load.js';
 import path from 'node:path';
@@ -19,6 +20,7 @@ const jsonSchemaString = {
 const configSchema = z.discriminatedUnion('type', [
 	jsonConfig.extend(jsonSchemaString),
 	markdownConfig.extend(jsonSchemaString),
+	plaintextConfig.extend(jsonSchemaString),
 	yamlConfig.extend(jsonSchemaString),
 ]);
 
@@ -26,6 +28,7 @@ const jsonSchema = zodToJsonSchema(configSchema, {
 	definitions: {
 		jsonConfig: jsonConfig,
 		markdownConfig: markdownConfig,
+		plaintextConfig: plaintextConfig,
 		yamlConfig: yamlConfig,
 		integerField: drizzleIntegerColumn,
 		textField: drizzleTextColumn,

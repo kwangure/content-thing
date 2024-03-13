@@ -61,9 +61,16 @@ export function insertIntoTable(
 	const values = [];
 
 	for (const [key, fieldConfig] of Object.entries(config.schema.data)) {
-		if (fieldConfig.nullable !== true && !data.hasOwnProperty(key)) {
+		if (
+			fieldConfig.nullable !== true &&
+			(!data.hasOwnProperty(key) ||
+				data[key] === undefined ||
+				data[key] === null)
+		) {
 			throw new Error(
-				`Non-nullable key "${key}" is missing in the data for table ${config.name}.`,
+				`Non-nullable key "${key}" in table "${config.name}" is "${
+					data[key]
+				}". \nRecord:\n${JSON.stringify(data, null, 4)}`,
 			);
 		}
 	}
