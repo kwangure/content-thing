@@ -47,9 +47,6 @@ importers:
       '@content-thing/remark-rich-attributes':
         specifier: ^0.0.3
         version: link:../remark-rich-attributes
-      '@content-thing/remark-toc':
-        specifier: ^0.0.2
-        version: link:../remark-toc
       '@content-thing/remark-variables':
         specifier: ^0.0.3
         version: link:../remark-variables
@@ -80,6 +77,9 @@ importers:
       lil-match:
         specifier: ^1.2.1
         version: 1.2.1
+      mdast-util-to-markdown:
+        specifier: ^2.1.0
+        version: 2.1.0
       remark-frontmatter:
         specifier: ^5.0.0
         version: 5.0.0
@@ -92,6 +92,9 @@ importers:
       unified:
         specifier: ^11.0.3
         version: 11.0.3
+      unist-util-visit:
+        specifier: ^5.0.0
+        version: 5.0.0
       zod:
         specifier: ^3.22.2
         version: 3.22.2

@@ -20,9 +20,11 @@ import { createLogger, type LogErrorOptions, type LogOptions } from 'vite';
 import Database, { type Database as DB } from '@signalapp/better-sqlite3';
 import fs from 'node:fs';
 import path from 'node:path';
-import { JsonEntry } from '../collections/entry/json.js';
-import { MarkdownEntry } from '../collections/entry/markdown.js';
-import { YamlEntry } from '../collections/entry/yaml.js';
+import { PluginContainer } from '../plugins/index.js';
+import { jsonPlugin } from '../plugins/json.js';
+import { markdownPlugin } from '../plugins/markdown.js';
+import { yamlPlugin } from '../plugins/yaml.js';
+import { plaintextPlugin } from '../plugins/plaintext.js';
 
 export let logger = createLogger();
 
@@ -37,6 +39,12 @@ export interface ThingConfig {
 export function createThing(thingConfig: ThingConfig) {
 	let db: DB;
 	const collectionNames: Set<string> = new Set();
+	const pluginContainer = new PluginContainer([
+		jsonPlugin,
+		markdownPlugin,
+		yamlPlugin,
+		plaintextPlugin,
+	]);
 	const thing = compound({
 		name: 'thing',
 		children: {
@@ -92,7 +100,7 @@ export function createThing(thingConfig: ThingConfig) {
 							}
 						}
 						for (const collectionName of collectionNames) {
-							seedCollection(thingConfig, collectionName, db);
+							seedCollection(thingConfig, collectionName, db, pluginContainer);
 						}
 
 						writeSchemaExports(thingConfig, collectionNames);
@@ -177,7 +185,7 @@ export function createThing(thingConfig: ThingConfig) {
 							});
 						});
 					},
-					updateFile({ event }) {
+					async updateFile({ event }) {
 						const { filepath } = event.value as { filepath: string };
 						const filename = path.basename(filepath);
 						if (!isReadme(filename)) return;
@@ -190,20 +198,17 @@ export function createThing(thingConfig: ThingConfig) {
 
 						// Ignore possibly malformed files being edited actively
 						try {
-							let entry;
-							if (filename.endsWith('.md')) {
-								entry = new MarkdownEntry(filepath);
-							} else if (filepath.endsWith('.yaml')) {
-								entry = new YamlEntry(filepath);
-							} else if (filepath.endsWith('.json')) {
-								entry = new JsonEntry(filepath);
-							}
-							if (entry) {
-								const data = entry.getRecord();
+							const loadResult = await pluginContainer.loadFile(
+								filepath,
+								collectionConfig.type,
+							);
+							if (loadResult) {
 								// TODO: Make this a transaction?
 								// Delete to avoid conflicts on unique columns
-								deleteFromTable(db, collectionConfig, { _id: data._id });
-								insertIntoTable(db, collectionConfig, data);
+								deleteFromTable(db, collectionConfig, {
+									_id: loadResult.record._id,
+								});
+								insertIntoTable(db, collectionConfig, loadResult.record);
 							}
 						} catch (error) {
 							logError(
@@ -224,7 +229,7 @@ export function createThing(thingConfig: ThingConfig) {
 								root.length + 1,
 							)}'. Seeding "${collectionName}" database table.`,
 						);
-						seedCollection(thingConfig, collectionName, db);
+						seedCollection(thingConfig, collectionName, db, pluginContainer);
 					},
 				},
 				conditions: {
@@ -248,10 +253,11 @@ function isNonNullable<T>(value: T | null | undefined): value is T {
 	return value !== null && value !== undefined;
 }
 
-function seedCollection(
+async function seedCollection(
 	thingConfig: ThingConfig,
 	collectionName: string,
 	db: DB,
+	pluginContainer: PluginContainer,
 ) {
 	const configResult = loadCollectionConfig(thingConfig, collectionName);
 	const collectionConfig = unwrapCollectionConfigResult(configResult);
@@ -262,21 +268,20 @@ function seedCollection(
 
 	dropTable(db, collectionConfig);
 	createTableFromSchema(db, collectionConfig);
-	const entries = getCollectionEntries(thingConfig, collectionConfig)
-		.map((entry) => {
-			if (entry.endsWith('.json')) return new JsonEntry(entry);
-			if (entry.endsWith('.md')) return new MarkdownEntry(entry);
-			if (entry.endsWith('.yaml')) return new YamlEntry(entry);
-		})
-		.filter(isNonNullable);
-	for (const entry of entries) {
+	const entries = (
+		await Promise.all(
+			getCollectionEntries(thingConfig, collectionConfig).map((entry) =>
+				pluginContainer.loadFile(entry, collectionConfig.type),
+			),
+		)
+	).filter(isNonNullable);
+	for (const { record } of entries) {
 		// TODO: Split `insertIntoTable` into a prepare and runner to
 		// reuse the same prepare statement for the whole collection
-		const data = entry.getRecord();
 
 		// TODO: Make this a transaction?
-		deleteFromTable(db, collectionConfig, { _id: data._id });
-		insertIntoTable(db, collectionConfig, data);
+		deleteFromTable(db, collectionConfig, { _id: record._id });
+		insertIntoTable(db, collectionConfig, record);
 	}
 }
 
