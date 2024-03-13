@@ -1,5 +1,11 @@
 # content-thing
 
+## 0.0.15
+
+### Patch Changes
+
+- eb30764: Add plaintext collections
+
 ## 0.0.14
 
 ### Patch Changes
