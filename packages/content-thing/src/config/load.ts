@@ -132,9 +132,8 @@ export const plaintextSchema = z
 				type: 'text',
 				primaryKey: true,
 			}),
-			_content: drizzleJsonColumn.parse({
-				type: 'json',
-				jsDocType: "import('content-thing/mdast').Root",
+			_content: drizzleTextColumn.parse({
+				type: 'text',
 			}),
 		};
 		return value;
