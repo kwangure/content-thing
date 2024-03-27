@@ -107,8 +107,8 @@ export function createThing(thingConfig: ThingConfig) {
 						writeDBClient(thingConfig, collectionNames);
 					},
 					clearGeneratedFiles() {
-						rimraf(thingConfig.outputDir);
-						mkdirp(thingConfig.outputDir);
+						rimraf(thingConfig.collectionsOutput);
+						mkdirp(thingConfig.collectionsOutput);
 					},
 				},
 				conditions: {
