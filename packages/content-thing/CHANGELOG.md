@@ -1,5 +1,11 @@
 # content-thing
 
+## 0.0.16
+
+### Patch Changes
+
+- 75287a6: Only clear outdated collections while starting up
+
 ## 0.0.15
 
 ### Patch Changes
