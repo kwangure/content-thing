@@ -28,7 +28,6 @@
 				"../internal-utils:build",
 				"../remark-attributes:build",
 				"../remark-rich-attributes:build",
-				"../remark-toc:build",
 				"../remark-variables:build",
 				"../remark-yaml-parse:build"
 			],
