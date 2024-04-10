@@ -22,7 +22,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { PluginContainer } from '../plugins/index.js';
 import { jsonPlugin } from '../plugins/json.js';
-import { markdownPlugin } from '../plugins/markdown.js';
+import { markdownPlugin } from '../plugins/markdown/plugin.js';
 import { yamlPlugin } from '../plugins/yaml.js';
 import { plaintextPlugin } from '../plugins/plaintext.js';
 

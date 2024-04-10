@@ -75,13 +75,13 @@
 			]
 		},
 		"test": {
-			"command": "tsx --test --test-reporter spec",
+			"command": "vitest run",
 			"files": [
 				"src/**/*.{js,ts}",
 				"tests/**/*.{js,ts}"
 			],
 			"dependencies": [
-				"build"
+				"build:lib"
 			],
 			"output": []
 		}
@@ -153,6 +153,7 @@
 		"tsx": "^4.7.0",
 		"typescript": "^5.1.6",
 		"vite": "^5.0.9",
+		"vitest": "^1.4.0",
 		"zod-to-json-schema": "^3.21.4"
 	},
 	"peerDependencies": {

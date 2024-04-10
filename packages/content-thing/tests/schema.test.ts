@@ -1,4 +1,4 @@
-import { describe, it } from 'node:test';
+import { describe, expect, it } from 'vitest';
 import assert from 'node:assert';
 import {
 	generateTextColumnCode,
@@ -12,12 +12,12 @@ import type { JsonColumn } from '../src/config/types.js';
 describe('generateTextColumnCode', () => {
 	it('generates code for text column with no options', () => {
 		const result = generateTextColumnCode('name', { type: 'text' });
-		assert.strictEqual(result, "text('name').notNull()");
+		expect(result).toEqual("text('name').notNull()");
 	});
 
 	it('generates code for text column with length', () => {
 		const result = generateTextColumnCode('name', { type: 'text', length: 50 });
-		assert.strictEqual(result, 'text(\'name\', {"length":50}).notNull()');
+		expect(result).toEqual('text(\'name\', {"length":50}).notNull()');
 	});
 
 	it('generates code for text column with enum', () => {
@@ -25,7 +25,7 @@ describe('generateTextColumnCode', () => {
 			type: 'text',
 			enum: ['a', 'b'],
 		});
-		assert.strictEqual(result, 'text(\'name\', {"enum":["a","b"]}).notNull()');
+		expect(result).toEqual('text(\'name\', {"enum":["a","b"]}).notNull()');
 	});
 
 	it('generates code for text column with default value', () => {
@@ -33,7 +33,7 @@ describe('generateTextColumnCode', () => {
 			type: 'text',
 			defaultValue: 'abc',
 		});
-		assert.strictEqual(result, 'text(\'name\').notNull().default("abc")');
+		expect(result).toEqual('text(\'name\').notNull().default("abc")');
 	});
 
 	it('generates code for text column as primary key', () => {
@@ -41,7 +41,7 @@ describe('generateTextColumnCode', () => {
 			type: 'text',
 			primaryKey: true,
 		});
-		assert.strictEqual(result, "text('name').notNull().primaryKey()");
+		expect(result).toEqual("text('name').notNull().primaryKey()");
 	});
 
 	it('generates code for nullable text column', () => {
@@ -49,7 +49,7 @@ describe('generateTextColumnCode', () => {
 			type: 'text',
 			nullable: true,
 		});
-		assert.strictEqual(result, "text('name')");
+		expect(result).toEqual("text('name')");
 	});
 
 	it('generates code for unique text column', () => {
@@ -57,7 +57,7 @@ describe('generateTextColumnCode', () => {
 			type: 'text',
 			unique: 'unique_name',
 		});
-		assert.strictEqual(result, `text('name').notNull().unique("unique_name")`);
+		expect(result).toEqual(`text('name').notNull().unique("unique_name")`);
 	});
 
 	it('should generate text column code with all options', () => {
@@ -72,7 +72,7 @@ describe('generateTextColumnCode', () => {
 			unique: true,
 		} as CTText;
 		const expected = `text('name', {"length":50,"enum":["value1","value2"]}).unique().default("value1").primaryKey()`;
-		assert.strictEqual(generateTextColumnCode(key, column), expected);
+		expect(generateTextColumnCode(key, column)).toEqual(expected);
 	});
 
 	it('should generate text column code with minimal options', () => {
@@ -81,14 +81,14 @@ describe('generateTextColumnCode', () => {
 			type: 'text',
 		} as CTText;
 		const expected = `text('name').notNull()`;
-		assert.strictEqual(generateTextColumnCode(key, column), expected);
+		expect(generateTextColumnCode(key, column)).toEqual(expected);
 	});
 });
 
 describe('generateIntegerColumnCode', () => {
 	it('generates code for integer column with no options', () => {
 		const result = generateIntegerColumnCode('age', { type: 'integer' });
-		assert.strictEqual(result, "integer('age').notNull()");
+		expect(result).toEqual("integer('age').notNull()");
 	});
 
 	it('generates code for integer column with mode', () => {
@@ -96,10 +96,7 @@ describe('generateIntegerColumnCode', () => {
 			type: 'integer',
 			mode: 'timestamp',
 		});
-		assert.strictEqual(
-			result,
-			'integer(\'age\', {"mode":"timestamp"}).notNull()',
-		);
+		expect(result).toEqual('integer(\'age\', {"mode":"timestamp"}).notNull()');
 	});
 
 	it('generates code for integer column with default value', () => {
@@ -107,7 +104,7 @@ describe('generateIntegerColumnCode', () => {
 			type: 'integer',
 			defaultValue: 25,
 		});
-		assert.strictEqual(result, "integer('age').notNull().default(25)");
+		expect(result).toEqual("integer('age').notNull().default(25)");
 	});
 
 	it('generates code for integer column as primary key', () => {
@@ -115,7 +112,7 @@ describe('generateIntegerColumnCode', () => {
 			type: 'integer',
 			primaryKey: true,
 		});
-		assert.strictEqual(result, "integer('age').notNull().primaryKey()");
+		expect(result).toEqual("integer('age').notNull().primaryKey()");
 	});
 
 	it('generates code for nullable integer column', () => {
@@ -123,7 +120,7 @@ describe('generateIntegerColumnCode', () => {
 			type: 'integer',
 			nullable: true,
 		});
-		assert.strictEqual(result, "integer('age')");
+		expect(result).toEqual("integer('age')");
 	});
 
 	it('generates code for unique integer column', () => {
@@ -131,7 +128,7 @@ describe('generateIntegerColumnCode', () => {
 			type: 'integer',
 			unique: 'unique_age',
 		});
-		assert.strictEqual(result, `integer('age').notNull().unique("unique_age")`);
+		expect(result).toEqual(`integer('age').notNull().unique("unique_age")`);
 	});
 
 	it('should generate integer column code with all options', () => {
@@ -145,7 +142,7 @@ describe('generateIntegerColumnCode', () => {
 			unique: true,
 		} as CTInteger;
 		const expected = `integer('age', {"mode":"timestamp"}).unique().default(0).primaryKey()`;
-		assert.strictEqual(generateIntegerColumnCode(key, column), expected);
+		expect(generateIntegerColumnCode(key, column)).toEqual(expected);
 	});
 
 	it('should generate integer column code with minimal options', () => {
@@ -154,7 +151,7 @@ describe('generateIntegerColumnCode', () => {
 			type: 'integer',
 		} as CTInteger;
 		const expected = `integer('age').notNull()`;
-		assert.strictEqual(generateIntegerColumnCode(key, column), expected);
+		expect(generateIntegerColumnCode(key, column)).toEqual(expected);
 	});
 });
 
@@ -163,7 +160,7 @@ describe('generateJsonColumnCode', () => {
 		const result = generateJsonColumnCode('data', {
 			type: 'json',
 		} as JsonColumn);
-		assert.strictEqual(result, "json('data').notNull()");
+		expect(result).toEqual("json('data').notNull()");
 	});
 
 	it('generates code for JSON column with JSDoc type', () => {
@@ -171,8 +168,7 @@ describe('generateJsonColumnCode', () => {
 			type: 'json',
 			jsDocType: 'SomeType',
 		} as JsonColumn);
-		assert.strictEqual(
-			result,
+		expect(result).toEqual(
 			"/** @type {ReturnType<typeof json<SomeType, 'data'>>} */(json('data')).notNull()",
 		);
 	});
@@ -182,8 +178,7 @@ describe('generateJsonColumnCode', () => {
 			type: 'json',
 			defaultValue: '{"key": "value"}',
 		} as JsonColumn);
-		assert.strictEqual(
-			result,
+		expect(result).toEqual(
 			`json('data').notNull().default("{\\"key\\": \\"value\\"}")`,
 		);
 	});
@@ -193,7 +188,7 @@ describe('generateJsonColumnCode', () => {
 			type: 'json',
 			primaryKey: true,
 		} as JsonColumn);
-		assert.strictEqual(result, "json('data').notNull().primaryKey()");
+		expect(result).toEqual("json('data').notNull().primaryKey()");
 	});
 
 	it('generates code for nullable JSON column', () => {
@@ -201,7 +196,7 @@ describe('generateJsonColumnCode', () => {
 			type: 'json',
 			nullable: true,
 		} as JsonColumn);
-		assert.strictEqual(result, "json('data')");
+		expect(result).toEqual("json('data')");
 	});
 
 	it('generates code for unique JSON column', () => {
@@ -209,7 +204,7 @@ describe('generateJsonColumnCode', () => {
 			type: 'json',
 			unique: 'unique_data',
 		} as JsonColumn);
-		assert.strictEqual(result, `json('data').notNull().unique("unique_data")`);
+		expect(result).toEqual(`json('data').notNull().unique("unique_data")`);
 	});
 
 	it('should generate JSON column code with all options', () => {
@@ -223,7 +218,7 @@ describe('generateJsonColumnCode', () => {
 			unique: true,
 		} as JsonColumn;
 		const expected = `/** @type {ReturnType<typeof json<SomeType, 'data'>>} */(json('data')).unique().default("{\\"key\\": \\"value\\"}").primaryKey()`;
-		assert.strictEqual(generateJsonColumnCode(key, column), expected);
+		expect(generateJsonColumnCode(key, column)).toEqual(expected);
 	});
 
 	it('should generate JSON column code with minimal options', () => {
@@ -232,7 +227,7 @@ describe('generateJsonColumnCode', () => {
 			type: 'json',
 		} as JsonColumn;
 		const expected = `json('data').notNull()`;
-		assert.strictEqual(generateJsonColumnCode(key, column), expected);
+		expect(generateJsonColumnCode(key, column)).toEqual(expected);
 	});
 });
 
@@ -263,7 +258,7 @@ describe('generateSchema', () => {
 			`\tage: integer('age').notNull(),\n` +
 			`\tpreferences: json('preferences').notNull(),\n` +
 			`});\n`;
-		assert.strictEqual(generateSchema(config as any), expected);
+		expect(generateSchema(config as any)).toEqual(expected);
 	});
 	it('throws error for unsupported column types', () => {
 		const config = {
@@ -276,8 +271,7 @@ describe('generateSchema', () => {
 				},
 			},
 		};
-		assert.throws(
-			() => generateSchema(config as any),
+		expect(() => generateSchema(config as any)).toThrow(
 			/Unsupported column type in schema/,
 		);
 	});
