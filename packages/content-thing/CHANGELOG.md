@@ -1,5 +1,11 @@
 # content-thing
 
+## 0.0.17
+
+### Patch Changes
+
+- 983b9fa: Process markdown file attributes outside of Remark
+
 ## 0.0.16
 
 ### Patch Changes
