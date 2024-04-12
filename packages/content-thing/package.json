@@ -27,7 +27,6 @@
 			"dependencies": [
 				"../internal-utils:build",
 				"../remark-attributes:build",
-				"../remark-rich-attributes:build",
 				"../remark-variables:build",
 				"../remark-yaml-parse:build"
 			],
@@ -125,7 +124,6 @@
 	"dependencies": {
 		"@content-thing/internal-utils": "^0.0.1",
 		"@content-thing/remark-attributes": "^0.0.3",
-		"@content-thing/remark-rich-attributes": "^0.0.3",
 		"@content-thing/remark-variables": "^0.0.3",
 		"@content-thing/remark-yaml-parse": "^0.0.2",
 		"@signalapp/better-sqlite3": "^8.6.0",

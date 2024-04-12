@@ -44,9 +44,6 @@ importers:
       '@content-thing/remark-attributes':
         specifier: ^0.0.3
         version: link:../remark-attributes
-      '@content-thing/remark-rich-attributes':
-        specifier: ^0.0.3
-        version: link:../remark-rich-attributes
       '@content-thing/remark-variables':
         specifier: ^0.0.3
         version: link:../remark-variables
@@ -148,40 +145,6 @@ importers:
         specifier: ^5.0.0
         version: 5.0.0
     devDependencies:
-      '@types/mdast':
-        specifier: ^4.0.1
-        version: 4.0.1
-      '@types/node':
-        specifier: ^20.4.10
-        version: 20.5.9
-      publint:
-        specifier: ^0.2.2
-        version: 0.2.2
-      remark-parse:
-        specifier: ^11.0.0
-        version: 11.0.0
-      tsx:
-        specifier: ^4.7.0
-        version: 4.7.0
-      typescript:
-        specifier: ^5.1.6
-        version: 5.2.2
-      unified:
-        specifier: ^11.0.3
-        version: 11.0.3
-
-  packages/remark-rich-attributes:
-    dependencies:
-      unist-util-visit:
-        specifier: ^5.0.0
-        version: 5.0.0
-    devDependencies:
-      '@content-thing/internal-utils':
-        specifier: workspace:^0.0.1
-        version: link:../internal-utils
-      '@content-thing/remark-attributes':
-        specifier: workspace:^0.0.3
-        version: link:../remark-attributes
       '@types/mdast':
         specifier: ^4.0.1
         version: 4.0.1
