@@ -1,10 +1,9 @@
-import { describe, it } from 'node:test';
+import { describe, expect, it } from 'vitest';
 import {
 	generateIntegerColumn,
 	generateJsonColumn,
 	generateTextColumn,
 } from './io.js';
-import assert from 'node:assert';
 import type { IntegerColumn, JsonColumn, TextColumn } from '../config/types.js';
 
 describe('generateIntegerColumn', () => {
@@ -15,7 +14,7 @@ describe('generateIntegerColumn', () => {
 			} as IntegerColumn,
 			'id',
 		);
-		assert.strictEqual(result, '"id" INTEGER NOT NULL');
+		expect(result).toEqual('"id" INTEGER NOT NULL');
 	});
 
 	it('should generate code for a nullable integer column', () => {
@@ -26,7 +25,7 @@ describe('generateIntegerColumn', () => {
 			},
 			'id',
 		);
-		assert.strictEqual(result, '"id" INTEGER');
+		expect(result).toEqual('"id" INTEGER');
 	});
 
 	it('should generate code for a unique integer column with custom constraint name', () => {
@@ -37,10 +36,7 @@ describe('generateIntegerColumn', () => {
 			} as IntegerColumn,
 			'id',
 		);
-		assert.strictEqual(
-			result,
-			'"id" INTEGER NOT NULL CONSTRAINT unique_id UNIQUE',
-		);
+		expect(result).toEqual('"id" INTEGER NOT NULL CONSTRAINT unique_id UNIQUE');
 	});
 
 	it('should generate code for a unique integer column without custom constraint name', () => {
@@ -51,7 +47,7 @@ describe('generateIntegerColumn', () => {
 			} as IntegerColumn,
 			'id',
 		);
-		assert.strictEqual(result, '"id" INTEGER NOT NULL UNIQUE');
+		expect(result).toEqual('"id" INTEGER NOT NULL UNIQUE');
 	});
 
 	it('should generate code for an integer column as primary key', () => {
@@ -62,7 +58,7 @@ describe('generateIntegerColumn', () => {
 			} as IntegerColumn,
 			'id',
 		);
-		assert.strictEqual(result, '"id" INTEGER NOT NULL PRIMARY KEY');
+		expect(result).toEqual('"id" INTEGER NOT NULL PRIMARY KEY');
 	});
 
 	it('should generate code for an integer column with default value', () => {
@@ -73,7 +69,7 @@ describe('generateIntegerColumn', () => {
 			} as IntegerColumn,
 			'id',
 		);
-		assert.strictEqual(result, '"id" INTEGER NOT NULL DEFAULT 1');
+		expect(result).toEqual('"id" INTEGER NOT NULL DEFAULT 1');
 	});
 
 	it('should generate code for an integer column with all options', () => {
@@ -87,8 +83,7 @@ describe('generateIntegerColumn', () => {
 			},
 			'id',
 		);
-		assert.strictEqual(
-			result,
+		expect(result).toEqual(
 			'"id" INTEGER NOT NULL CONSTRAINT unique_id UNIQUE PRIMARY KEY DEFAULT 1',
 		);
 	});
@@ -100,7 +95,7 @@ describe('generateJsonColumn', () => {
 			{ type: 'json' } as JsonColumn,
 			'json_data',
 		);
-		assert.strictEqual(result, '"json_data" TEXT NOT NULL');
+		expect(result).toEqual('"json_data" TEXT NOT NULL');
 	});
 
 	it('should generate code for a nullable JSON column', () => {
@@ -111,7 +106,7 @@ describe('generateJsonColumn', () => {
 			} as JsonColumn,
 			'json_data',
 		);
-		assert.strictEqual(result, '"json_data" TEXT');
+		expect(result).toEqual('"json_data" TEXT');
 	});
 
 	it('should generate code for a unique JSON column', () => {
@@ -122,7 +117,7 @@ describe('generateJsonColumn', () => {
 			} as JsonColumn,
 			'json_data',
 		);
-		assert.strictEqual(result, '"json_data" TEXT NOT NULL UNIQUE');
+		expect(result).toEqual('"json_data" TEXT NOT NULL UNIQUE');
 	});
 
 	it('should generate code for a unique JSON column with constraint name', () => {
@@ -133,8 +128,7 @@ describe('generateJsonColumn', () => {
 			} as JsonColumn,
 			'json_data',
 		);
-		assert.strictEqual(
-			result,
+		expect(result).toEqual(
 			'"json_data" TEXT NOT NULL CONSTRAINT unique_json UNIQUE',
 		);
 	});
@@ -147,7 +141,7 @@ describe('generateJsonColumn', () => {
 			} as JsonColumn,
 			'json_data',
 		);
-		assert.strictEqual(result, '"json_data" TEXT NOT NULL PRIMARY KEY');
+		expect(result).toEqual('"json_data" TEXT NOT NULL PRIMARY KEY');
 	});
 
 	it('should generate code for a JSON column with a default value', () => {
@@ -158,8 +152,7 @@ describe('generateJsonColumn', () => {
 			} as JsonColumn,
 			'json_data',
 		);
-		assert.strictEqual(
-			result,
+		expect(result).toEqual(
 			'"json_data" TEXT NOT NULL DEFAULT \'{"key":"value"}\'',
 		);
 	});
@@ -175,8 +168,7 @@ describe('generateJsonColumn', () => {
 			} as JsonColumn,
 			'json_data',
 		);
-		assert.strictEqual(
-			result,
+		expect(result).toEqual(
 			'"json_data" TEXT NOT NULL CONSTRAINT unique_json UNIQUE PRIMARY KEY DEFAULT \'{"key":"value"}\'',
 		);
 	});
@@ -185,7 +177,7 @@ describe('generateJsonColumn', () => {
 describe('generateTextColumn', () => {
 	it('should generate code for a text column with no additional options', () => {
 		const result = generateTextColumn({ type: 'text' } as TextColumn, 'name');
-		assert.strictEqual(result, '"name" TEXT NOT NULL');
+		expect(result).toEqual('"name" TEXT NOT NULL');
 	});
 
 	it('should generate code for a text column with length', () => {
@@ -196,7 +188,7 @@ describe('generateTextColumn', () => {
 			} as TextColumn,
 			'name',
 		);
-		assert.strictEqual(result, '"name" TEXT(50) NOT NULL');
+		expect(result).toEqual('"name" TEXT(50) NOT NULL');
 	});
 
 	it('should generate code for a text column with enum', () => {
@@ -207,8 +199,7 @@ describe('generateTextColumn', () => {
 			} as TextColumn,
 			'name',
 		);
-		assert.strictEqual(
-			result,
+		expect(result).toEqual(
 			'"name" TEXT CHECK ("name" IN (\'A\', \'B\')) NOT NULL',
 		);
 	});
@@ -221,7 +212,7 @@ describe('generateTextColumn', () => {
 			} as TextColumn,
 			'name',
 		);
-		assert.strictEqual(result, '"name" TEXT NOT NULL DEFAULT \'abc\'');
+		expect(result).toEqual('"name" TEXT NOT NULL DEFAULT \'abc\'');
 	});
 
 	it('should generate code for a text column as a primary key', () => {
@@ -232,7 +223,7 @@ describe('generateTextColumn', () => {
 			} as TextColumn,
 			'name',
 		);
-		assert.strictEqual(result, '"name" TEXT NOT NULL PRIMARY KEY');
+		expect(result).toEqual('"name" TEXT NOT NULL PRIMARY KEY');
 	});
 
 	it('should generate code for a nullable text column', () => {
@@ -243,7 +234,7 @@ describe('generateTextColumn', () => {
 			} as TextColumn,
 			'name',
 		);
-		assert.strictEqual(result, '"name" TEXT');
+		expect(result).toEqual('"name" TEXT');
 	});
 
 	it('should generate code for a unique text column', () => {
@@ -254,8 +245,7 @@ describe('generateTextColumn', () => {
 			} as TextColumn,
 			'name',
 		);
-		assert.strictEqual(
-			result,
+		expect(result).toEqual(
 			'"name" TEXT NOT NULL CONSTRAINT unique_name UNIQUE',
 		);
 	});
@@ -273,8 +263,7 @@ describe('generateTextColumn', () => {
 			},
 			'name',
 		);
-		assert.strictEqual(
-			result,
+		expect(result).toEqual(
 			"\"name\" TEXT(50) CHECK (\"name\" IN ('A', 'B')) NOT NULL UNIQUE PRIMARY KEY DEFAULT 'A'",
 		);
 	});
@@ -287,7 +276,7 @@ describe('generateTextColumn', () => {
 			} as TextColumn,
 			'name',
 		);
-		assert.strictEqual(result, `"name" TEXT NOT NULL DEFAULT 'O''Reilly'`);
+		expect(result).toEqual(`"name" TEXT NOT NULL DEFAULT 'O''Reilly'`);
 	});
 
 	it('handles double quotes in default value', () => {
@@ -298,8 +287,7 @@ describe('generateTextColumn', () => {
 			} as TextColumn,
 			'name',
 		);
-		assert.strictEqual(
-			result,
+		expect(result).toEqual(
 			`"name" TEXT NOT NULL DEFAULT 'The book is called "JavaScript"'`,
 		);
 	});
@@ -312,8 +300,7 @@ describe('generateTextColumn', () => {
 			} as TextColumn,
 			'name',
 		);
-		assert.strictEqual(
-			result,
+		expect(result).toEqual(
 			`"name" TEXT NOT NULL DEFAULT 'O''Reilly''s book is called "JavaScript"'`,
 		);
 	});
@@ -326,8 +313,7 @@ describe('generateTextColumn', () => {
 			} as TextColumn,
 			'name',
 		);
-		assert.strictEqual(
-			result,
+		expect(result).toEqual(
 			`"name" TEXT CHECK ("name" IN ('O''Reilly', 'The "Best" Book')) NOT NULL`,
 		);
 	});

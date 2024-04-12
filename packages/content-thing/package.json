@@ -27,8 +27,6 @@
 			"dependencies": [
 				"../internal-utils:build",
 				"../remark-attributes:build",
-				"../remark-rich-attributes:build",
-				"../remark-toc:build",
 				"../remark-variables:build",
 				"../remark-yaml-parse:build"
 			],
@@ -75,13 +73,13 @@
 			]
 		},
 		"test": {
-			"command": "tsx --test --test-reporter spec",
+			"command": "vitest run",
 			"files": [
 				"src/**/*.{js,ts}",
 				"tests/**/*.{js,ts}"
 			],
 			"dependencies": [
-				"build"
+				"build:lib"
 			],
 			"output": []
 		}
@@ -126,7 +124,6 @@
 	"dependencies": {
 		"@content-thing/internal-utils": "^0.0.1",
 		"@content-thing/remark-attributes": "^0.0.3",
-		"@content-thing/remark-rich-attributes": "^0.0.3",
 		"@content-thing/remark-variables": "^0.0.3",
 		"@content-thing/remark-yaml-parse": "^0.0.2",
 		"@signalapp/better-sqlite3": "^8.6.0",
@@ -153,6 +150,7 @@
 		"tsx": "^4.7.0",
 		"typescript": "^5.1.6",
 		"vite": "^5.0.9",
+		"vitest": "^1.4.0",
 		"zod-to-json-schema": "^3.21.4"
 	},
 	"peerDependencies": {

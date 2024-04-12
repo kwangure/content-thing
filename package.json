@@ -20,8 +20,6 @@
 				"./packages/content-thing:build",
 				"./packages/internal-utils:build",
 				"./packages/remark-attributes:build",
-				"./packages/remark-rich-attributes:build",
-				"./packages/remark-toc:build",
 				"./packages/remark-variables:build",
 				"./packages/remark-yaml-parse:build"
 			]
@@ -52,8 +50,6 @@
 				"./packages/content-thing:pre-commit",
 				"./packages/internal-utils:pre-commit",
 				"./packages/remark-attributes:pre-commit",
-				"./packages/remark-rich-attributes:pre-commit",
-				"./packages/remark-toc:pre-commit",
 				"./packages/remark-variables:pre-commit",
 				"./packages/remark-yaml-parse:pre-commit"
 			]
@@ -64,8 +60,6 @@
 				"./packages/content-thing:release",
 				"./packages/internal-utils:release",
 				"./packages/remark-attributes:release",
-				"./packages/remark-rich-attributes:release",
-				"./packages/remark-toc:release",
 				"./packages/remark-variables:release",
 				"./packages/remark-yaml-parse:release"
 			]
@@ -75,8 +69,6 @@
 				"./packages/content-thing:test",
 				"./packages/internal-utils:test",
 				"./packages/remark-attributes:test",
-				"./packages/remark-rich-attributes:test",
-				"./packages/remark-toc:test",
 				"./packages/remark-variables:test",
 				"./packages/remark-yaml-parse:test"
 			]
