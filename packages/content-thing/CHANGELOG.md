@@ -1,5 +1,11 @@
 # content-thing
 
+## 0.0.18
+
+### Patch Changes
+
+- bac90e0: Update Hine
+
 ## 0.0.17
 
 ### Patch Changes
