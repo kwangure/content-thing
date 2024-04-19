@@ -55,7 +55,11 @@
 			]
 		},
 		"release": {
-			"command": "changeset publish",
+			"#comment": [
+				"Changesets doesn't bump pnpm-lock.yaml version so we run",
+				"`pnpm install` to do it for us"
+			],
+			"command": "changeset publish  && pnpm install",
 			"dependencies": [
 				"./packages/content-thing:release",
 				"./packages/internal-utils:release",
@@ -74,11 +78,7 @@
 			]
 		},
 		"version": {
-			"#comment": [
-				"Changesets doesn't bump pnpm-lock.json so we run `pnpm install`",
-				"to do it for us"
-			],
-			"command": "changeset version && pnpm install",
+			"command": "changeset version",
 			"files": [
 				"./changeset/*.md",
 				"./packages/**/package.json",
