@@ -112,8 +112,8 @@ export function createThing(thingConfig: ThingConfig) {
 					},
 				},
 				conditions: {
-					isCollectionItem({ event }) {
-						const { filepath } = (event?.value || {}) as { filepath: string };
+					isCollectionItem(event) {
+						const { filepath } = event.detail as { filepath: string };
 						return filepath.startsWith(thingConfig.collectionsDir);
 					},
 					shouldWatch: () => thingConfig.watch,
@@ -121,15 +121,15 @@ export function createThing(thingConfig: ThingConfig) {
 			},
 			watch: {
 				actions: {
-					addCollection({ event }) {
-						const { filepath } = event.value as { filepath: string };
+					addCollection(event) {
+						const { filepath } = event.detail as { filepath: string };
 						const collection = path.basename(filepath);
 						collectionNames.add(collection);
 
 						writeSchemaExports(thingConfig, collectionNames);
 						writeDBClient(thingConfig, collectionNames);
 					},
-					watchCollectionsDir(ownerState) {
+					watchCollectionsDir(event) {
 						const { collectionsDir, root } = thingConfig;
 						logInfo(
 							`Watching top-level files in '${collectionsDir.slice(
@@ -142,10 +142,10 @@ export function createThing(thingConfig: ThingConfig) {
 						});
 						watcher.on('addDir', (filepath) => {
 							if (filepath === collectionsDir) return;
-							ownerState.dispatch('addCollection', { filepath });
+							event.currentTarget.dispatch('addCollection', { filepath });
 						});
 					},
-					watchCollections(ownerState) {
+					watchCollections(event) {
 						queueMicrotask(() => {
 							const { collectionsDir, root } = thingConfig;
 
@@ -156,42 +156,41 @@ export function createThing(thingConfig: ThingConfig) {
 										root.length + 1,
 									)}'`,
 								);
-								ownerState.dispatch('collectionFound', collection);
+								event.currentTarget.dispatch('collectionFound', collection);
 							}
 						});
 					},
-					createWatcher(ownerState) {
-						const { event } = ownerState;
-						const { collectionsDir, root } = thingConfig;
+					createWatcher(event) {
+						const { collectionsDir } = thingConfig;
 						const collectionRoot = path.join(
 							collectionsDir,
-							event.value as string,
+							event.detail as string,
 						);
 						const watcher = chokidar.watch(collectionRoot, {
 							ignoreInitial: true,
 						});
 
 						watcher.on('add', (filepath) => {
-							ownerState.dispatch('fileAdded', {
-								collection: event.value,
+							event.currentTarget.dispatch('fileAdded', {
+								collection: event.detail,
 								filepath,
 							});
 						});
 
 						watcher.on('change', (filepath) => {
-							ownerState.dispatch('fileChanged', {
-								collection: event.value,
+							event.currentTarget.dispatch('fileChanged', {
+								collection: event.detail,
 								filepath,
 							});
 						});
 					},
-					async updateFile({ event }) {
-						const { filepath } = event.value as { filepath: string };
+					async updateFile(event) {
+						const { filepath } = event.detail as { filepath: string };
 						const filename = path.basename(filepath);
 						if (!isReadme(filename)) return;
 						const configResult = loadCollectionConfig(
 							thingConfig,
-							(event.value as { collection: string }).collection,
+							(event.detail as { collection: string }).collection,
 						);
 						const collectionConfig = unwrapCollectionConfigResult(configResult);
 						if (!collectionConfig) return;
@@ -216,15 +215,15 @@ export function createThing(thingConfig: ThingConfig) {
 							);
 						}
 					},
-					seedCollection({ event }) {
+					seedCollection(event) {
 						const { root } = thingConfig;
-						const { collection: collectionName, filepath } = event.value as {
+						const { collection: collectionName, filepath } = event.detail as {
 							collection: string;
 							filepath: string;
 						};
 						logInfo(
 							`Config file ${
-								event.name === 'fileAdded' ? 'added' : 'changed'
+								event.type === 'fileAdded' ? 'added' : 'changed'
 							} '${filepath.slice(
 								root.length + 1,
 							)}'. Seeding "${collectionName}" database table.`,
@@ -233,12 +232,12 @@ export function createThing(thingConfig: ThingConfig) {
 					},
 				},
 				conditions: {
-					isCollectionConfig({ event }) {
-						const { filepath } = (event?.value || {}) as { filepath: string };
+					isCollectionConfig(event) {
+						const { filepath } = event.detail as { filepath: string };
 						return filepath.endsWith('collection.config.json');
 					},
-					isNotCollectionConfig({ event }) {
-						const { filepath } = (event?.value || {}) as { filepath: string };
+					isNotCollectionConfig(event) {
+						const { filepath } = event.detail as { filepath: string };
 						return !filepath.endsWith('collection.config.json');
 					},
 				},
