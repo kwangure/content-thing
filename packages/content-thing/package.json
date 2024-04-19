@@ -131,7 +131,7 @@
 		"chokidar": "^3.5.3",
 		"drizzle-orm": "^0.28.5",
 		"drizzle-zod": "^0.5.1",
-		"hine": "^0.0.23",
+		"hine": "^0.0.24",
 		"js-yaml": "^4.1.0",
 		"lil-match": "^1.2.1",
 		"mdast-util-to-markdown": "^2.1.0",
