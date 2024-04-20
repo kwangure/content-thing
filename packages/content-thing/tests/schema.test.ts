@@ -1,22 +1,29 @@
 import { describe, expect, it } from 'vitest';
-import assert from 'node:assert';
 import {
 	generateTextColumnCode,
 	generateIntegerColumnCode,
 	generateJsonColumnCode,
 	generateSchema,
 } from '../src/db/schema.js';
-import type { CTInteger, CTText } from '../src/db/types.js';
-import type { JsonColumn } from '../src/config/types.js';
+import type {
+	IntegerColumn,
+	JsonColumn,
+	TextColumn,
+} from '../src/config/types.js';
 
 describe('generateTextColumnCode', () => {
 	it('generates code for text column with no options', () => {
-		const result = generateTextColumnCode('name', { type: 'text' });
+		const result = generateTextColumnCode('name', {
+			type: 'text',
+		} as TextColumn);
 		expect(result).toEqual("text('name').notNull()");
 	});
 
 	it('generates code for text column with length', () => {
-		const result = generateTextColumnCode('name', { type: 'text', length: 50 });
+		const result = generateTextColumnCode('name', {
+			type: 'text',
+			length: 50,
+		} as TextColumn);
 		expect(result).toEqual('text(\'name\', {"length":50}).notNull()');
 	});
 
@@ -24,7 +31,7 @@ describe('generateTextColumnCode', () => {
 		const result = generateTextColumnCode('name', {
 			type: 'text',
 			enum: ['a', 'b'],
-		});
+		} as TextColumn);
 		expect(result).toEqual('text(\'name\', {"enum":["a","b"]}).notNull()');
 	});
 
@@ -32,7 +39,7 @@ describe('generateTextColumnCode', () => {
 		const result = generateTextColumnCode('name', {
 			type: 'text',
 			defaultValue: 'abc',
-		});
+		} as TextColumn);
 		expect(result).toEqual('text(\'name\').notNull().default("abc")');
 	});
 
@@ -40,7 +47,7 @@ describe('generateTextColumnCode', () => {
 		const result = generateTextColumnCode('name', {
 			type: 'text',
 			primaryKey: true,
-		});
+		} as TextColumn);
 		expect(result).toEqual("text('name').notNull().primaryKey()");
 	});
 
@@ -56,7 +63,7 @@ describe('generateTextColumnCode', () => {
 		const result = generateTextColumnCode('name', {
 			type: 'text',
 			unique: 'unique_name',
-		});
+		} as TextColumn);
 		expect(result).toEqual(`text('name').notNull().unique("unique_name")`);
 	});
 
@@ -70,7 +77,7 @@ describe('generateTextColumnCode', () => {
 			primaryKey: true,
 			nullable: true,
 			unique: true,
-		} as CTText;
+		} as TextColumn;
 		const expected = `text('name', {"length":50,"enum":["value1","value2"]}).unique().default("value1").primaryKey()`;
 		expect(generateTextColumnCode(key, column)).toEqual(expected);
 	});
@@ -79,7 +86,7 @@ describe('generateTextColumnCode', () => {
 		const key = 'name';
 		const column = {
 			type: 'text',
-		} as CTText;
+		} as TextColumn;
 		const expected = `text('name').notNull()`;
 		expect(generateTextColumnCode(key, column)).toEqual(expected);
 	});
@@ -87,7 +94,9 @@ describe('generateTextColumnCode', () => {
 
 describe('generateIntegerColumnCode', () => {
 	it('generates code for integer column with no options', () => {
-		const result = generateIntegerColumnCode('age', { type: 'integer' });
+		const result = generateIntegerColumnCode('age', {
+			type: 'integer',
+		} as IntegerColumn);
 		expect(result).toEqual("integer('age').notNull()");
 	});
 
@@ -95,7 +104,7 @@ describe('generateIntegerColumnCode', () => {
 		const result = generateIntegerColumnCode('age', {
 			type: 'integer',
 			mode: 'timestamp',
-		});
+		} as IntegerColumn);
 		expect(result).toEqual('integer(\'age\', {"mode":"timestamp"}).notNull()');
 	});
 
@@ -103,7 +112,7 @@ describe('generateIntegerColumnCode', () => {
 		const result = generateIntegerColumnCode('age', {
 			type: 'integer',
 			defaultValue: 25,
-		});
+		} as IntegerColumn);
 		expect(result).toEqual("integer('age').notNull().default(25)");
 	});
 
@@ -111,7 +120,7 @@ describe('generateIntegerColumnCode', () => {
 		const result = generateIntegerColumnCode('age', {
 			type: 'integer',
 			primaryKey: true,
-		});
+		} as IntegerColumn);
 		expect(result).toEqual("integer('age').notNull().primaryKey()");
 	});
 
@@ -127,7 +136,7 @@ describe('generateIntegerColumnCode', () => {
 		const result = generateIntegerColumnCode('age', {
 			type: 'integer',
 			unique: 'unique_age',
-		});
+		} as IntegerColumn);
 		expect(result).toEqual(`integer('age').notNull().unique("unique_age")`);
 	});
 
@@ -140,7 +149,7 @@ describe('generateIntegerColumnCode', () => {
 			primaryKey: true,
 			nullable: true,
 			unique: true,
-		} as CTInteger;
+		} as IntegerColumn;
 		const expected = `integer('age', {"mode":"timestamp"}).unique().default(0).primaryKey()`;
 		expect(generateIntegerColumnCode(key, column)).toEqual(expected);
 	});
@@ -149,7 +158,7 @@ describe('generateIntegerColumnCode', () => {
 		const key = 'age';
 		const column = {
 			type: 'integer',
-		} as CTInteger;
+		} as IntegerColumn;
 		const expected = `integer('age').notNull()`;
 		expect(generateIntegerColumnCode(key, column)).toEqual(expected);
 	});

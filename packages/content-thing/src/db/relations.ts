@@ -1,8 +1,6 @@
 import path from 'node:path';
-import { cwd } from 'node:process';
-import type { CTOneRelation } from './types.js';
 import type { ThingConfig } from '../state/state.js';
-import type { CollectionConfig } from '../config/types.js';
+import type { CollectionConfig, OneRelation } from '../config/types.js';
 
 /**
  * Generates the code for the one relation
@@ -10,10 +8,7 @@ import type { CollectionConfig } from '../config/types.js';
  * @param table - The name of the table
  * @param relation - The relation configuration for one type
  */
-export function generateOneRelationCode(
-	table: string,
-	relation: CTOneRelation,
-) {
+export function generateOneRelationCode(table: string, relation: OneRelation) {
 	let relationCode = `one(${relation.collection}, {\n`;
 	relationCode += `\t\tfields: [${table}.${relation.field}],\n`;
 	relationCode += `\t\treferences: [${relation.collection}.${relation.reference}],\n`;

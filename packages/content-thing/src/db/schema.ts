@@ -1,5 +1,9 @@
-import type { CollectionConfig, JsonColumn } from '../config/types';
-import type { CTInteger, CTText } from './types';
+import type {
+	CollectionConfig,
+	IntegerColumn,
+	JsonColumn,
+	TextColumn,
+} from '../config/types';
 
 /**
  * Generates the column code for text type
@@ -8,8 +12,8 @@ import type { CTInteger, CTText } from './types';
  * @param column - The column configuration for text type
  * @returns Generated code for text column
  */
-export function generateTextColumnCode(key: string, column: CTText) {
-	const options: Partial<CTText> = {};
+export function generateTextColumnCode(key: string, column: TextColumn) {
+	const options: Partial<TextColumn> = {};
 	if (column.length) {
 		options.length = column.length;
 	}
@@ -60,8 +64,8 @@ export function generateTextColumnCode(key: string, column: CTText) {
  * @param column The column configuration for integer type
  * @returns Generated code for integer column
  */
-export function generateIntegerColumnCode(key: string, column: CTInteger) {
-	const options: Partial<CTInteger> = {};
+export function generateIntegerColumnCode(key: string, column: IntegerColumn) {
+	const options: Partial<IntegerColumn> = {};
 	if (column.mode) {
 		options.mode = column.mode;
 	}
