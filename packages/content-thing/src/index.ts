@@ -24,7 +24,7 @@ export function content(): Plugin {
 			command = config.command;
 			outputDir = path.join(config.root, '.svelte-kit/content-thing');
 			thingConfig = {
-				collectionsDir: path.join(config.root, 'src/thing/collections'),
+				collectionsDir: path.join(config.root, 'src/collections'),
 				collectionsOutput: path.join(outputDir, 'collections'),
 				root: config.root,
 				outputDir,
