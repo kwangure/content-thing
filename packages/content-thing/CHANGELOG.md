@@ -1,5 +1,12 @@
 # content-thing
 
+## 0.0.20
+
+### Patch Changes
+
+- 81c2cc2: Contribute collection config via plugins
+- 8a8f291: Remove vestigial types
+
 ## 0.0.19
 
 ### Patch Changes
