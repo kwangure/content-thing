@@ -133,7 +133,6 @@
 		"drizzle-zod": "^0.5.1",
 		"hine": "^0.0.24",
 		"js-yaml": "^4.1.0",
-		"lil-match": "^1.2.1",
 		"mdast-util-to-markdown": "^2.1.0",
 		"remark-frontmatter": "^5.0.0",
 		"remark-parse": "^11.0.0",

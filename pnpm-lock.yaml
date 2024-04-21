@@ -71,9 +71,6 @@ importers:
       js-yaml:
         specifier: ^4.1.0
         version: 4.1.0
-      lil-match:
-        specifier: ^1.2.1
-        version: 1.2.1
       mdast-util-to-markdown:
         specifier: ^2.1.0
         version: 2.1.0
@@ -1715,9 +1712,6 @@ packages:
   levn@0.4.1:
     resolution: {integrity: sha512-+bT2uH4E5LGE7h/n3evcS/sQlJXCpIp6ym8OWJ5eV6+67Dsql/LaaT7qJBAt2rzfoa/5QBGBhxDix1dMt2kQKQ==}
     engines: {node: '>= 0.8.0'}
-
-  lil-match@1.2.1:
-    resolution: {integrity: sha512-fudLGqwTfXD3c8WqCR78jsVc6L69BF3oYDBsMQWadgMAL8BmX+wSo4ZNTFRQTQs82/0XkoCKlJMnZPW0kyg1DQ==}
 
   lilconfig@2.1.0:
     resolution: {integrity: sha512-utWOt/GHzuUxnLKxB6dk81RoOeoNeHgbrXiuGk4yyF5qlRz+iIVWu56E2fqGHFrXz0QNUhLB/8nKqvRH66JKGQ==}
@@ -4279,8 +4273,6 @@ snapshots:
     dependencies:
       prelude-ls: 1.2.1
       type-check: 0.4.0
-
-  lil-match@1.2.1: {}
 
   lilconfig@2.1.0: {}
 
