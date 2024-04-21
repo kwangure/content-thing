@@ -1,4 +1,3 @@
-import { match } from 'lil-match';
 import {
 	createTableFromSchema,
 	deleteFromTable,
@@ -287,29 +286,42 @@ async function seedCollection(
 function unwrapCollectionConfigResult(
 	configResult: ReturnType<typeof loadCollectionConfig>,
 ) {
-	return match(configResult)
-		.with({ ok: true }, ({ value }) => value)
-		.with({ type: 'file-not-found' }, ({ error: { collection } }) => {
-			logError(
-				`"collection.config.json" not found in "${collection}" collection. All collections must have a config file.`,
-			);
-		})
-		.with({ type: 'read-file-error' }, ({ error: { collection, message } }) => {
-			logError(
-				`Unable to read "collections/${collection}/collection.config.json". ${message}`,
-			);
-		})
-		.with({ type: 'json-parse-error' }, ({ error: { collection } }) => {
-			logError(
-				`Malformed JSON in "collections/${collection}/collection.config.json".`,
-			);
-		})
-		.with({ type: 'validation-error' }, ({ error }) => {
-			logError(
-				`Invalid JSON Schema. ${JSON.stringify(error.format(), null, 4)}`,
-			);
-		})
-		.exhaustive('');
+	if (configResult.ok) {
+		return configResult.value;
+	}
+
+	if (configResult.type === 'file-not-found') {
+		return logError(
+			`"collection.config.json" not found in "${configResult.error.collection}" collection. All collections must have a config file.`,
+		);
+	}
+
+	if (configResult.type === 'read-file-error') {
+		return logError(
+			`Unable to read "collections/${configResult.error.collection}/collection.config.json". ${configResult.error.message}`,
+		);
+	}
+
+	if (configResult.type === 'json-parse-error') {
+		return logError(
+			`Malformed JSON in "collections/${configResult.error.collection}/collection.config.json".`,
+		);
+	}
+
+	if (configResult.type === 'validation-error') {
+		return logError(
+			`Invalid JSON Schema. ${JSON.stringify(
+				configResult.error.format(),
+				null,
+				4,
+			)}`,
+		);
+	}
+
+	const exhaustiveCheck: never = configResult.type;
+	throw Error(
+		`Unhandled config error of type "${exhaustiveCheck}". ${configResult.error}`,
+	);
 }
 
 function logInfo(message: string, options: LogOptions = {}) {
