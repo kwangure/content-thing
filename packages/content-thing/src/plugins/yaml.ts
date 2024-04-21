@@ -1,25 +1,39 @@
 import fs from 'node:fs/promises';
 import yaml from 'js-yaml';
-import type { CollectionPlugin, OnLoadResult } from './types.js';
+import type { CollectionPlugin } from './index.js';
 import { parseFilepath } from '../helpers/filepath.js';
 
 export const yamlPlugin: CollectionPlugin = {
 	name: 'collection-plugin-yaml',
 	setup(build) {
+		build.onCollectionConfig(
+			{ filter: { collection: { type: /^yaml$/ } } },
+			async () => {
+				return {
+					data: {
+						fields: {
+							_id: {
+								type: 'text',
+								primaryKey: true,
+							},
+						},
+					},
+				};
+			},
+		);
+
 		build.onLoad(
-			{ filter: { path: /\.(yaml|yml)$/, collection: { type: /yaml/ } } },
+			{ filter: { path: /\.(yaml|yml)$/, collection: { type: /^yaml$/ } } },
 			async ({ path }) => {
 				const { entry } = parseFilepath(path);
 				const content = await fs.readFile(path, 'utf-8');
 				const json = yaml.load(content) as Record<string, any>;
-				const loadResult: OnLoadResult = {
+				return {
 					record: {
 						...json,
 						_id: entry.id,
 					},
 				};
-
-				return loadResult;
 			},
 		);
 	},

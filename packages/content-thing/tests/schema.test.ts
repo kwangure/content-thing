@@ -244,8 +244,8 @@ describe('generateSchema', () => {
 	it('should generate markdown schema', () => {
 		const config = {
 			name: 'testTable',
-			schema: {
-				data: {
+			data: {
+				fields: {
 					name: {
 						type: 'text',
 					},
@@ -272,8 +272,8 @@ describe('generateSchema', () => {
 	it('throws error for unsupported column types', () => {
 		const config = {
 			name: 'testTable',
-			schema: {
-				data: {
+			data: {
+				fields: {
 					title: {
 						type: 'unsupported',
 					},

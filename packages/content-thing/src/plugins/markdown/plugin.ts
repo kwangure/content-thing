@@ -6,7 +6,7 @@ import remarkFrontmatter from 'remark-frontmatter';
 import { remarkYamlParse } from '@content-thing/remark-yaml-parse';
 import { remarkAttributes } from '@content-thing/remark-attributes';
 import { remarkVariables } from '@content-thing/remark-variables';
-import type { CollectionPlugin, OnLoadResult } from '../types.js';
+import type { CollectionPlugin } from '../index.js';
 import { parseFilepath } from '../../helpers/filepath.js';
 import { getHeadingTree } from './heading_tree.js';
 import type { Root } from 'mdast';
@@ -23,8 +23,32 @@ export const markdownPlugin: CollectionPlugin = {
 			.use(remarkAttributes)
 			.use(remarkVariables);
 
+		build.onCollectionConfig(
+			{ filter: { collection: { type: /^markdown$/ } } },
+			async () => {
+				return {
+					data: {
+						fields: {
+							_id: {
+								type: 'text',
+								primaryKey: true,
+							},
+							_headingTree: {
+								type: 'json',
+								jsDocType: "import('content-thing').TocEntry[]",
+							},
+							_content: {
+								type: 'json',
+								jsDocType: "import('content-thing/mdast').Root",
+							},
+						},
+					},
+				};
+			},
+		);
+
 		build.onLoad(
-			{ filter: { collection: { type: /markdown/ } } },
+			{ filter: { collection: { type: /^markdown$/ } } },
 			async ({ path }) => {
 				const { entry } = parseFilepath(path);
 				const content = await fs.readFile(path, 'utf-8');
@@ -32,7 +56,7 @@ export const markdownPlugin: CollectionPlugin = {
 				const transformedTree = processor.runSync(tree);
 				processFileAttributes(transformedTree, path);
 				const tableOfContents = getHeadingTree(transformedTree as Root);
-				const loadResult: OnLoadResult = {
+				return {
 					record: {
 						...transformedTree.data?.frontmatter,
 						_content: transformedTree,
@@ -40,8 +64,6 @@ export const markdownPlugin: CollectionPlugin = {
 						_headingTree: tableOfContents,
 					},
 				};
-
-				return loadResult;
 			},
 		);
 	},

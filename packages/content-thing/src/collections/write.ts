@@ -10,11 +10,11 @@ export function writeSchema(
 	collectionConfig: CollectionConfig,
 ) {
 	let schemaCode = '';
-	if (collectionConfig.relations) {
+	if (collectionConfig.data?.relations) {
 		schemaCode += generateRelationImports(thingConfig, collectionConfig);
 	}
 	schemaCode += generateSchema(collectionConfig);
-	if (collectionConfig.relations) {
+	if (collectionConfig.data?.relations) {
 		schemaCode += `\n`;
 		schemaCode += `${generateRelations(collectionConfig)}\n\n`;
 	}

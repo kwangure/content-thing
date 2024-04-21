@@ -18,7 +18,7 @@ export function createTableFromSchema(db: Database, config: CollectionConfig) {
 		db.prepare(`DROP TABLE IF EXISTS ${config.name}`).run();
 
 		let columns = [];
-		for (const [key, value] of Object.entries(config.schema.data || {})) {
+		for (const [key, value] of Object.entries(config.data.fields || {})) {
 			let columnDef;
 			switch (value.type) {
 				case 'integer':
@@ -60,7 +60,7 @@ export function insertIntoTable(
 	const placeholders = [];
 	const values = [];
 
-	for (const [key, fieldConfig] of Object.entries(config.schema.data)) {
+	for (const [key, fieldConfig] of Object.entries(config.data.fields ?? {})) {
 		if (
 			fieldConfig.nullable !== true &&
 			(!data.hasOwnProperty(key) ||
@@ -76,7 +76,7 @@ export function insertIntoTable(
 	}
 
 	for (const [key, value] of Object.entries(data)) {
-		const fieldConfig = config.schema.data[key];
+		const fieldConfig = config.data.fields[key];
 		if (fieldConfig) {
 			validateValue(value, fieldConfig);
 			columnNames.push(`"${key}"`);
@@ -97,7 +97,7 @@ export function insertIntoTable(
 				values,
 				null,
 				4,
-			)} with schema: ${JSON.stringify(config.schema.data, null, 4)}`,
+			)} with schema: ${JSON.stringify(config.data.fields, null, 4)}`,
 		);
 		error.cause = cause;
 		throw error;
@@ -120,7 +120,7 @@ export function deleteFromTable(
 	const values = [];
 
 	for (const [key, value] of Object.entries(data)) {
-		const fieldConfig = config.schema.data[key];
+		const fieldConfig = config.data.fields[key];
 		if (fieldConfig) {
 			if (fieldConfig.type === 'json') {
 				conditions.push(`"${key}" = ?`);
