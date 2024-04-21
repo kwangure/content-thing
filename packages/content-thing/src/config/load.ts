@@ -1,9 +1,4 @@
 import { z } from 'zod';
-import fs from 'node:fs';
-import path from 'node:path';
-import type { CollectionConfig } from './types';
-import { Err, Ok } from '../result.js';
-import type { ThingConfig } from '../state/state';
 
 export const drizzleColumn = z
 	.object({
@@ -67,18 +62,11 @@ export const drizzleManyRelation = z
 	})
 	.strict();
 
-const dataPropertySchema = z.string().refine(
-	(value) => !value.startsWith('_'),
-	(value) => ({
-		message: `Forbidden property '${value}'. Data property names beginning with underscore are reserved.`,
-	}),
-);
-
-export const markdownSchema = z
+export const collectionData = z
 	.object({
-		data: z
+		fields: z
 			.record(
-				dataPropertySchema,
+				z.string(),
 				z.discriminatedUnion('type', [
 					drizzleIntegerColumn,
 					drizzleJsonColumn,
@@ -86,189 +74,25 @@ export const markdownSchema = z
 				]),
 			)
 			.default({}),
-	})
-	.strict()
-	.transform((value) => {
-		value.data = {
-			...value.data,
-			_id: drizzleTextColumn.parse({
-				type: 'text',
-				primaryKey: true,
-			}),
-			_headingTree: drizzleJsonColumn.parse({
-				type: 'json',
-				jsDocType: "import('content-thing').TocEntry[]",
-			}),
-			_content: drizzleJsonColumn.parse({
-				type: 'json',
-				jsDocType: "import('content-thing/mdast').Root",
-			}),
-		};
-		return value;
-	});
-
-export const markdownConfig = z
-	.object({
-		$schema: z.string().optional(),
-		type: z.literal('markdown'),
-		schema: markdownSchema,
 		relations: z
 			.record(
-				dataPropertySchema,
+				z.string(),
 				z.discriminatedUnion('type', [drizzleOneRelation, drizzleManyRelation]),
 			)
 			.optional(),
 	})
 	.strict();
 
-export const plaintextSchema = z
-	.object({
-		data: z.object({}).default({}),
-	})
-	.strict()
-	.transform((value) => {
-		value.data = {
-			_id: drizzleTextColumn.parse({
-				type: 'text',
-				primaryKey: true,
-			}),
-			_content: drizzleTextColumn.parse({
-				type: 'text',
-			}),
-		};
-		return value;
-	});
-
-export const plaintextConfig = z
+export const collectionConfig = z
 	.object({
 		$schema: z.string().optional(),
-		type: z.literal('plaintext'),
-		schema: plaintextSchema.optional(),
-		relations: z
-			.record(
-				dataPropertySchema,
-				z.discriminatedUnion('type', [drizzleOneRelation, drizzleManyRelation]),
-			)
-			.optional(),
+		type: z.string(),
+		data: collectionData.default({}),
 	})
 	.strict();
 
-export const yamlSchema = z
+export const pluginCollectionConfig = z
 	.object({
-		data: z.record(
-			dataPropertySchema,
-			z.discriminatedUnion('type', [
-				drizzleIntegerColumn,
-				drizzleJsonColumn,
-				drizzleTextColumn,
-			]),
-		),
-	})
-	.strict()
-	.transform((value) => {
-		value.data = {
-			...value.data,
-			_id: drizzleTextColumn.parse({
-				type: 'text',
-				primaryKey: true,
-			}),
-		};
-		return value;
-	});
-
-export const yamlConfig = z
-	.object({
-		$schema: z.string().optional(),
-		type: z.literal('yaml'),
-		schema: yamlSchema,
-		relations: z
-			.record(
-				z.discriminatedUnion('type', [drizzleOneRelation, drizzleManyRelation]),
-			)
-			.optional(),
+		data: collectionData.default({}),
 	})
 	.strict();
-
-export const jsonSchema = z
-	.object({
-		data: z.record(
-			dataPropertySchema,
-			z.discriminatedUnion('type', [
-				drizzleIntegerColumn,
-				drizzleJsonColumn,
-				drizzleTextColumn,
-			]),
-		),
-	})
-	.strict()
-	.transform((value) => {
-		value.data = {
-			...value.data,
-			_id: drizzleTextColumn.parse({
-				type: 'text',
-				primaryKey: true,
-			}),
-		};
-		return value;
-	});
-
-export const jsonConfig = z
-	.object({
-		$schema: z.string().optional(),
-		type: z.literal('json'),
-		schema: jsonSchema,
-		relations: z
-			.record(
-				z.discriminatedUnion('type', [drizzleOneRelation, drizzleManyRelation]),
-			)
-			.optional(),
-	})
-	.strict();
-
-export const configSchema = z.discriminatedUnion('type', [
-	jsonConfig,
-	markdownConfig,
-	plaintextConfig,
-	yamlConfig,
-]);
-
-export function loadCollectionConfig(
-	thingConfig: ThingConfig,
-	collectionName: string,
-) {
-	const configPath = path.join(
-		thingConfig.collectionsDir,
-		collectionName,
-		'collection.config.json',
-	);
-
-	let configContent;
-	try {
-		configContent = fs.readFileSync(configPath, 'utf-8');
-	} catch (_error) {
-		let type =
-			(_error as any).code === 'ENOENT'
-				? ('file-not-found' as const)
-				: ('read-file-error' as const);
-		Object.assign(_error as any, { collection: collectionName });
-		return Err(type, _error as Error & { collection: string });
-	}
-
-	let configJSON;
-	try {
-		configJSON = JSON.parse(configContent);
-	} catch (_error) {
-		Object.assign(_error as any, { collection: collectionName });
-		return Err('json-parse-error', _error as Error & { collection: string });
-	}
-
-	let parseResult = configSchema.safeParse(configJSON);
-	let validatedJSON;
-	if (parseResult.success) {
-		validatedJSON = parseResult.data;
-	} else {
-		return Err('validation-error', parseResult.error);
-	}
-
-	return Ok({ ...validatedJSON, name: collectionName } as CollectionConfig);
-}

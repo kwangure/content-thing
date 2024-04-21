@@ -3,7 +3,7 @@ import type {
 	IntegerColumn,
 	JsonColumn,
 	TextColumn,
-} from '../config/types';
+} from '../config/types.js';
 
 /**
  * Generates the column code for text type
@@ -159,9 +159,9 @@ export function generateSchema(collectionConfig: CollectionConfig) {
 	const drizzleImports = new Set(['sqliteTable']);
 	const contentThingImports = new Set();
 
-	const { schema, name: tableName } = collectionConfig;
-	if (schema.data) {
-		const columns = Object.values(schema.data);
+	const { data, name: tableName } = collectionConfig;
+	if (data.fields) {
+		const columns = Object.values(data.fields);
 		for (const column of columns) {
 			if (DRIZZLE_COLUMNS.includes(column.type)) {
 				drizzleImports.add(column.type);
@@ -184,9 +184,9 @@ export function generateSchema(collectionConfig: CollectionConfig) {
 	schemaCode += `\n`;
 	schemaCode += `export const ${tableName} = sqliteTable('${tableName}', {\n`;
 
-	if (schema.data) {
-		for (const key in schema.data) {
-			const column = schema.data[key];
+	if (data.fields) {
+		for (const key in data.fields) {
+			const column = data.fields[key];
 			const columnType = column.type;
 			let columnCode = '';
 			if (columnType === 'text') {

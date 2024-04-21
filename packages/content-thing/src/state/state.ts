@@ -6,7 +6,6 @@ import {
 } from '../db/io.js';
 import { getCollectionEntries, isReadme } from '../collections/collect.js';
 import { atomic, compound } from 'hine';
-import { loadCollectionConfig } from '../config/load.js';
 import { mkdirp, rimraf } from '@content-thing/internal-utils/filesystem';
 import {
 	writeDBClient,
@@ -24,6 +23,7 @@ import { jsonPlugin } from '../plugins/json.js';
 import { markdownPlugin } from '../plugins/markdown/plugin.js';
 import { yamlPlugin } from '../plugins/yaml.js';
 import { plaintextPlugin } from '../plugins/plaintext.js';
+import type { ZodError, ZodIssue } from 'zod';
 
 export let logger = createLogger();
 
@@ -187,7 +187,7 @@ export function createThing(thingConfig: ThingConfig) {
 						const { filepath } = event.detail as { filepath: string };
 						const filename = path.basename(filepath);
 						if (!isReadme(filename)) return;
-						const configResult = loadCollectionConfig(
+						const configResult = await pluginContainer.loadCollectionConfig(
 							thingConfig,
 							(event.detail as { collection: string }).collection,
 						);
@@ -257,7 +257,10 @@ async function seedCollection(
 	db: DB,
 	pluginContainer: PluginContainer,
 ) {
-	const configResult = loadCollectionConfig(thingConfig, collectionName);
+	const configResult = await pluginContainer.loadCollectionConfig(
+		thingConfig,
+		collectionName,
+	);
 	const collectionConfig = unwrapCollectionConfigResult(configResult);
 	if (!collectionConfig) return;
 
@@ -283,45 +286,46 @@ async function seedCollection(
 	}
 }
 
-function unwrapCollectionConfigResult(
-	configResult: ReturnType<typeof loadCollectionConfig>,
-) {
+type ConfigResult = Awaited<
+	ReturnType<PluginContainer['loadCollectionConfig']>
+>;
+
+function unwrapCollectionConfigResult(configResult: ConfigResult) {
 	if (configResult.ok) {
 		return configResult.value;
 	}
-
 	if (configResult.type === 'file-not-found') {
 		return logError(
 			`"collection.config.json" not found in "${configResult.error.collection}" collection. All collections must have a config file.`,
 		);
 	}
-
 	if (configResult.type === 'read-file-error') {
 		return logError(
 			`Unable to read "collections/${configResult.error.collection}/collection.config.json". ${configResult.error.message}`,
 		);
 	}
-
 	if (configResult.type === 'json-parse-error') {
 		return logError(
-			`Malformed JSON in "collections/${configResult.error.collection}/collection.config.json".`,
+			`Unable to read "collections/${configResult.error.collection}/collection.config.json". ${configResult.error.message}`,
 		);
 	}
-
-	if (configResult.type === 'validation-error') {
+	if (configResult.type === 'user-config-validation-error') {
 		return logError(
-			`Invalid JSON Schema. ${JSON.stringify(
-				configResult.error.format(),
-				null,
-				4,
-			)}`,
+			`Invalid collection config at "collections/${
+				configResult.error.collectionName
+			}/collection.config.json". ${formatZodError(configResult.error)}`,
+		);
+	}
+	if (configResult.type === 'plugin-config-validation-error') {
+		return logError(
+			`Invalid collection config contributed by plugin "${
+				configResult.error.pluginName
+			}". ${formatZodError(configResult.error)}`,
 		);
 	}
 
 	const exhaustiveCheck: never = configResult.type;
-	throw Error(
-		`Unhandled config error of type "${exhaustiveCheck}". ${configResult.error}`,
-	);
+	throw Error(`Unhandled config error type "${exhaustiveCheck}".`);
 }
 
 function logInfo(message: string, options: LogOptions = {}) {
@@ -336,4 +340,15 @@ function logError(message: string, options: LogErrorOptions = {}) {
 		options.timestamp = true;
 	}
 	logger.error(message, options);
+}
+
+function formatZodError(error: ZodError) {
+	const { fieldErrors, formErrors } = error.flatten();
+	let message = formErrors.join(' ');
+	if (message.length && message.at(-1) !== '.') message += '.';
+	for (const [path, errors] of Object.entries(fieldErrors)) {
+		message += ` Field error at "config.${path}"`;
+		message += errors?.length ? `: ${errors.join(', ')}.` : '.';
+	}
+	return message;
 }

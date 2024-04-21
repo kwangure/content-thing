@@ -18,9 +18,10 @@ export function generateOneRelationCode(table: string, relation: OneRelation) {
 }
 
 export function generateRelations(collectionConfig: CollectionConfig) {
-	const { relations, name: tableName } = collectionConfig;
+	const tableName = collectionConfig.name;
+	const relations = collectionConfig.data?.relations ?? {};
 	const types = [
-		...new Set(Object.values(relations ?? {}).map(({ type }) => type)),
+		...new Set(Object.values(relations).map(({ type }) => type)),
 	].sort();
 	let relationCode = `export const ${tableName}Relations = relations(${tableName}, ({ ${types.join(
 		', ',
@@ -47,7 +48,7 @@ export function generateRelationImports(
 	let imports = `import { relations } from 'content-thing/drizzle-orm';\n`;
 
 	const relatedCollections = new Set(
-		Object.values(collectionConfig.relations ?? {}).map(
+		Object.values(collectionConfig.data?.relations ?? {}).map(
 			({ collection }) => collection,
 		),
 	);

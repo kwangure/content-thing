@@ -1,13 +1,11 @@
 import {
+	collectionConfig,
 	drizzleIntegerColumn,
 	drizzleJsonColumn,
 	drizzleManyRelation,
 	drizzleOneRelation,
 	drizzleTextColumn,
-	markdownConfig,
-	markdownSchema,
-	yamlConfig,
-	yamlSchema,
+	pluginCollectionConfig,
 } from './load.js';
 import { z } from 'zod';
 
@@ -19,12 +17,7 @@ export type ColumnType = IntegerColumn | JsonColumn | TextColumn;
 export type OneRelation = z.output<typeof drizzleOneRelation>;
 export type ManyRelation = z.output<typeof drizzleManyRelation>;
 
-export type MarkdownSchema = z.output<typeof markdownSchema>;
-export type YamlSchema = z.output<typeof yamlSchema>;
-export type CollectionSchema = MarkdownSchema | YamlSchema;
-
-export type MarkdownConfig = z.output<typeof markdownConfig>;
-export type YamlConfig = z.output<typeof yamlConfig>;
-export type CollectionConfig = (MarkdownConfig | YamlConfig) & {
+export type PluginCollectionConfig = z.input<typeof pluginCollectionConfig>;
+export type CollectionConfig = z.output<typeof collectionConfig> & {
 	name: string;
 };
