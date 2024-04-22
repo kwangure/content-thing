@@ -1,5 +1,11 @@
 # content-thing
 
+## 0.0.21
+
+### Patch Changes
+
+- 1318118: Move files from src/thing/collections to src/collections
+
 ## 0.0.20
 
 ### Patch Changes
