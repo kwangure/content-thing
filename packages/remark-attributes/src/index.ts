@@ -38,7 +38,7 @@ function parseCode(code: Code) {
 	const match = code.meta.match(ATTRIBUTE_BLOCK_RE);
 	if (!match) return;
 
-	const parseOutput = mdAttributes(match[1].trim());
+	const parseOutput = mdAttributes(match[1].trim(), 0, { defaultValue: true });
 	if (!isNonEmptyObject(parseOutput.prop)) return;
 
 	code.data.attributes = parseOutput.prop;
