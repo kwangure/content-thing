@@ -1,5 +1,11 @@
 # content-thing
 
+## 0.0.22
+
+### Patch Changes
+
+- 4bd997a: Upgrade Hine
+
 ## 0.0.21
 
 ### Patch Changes
