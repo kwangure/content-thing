@@ -5,7 +5,13 @@ import {
 	insertIntoTable,
 } from '../db/io.js';
 import { getCollectionEntries, isReadme } from '../collections/collect.js';
-import { atomic, compound } from 'hine';
+import {
+	atomic,
+	compound,
+	emitEvent,
+	resolveState,
+	type StateEvent,
+} from 'hine';
 import { mkdirp, rimraf } from '@content-thing/internal-utils/filesystem';
 import {
 	writeDBClient,
@@ -23,7 +29,7 @@ import { jsonPlugin } from '../plugins/json.js';
 import { markdownPlugin } from '../plugins/markdown/plugin.js';
 import { yamlPlugin } from '../plugins/yaml.js';
 import { plaintextPlugin } from '../plugins/plaintext.js';
-import type { ZodError, ZodIssue } from 'zod';
+import type { ZodError } from 'zod';
 
 export let logger = createLogger();
 
@@ -44,83 +50,33 @@ export function createThing(thingConfig: ThingConfig) {
 		yamlPlugin,
 		plaintextPlugin,
 	]);
-	const thing = compound({
-		name: 'thing',
-		children: {
-			uninitialized: atomic({
+	const thing = compound('thing', {
+		initial: 'uninitialized',
+		children: [
+			atomic('uninitialized', {
 				on: {
-					build: { goto: 'build' },
-				},
-			}),
-			build: atomic({
-				entry: ['clearGeneratedFiles', 'buildCollections'],
-				always: {
-					if: 'shouldWatch',
-					goto: 'watch',
-				},
-			}),
-			watch: atomic({
-				entry: ['watchCollections', 'watchCollectionsDir'],
-				on: {
-					addCollection: { run: ['addCollection'] },
-					collectionFound: { run: ['createWatcher'] },
-					fileAdded: [
-						{ if: 'isCollectionConfig', run: ['seedCollection'] },
-						{ if: 'isNotCollectionConfig', run: ['updateFile'] },
-					],
-					fileChanged: [
-						{ if: 'isCollectionConfig', run: ['seedCollection'] },
-						{ if: 'isNotCollectionConfig', run: ['updateFile'] },
+					build: [
+						{ if: () => thingConfig.watch, goto: 'watch' },
+						{ goto: 'build' },
 					],
 				},
 			}),
-		},
-	});
-
-	thing.resolve({
-		children: {
-			build: {
-				actions: {
-					buildCollections() {
-						logInfo('Starting collection build...');
-						const dbPath = path.join(thingConfig.outputDir, 'sqlite.db');
-						db = new Database(dbPath);
-						const { collectionsDir } = thingConfig;
-						const collectionRootDirs: string[] = [];
-						if (fs.existsSync(collectionsDir)) {
-							const entries = fs.readdirSync(collectionsDir, {
-								withFileTypes: true,
-							});
-							for (const entry of entries) {
-								if (entry.isDirectory()) {
-									collectionRootDirs.push(entry.name);
-									collectionNames.add(entry.name);
-								}
-							}
-						}
-						for (const collectionName of collectionNames) {
-							seedCollection(thingConfig, collectionName, db, pluginContainer);
-						}
-
-						writeSchemaExports(thingConfig, collectionNames);
-						writeDBClient(thingConfig, collectionNames);
-					},
-					clearGeneratedFiles() {
-						rimraf(thingConfig.collectionsOutput);
-						mkdirp(thingConfig.collectionsOutput);
-					},
+			atomic('build', {
+				hooks: {
+					afterEntry: [clearGeneratedFiles, buildCollections],
 				},
-				conditions: {
-					isCollectionItem(event) {
-						const { filepath } = event.detail as { filepath: string };
-						return filepath.startsWith(thingConfig.collectionsDir);
-					},
-					shouldWatch: () => thingConfig.watch,
+			}),
+			atomic('watch', {
+				hooks: {
+					afterEntry: [
+						clearGeneratedFiles,
+						buildCollections,
+						watchCollections,
+						watchCollectionsDir,
+					],
 				},
-			},
-			watch: {
-				actions: {
-					addCollection(event) {
+				on: {
+					addCollection(event: StateEvent) {
 						const { filepath } = event.detail as { filepath: string };
 						const collection = path.basename(filepath);
 						collectionNames.add(collection);
@@ -128,38 +84,7 @@ export function createThing(thingConfig: ThingConfig) {
 						writeSchemaExports(thingConfig, collectionNames);
 						writeDBClient(thingConfig, collectionNames);
 					},
-					watchCollectionsDir(event) {
-						const { collectionsDir, root } = thingConfig;
-						logInfo(
-							`Watching top-level files in '${collectionsDir.slice(
-								root.length + 1,
-							)}'`,
-						);
-						const watcher = chokidar.watch(collectionsDir, {
-							depth: 0,
-							ignoreInitial: true,
-						});
-						watcher.on('addDir', (filepath) => {
-							if (filepath === collectionsDir) return;
-							event.currentTarget.dispatch('addCollection', { filepath });
-						});
-					},
-					watchCollections(event) {
-						queueMicrotask(() => {
-							const { collectionsDir, root } = thingConfig;
-
-							for (const collection of collectionNames) {
-								const collectionRoot = path.join(collectionsDir, collection);
-								logInfo(
-									`Watching collection files in '${collectionRoot.slice(
-										root.length + 1,
-									)}'`,
-								);
-								event.currentTarget.dispatch('collectionFound', collection);
-							}
-						});
-					},
-					createWatcher(event) {
+					collectionFound(event: StateEvent) {
 						const { collectionsDir } = thingConfig;
 						const collectionRoot = path.join(
 							collectionsDir,
@@ -170,85 +95,161 @@ export function createThing(thingConfig: ThingConfig) {
 						});
 
 						watcher.on('add', (filepath) => {
-							event.currentTarget.dispatch('fileAdded', {
+							emitEvent(event.currentTarget, 'fileAdded', {
 								collection: event.detail,
 								filepath,
 							});
 						});
 
 						watcher.on('change', (filepath) => {
-							event.currentTarget.dispatch('fileChanged', {
+							emitEvent(event.currentTarget, 'fileChanged', {
 								collection: event.detail,
 								filepath,
 							});
 						});
 					},
-					async updateFile(event) {
-						const { filepath } = event.detail as { filepath: string };
-						const filename = path.basename(filepath);
-						if (!isReadme(filename)) return;
-						const configResult = await pluginContainer.loadCollectionConfig(
-							thingConfig,
-							(event.detail as { collection: string }).collection,
-						);
-						const collectionConfig = unwrapCollectionConfigResult(configResult);
-						if (!collectionConfig) return;
-
-						// Ignore possibly malformed files being edited actively
-						try {
-							const loadResult = await pluginContainer.loadFile(
-								filepath,
-								collectionConfig.type,
-							);
-							if (loadResult) {
-								// TODO: Make this a transaction?
-								// Delete to avoid conflicts on unique columns
-								deleteFromTable(db, collectionConfig, {
-									_id: loadResult.record._id,
-								});
-								insertIntoTable(db, collectionConfig, loadResult.record);
-							}
-						} catch (error) {
-							logError(
-								`[content-thing] Malformed document at ${filepath}. ${error}`,
-							);
-						}
-					},
-					seedCollection(event) {
-						const { root } = thingConfig;
-						const { collection: collectionName, filepath } = event.detail as {
-							collection: string;
-							filepath: string;
-						};
-						logInfo(
-							`Config file ${
-								event.type === 'fileAdded' ? 'added' : 'changed'
-							} '${filepath.slice(
-								root.length + 1,
-							)}'. Seeding "${collectionName}" database table.`,
-						);
-						seedCollection(thingConfig, collectionName, db, pluginContainer);
-					},
+					fileAdded: [
+						{
+							if: isCollectionConfig,
+							run: __seedCollection,
+						},
+						{
+							if: (event: StateEvent) => !isCollectionConfig(event),
+							run: updateFile,
+						},
+					],
+					fileChanged: [
+						{
+							if: isCollectionConfig,
+							run: __seedCollection,
+						},
+						{
+							if: (event: StateEvent) => !isCollectionConfig(event),
+							run: updateFile,
+						},
+					],
 				},
-				conditions: {
-					isCollectionConfig(event) {
-						const { filepath } = event.detail as { filepath: string };
-						return filepath.endsWith('collection.config.json');
-					},
-					isNotCollectionConfig(event) {
-						const { filepath } = event.detail as { filepath: string };
-						return !filepath.endsWith('collection.config.json');
-					},
-				},
-			},
-		},
+			}),
+		],
 	});
 
-	return thing;
+	function clearGeneratedFiles() {
+		rimraf(thingConfig.collectionsOutput);
+		mkdirp(thingConfig.collectionsOutput);
+	}
+
+	function buildCollections() {
+		logInfo('Starting collection build...');
+		const dbPath = path.join(thingConfig.outputDir, 'sqlite.db');
+		db = new Database(dbPath);
+		const { collectionsDir } = thingConfig;
+		const collectionRootDirs: string[] = [];
+		if (fs.existsSync(collectionsDir)) {
+			const entries = fs.readdirSync(collectionsDir, {
+				withFileTypes: true,
+			});
+			for (const entry of entries) {
+				if (entry.isDirectory()) {
+					collectionRootDirs.push(entry.name);
+					collectionNames.add(entry.name);
+				}
+			}
+		}
+		for (const collectionName of collectionNames) {
+			seedCollection(thingConfig, collectionName, db, pluginContainer);
+		}
+
+		writeSchemaExports(thingConfig, collectionNames);
+		writeDBClient(thingConfig, collectionNames);
+	}
+
+	function watchCollectionsDir(event: StateEvent) {
+		const { collectionsDir, root } = thingConfig;
+		logInfo(
+			`Watching top-level files in '${collectionsDir.slice(root.length + 1)}'`,
+		);
+		const watcher = chokidar.watch(collectionsDir, {
+			depth: 0,
+			ignoreInitial: true,
+		});
+		watcher.on('addDir', (filepath) => {
+			if (filepath === collectionsDir) return;
+			emitEvent(event.currentTarget, 'addCollection', { filepath });
+		});
+	}
+
+	function watchCollections(event: StateEvent) {
+		queueMicrotask(() => {
+			const { collectionsDir, root } = thingConfig;
+
+			for (const collection of collectionNames) {
+				const collectionRoot = path.join(collectionsDir, collection);
+				logInfo(
+					`Watching collection files in '${collectionRoot.slice(
+						root.length + 1,
+					)}'`,
+				);
+				emitEvent(event.currentTarget, 'collectionFound', collection);
+			}
+		});
+	}
+
+	async function updateFile(event: StateEvent) {
+		const { filepath } = event.detail as { filepath: string };
+		const filename = path.basename(filepath);
+		if (!isReadme(filename)) return;
+		const configResult = await pluginContainer.loadCollectionConfig(
+			thingConfig,
+			(event.detail as { collection: string }).collection,
+		);
+		const collectionConfig = unwrapCollectionConfigResult(configResult);
+		if (!collectionConfig) return;
+
+		// Ignore possibly malformed files being edited actively
+		try {
+			const loadResult = await pluginContainer.loadFile(
+				filepath,
+				collectionConfig.type,
+			);
+			if (loadResult) {
+				// TODO: Make this a transaction?
+				// Delete to avoid conflicts on unique columns
+				deleteFromTable(db, collectionConfig, {
+					_id: loadResult.record._id,
+				});
+				insertIntoTable(db, collectionConfig, loadResult.record);
+			}
+		} catch (error) {
+			logError(`[content-thing] Malformed document at ${filepath}. ${error}`);
+		}
+	}
+
+	function __seedCollection(event: StateEvent) {
+		const { root } = thingConfig;
+		const { collection: collectionName, filepath } = event.detail as {
+			collection: string;
+			filepath: string;
+		};
+		logInfo(
+			`Config file ${
+				event.type === 'fileAdded' ? 'added' : 'changed'
+			} '${filepath.slice(
+				root.length + 1,
+			)}'. Seeding "${collectionName}" database table.`,
+		);
+		seedCollection(thingConfig, collectionName, db, pluginContainer);
+	}
+
+	return resolveState(thing);
 }
 
 function isNonNullable<T>(value: T | null | undefined): value is T {
 	return value !== null && value !== undefined;
+}
+
+function isCollectionConfig(event: StateEvent) {
+	const { filepath } = event.detail as { filepath: string };
+	return filepath.endsWith('collection.config.json');
 }
 
 async function seedCollection(

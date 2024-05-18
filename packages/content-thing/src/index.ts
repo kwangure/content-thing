@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { createThing, logger, type ThingConfig } from './state/state.js';
 import type { Plugin, ResolvedConfig } from 'vite';
+import { emitEvent } from 'hine';
 
 export { extendSvelteConfig } from './svelte-kit.js';
 
@@ -31,7 +32,7 @@ export function content(): Plugin {
 				watch: command === 'serve',
 			};
 			const thing = createThing(thingConfig);
-			thing.dispatch('build');
+			emitEvent(thing, 'build');
 		},
 		resolveId(id) {
 			if (id.endsWith('sqlite.db')) {
