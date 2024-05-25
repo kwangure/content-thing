@@ -10,7 +10,9 @@ import type { CollectionPlugin } from '../index.js';
 import { parseFilepath } from '../../helpers/filepath.js';
 import { getHeadingTree } from './heading_tree.js';
 import type { Root } from 'mdast';
+import { processCopyAttributes } from './copy_attributes.js';
 import { processFileAttributes } from './file_attributes.js';
+import { highlightCodeBlocks } from './highlight_code.js';
 
 export const markdownPlugin: CollectionPlugin = {
 	name: 'collection-plugin-markdown',
@@ -55,6 +57,8 @@ export const markdownPlugin: CollectionPlugin = {
 				const tree = processor.parse(content);
 				const transformedTree = processor.runSync(tree);
 				processFileAttributes(transformedTree, path);
+				processCopyAttributes(transformedTree);
+				await highlightCodeBlocks(transformedTree);
 				const tableOfContents = getHeadingTree(transformedTree as Root);
 				return {
 					record: {
