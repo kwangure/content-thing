@@ -1,5 +1,11 @@
 # content-thing
 
+## 0.0.23
+
+### Patch Changes
+
+- 17ac36e: Add syntax highlighting & copying at build time
+
 ## 0.0.22
 
 ### Patch Changes
