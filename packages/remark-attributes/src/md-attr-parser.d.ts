@@ -1,6 +1,6 @@
 declare module 'md-attr-parser' {
 	interface ParseConfig {
-		defaultValue?: () => any;
+		defaultValue?: any;
 	}
 
 	interface ParseResult {
