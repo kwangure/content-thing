@@ -17,6 +17,7 @@
 	"wireit": {
 		"build": {
 			"dependencies": [
+				"./packages/svelte:build",
 				"./packages/content-thing:build",
 				"./packages/internal-utils:build",
 				"./packages/remark-attributes:build",
@@ -47,6 +48,7 @@
 		},
 		"pre-commit": {
 			"dependencies": [
+				"./packages/svelte-components:pre-commit",
 				"./packages/content-thing:pre-commit",
 				"./packages/internal-utils:pre-commit",
 				"./packages/remark-attributes:pre-commit",
@@ -57,6 +59,7 @@
 		"release": {
 			"command": "changeset publish",
 			"dependencies": [
+				"./packages/svelte-components:release",
 				"./packages/content-thing:release",
 				"./packages/internal-utils:release",
 				"./packages/remark-attributes:release",
@@ -85,6 +88,8 @@
 	},
 	"devDependencies": {
 		"@changesets/cli": "^2.26.2",
+		"eslint": "^8.55.0",
+		"prettier": "^3.1.0",
 		"wireit": "^0.14.1"
 	}
 }

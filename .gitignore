@@ -8,8 +8,9 @@ node_modules
 *.tsbuildinfo
 
 packages/*/*.tgz
-packages/*/dist/**
-packages/*/types/**
+packages/*/.svelte-kit
+packages/*/dist
+packages/*/types
 
 sites/*/.svelte-kit
 sites/*/build
