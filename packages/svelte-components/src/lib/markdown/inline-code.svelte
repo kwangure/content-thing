@@ -7,6 +7,5 @@
 
 <InlineCode
 	attributes={node.data?.attributes}
-	code={node.value}
-	language={node.data?.attributes.lang}
+	tokens={node.data?.highlightedTokens ?? []}
 />

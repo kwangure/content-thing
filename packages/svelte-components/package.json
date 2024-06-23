@@ -138,11 +138,10 @@
 		"uid": "^2.0.2"
 	},
 	"peerDependencies": {
-		"@svelte-thing/components": "^0.0.23",
 		"svelte": "^4.0.0"
 	},
 	"devDependencies": {
-		"@svelte-thing/components": "^0.0.24",
+		"@svelte-thing/components": "^0.0.26",
 		"@sveltejs/adapter-auto": "^3.0.0",
 		"@sveltejs/kit": "^2.0.0",
 		"@sveltejs/package": "^2.2.0",
