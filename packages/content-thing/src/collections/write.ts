@@ -13,7 +13,10 @@ export function writeSchema(
 	if (collectionConfig.data?.relations) {
 		schemaCode += generateRelationImports(thingConfig, collectionConfig);
 	}
-	schemaCode += generateSchema(collectionConfig);
+	const schema = generateSchema(collectionConfig);
+	if (!schema.ok) throw schema.error;
+
+	schemaCode += schema.value;
 	if (collectionConfig.data?.relations) {
 		schemaCode += `\n`;
 		schemaCode += `${generateRelations(collectionConfig)}\n\n`;
