@@ -1,9 +1,10 @@
-import { describe, expect, it } from 'vitest';
+import { assert, describe, expect, it } from 'vitest';
 import {
 	generateTextColumnCode,
 	generateIntegerColumnCode,
 	generateJsonColumnCode,
 	generateSchema,
+	isValidFieldName,
 } from '../src/db/schema.js';
 import type {
 	IntegerColumn,
@@ -263,11 +264,13 @@ describe('generateSchema', () => {
 			"import { json } from 'content-thing/db';\n" +
 			'\n' +
 			`export const testTable = sqliteTable('testTable', {\n` +
-			`\tname: text('name').notNull(),\n` +
-			`\tage: integer('age').notNull(),\n` +
-			`\tpreferences: json('preferences').notNull(),\n` +
+			`\t"name": text('name').notNull(),\n` +
+			`\t"age": integer('age').notNull(),\n` +
+			`\t"preferences": json('preferences').notNull(),\n` +
 			`});\n`;
-		expect(generateSchema(config as any)).toEqual(expected);
+		const schema = generateSchema(config as any);
+		assert(schema.ok);
+		expect(schema.value).toEqual(expected);
 	});
 	it('throws error for unsupported column types', () => {
 		const config = {
@@ -283,5 +286,79 @@ describe('generateSchema', () => {
 		expect(() => generateSchema(config as any)).toThrow(
 			/Unsupported column type in schema/,
 		);
+	});
+});
+
+describe('isValidFieldName', () => {
+	// Test cases for single character invalid keys
+	it('should invalidate single character special key "!"', () => {
+		expect(isValidFieldName('!')).toBe(false);
+	});
+
+	it('should invalidate single character special key "@"', () => {
+		expect(isValidFieldName('@')).toBe(false);
+	});
+
+	it('should invalidate single character special key "&"', () => {
+		expect(isValidFieldName('&')).toBe(false);
+	});
+
+	// Test cases for multiple character invalid keys
+	it('should invalidate key with spaces "a b c"', () => {
+		expect(isValidFieldName('a b c')).toBe(false);
+	});
+
+	it('should invalidate key starting with special character "!abc"', () => {
+		expect(isValidFieldName('!abc')).toBe(false);
+	});
+
+	it('should invalidate key with combination of letters and special characters "a!b@c#"', () => {
+		expect(isValidFieldName('a!b@c#')).toBe(false);
+	});
+
+	// Test cases for edge cases
+	it('should invalidate empty key ""', () => {
+		expect(isValidFieldName('')).toBe(false);
+	});
+
+	it('should invalidate key with non-Latin characters "你好"', () => {
+		expect(isValidFieldName('你好')).toBe(false);
+	});
+
+	it('should invalidate key with control characters "abc\\ndef"', () => {
+		expect(isValidFieldName('abc\ndef')).toBe(false);
+	});
+
+	// Test cases for valid keys
+	it('should validate single character key "a"', () => {
+		expect(isValidFieldName('a')).toBe(true);
+	});
+
+	it('should validate single character key "A"', () => {
+		expect(isValidFieldName('A')).toBe(true);
+	});
+
+	it('should validate single character key "1"', () => {
+		expect(isValidFieldName('1')).toBe(true);
+	});
+
+	it('should validate key with alphanumeric characters "a1B2"', () => {
+		expect(isValidFieldName('a1B2')).toBe(true);
+	});
+
+	it('should validate key with underscore "_"', () => {
+		expect(isValidFieldName('_')).toBe(true);
+	});
+
+	it('should validate key with dollar sign "$"', () => {
+		expect(isValidFieldName('$')).toBe(true);
+	});
+
+	it('should validate key with combination of valid characters "a_B$1"', () => {
+		expect(isValidFieldName('a_B$1')).toBe(true);
+	});
+
+	it('should validate key with mixed case "aBcDeF"', () => {
+		expect(isValidFieldName('aBcDeF')).toBe(true);
 	});
 });

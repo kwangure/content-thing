@@ -4,6 +4,7 @@ import type {
 	JsonColumn,
 	TextColumn,
 } from '../config/types.js';
+import { Err, Ok } from '../result.js';
 
 /**
  * Generates the column code for text type
@@ -185,24 +186,37 @@ export function generateSchema(collectionConfig: CollectionConfig) {
 	schemaCode += `export const ${tableName} = sqliteTable('${tableName}', {\n`;
 
 	if (data.fields) {
-		for (const key in data.fields) {
-			const column = data.fields[key];
+		for (const field in data.fields) {
+			if (!isValidFieldName(field)) {
+				return Err(
+					'invalid-field-name',
+					new Error(
+						`Expected field name to match "${COLUMN_NAME_REGEXP.toString()}" but found field "${field}".`,
+					),
+				);
+			}
+			const column = data.fields[field];
 			const columnType = column.type;
 			let columnCode = '';
 			if (columnType === 'text') {
-				columnCode = generateTextColumnCode(key, column);
+				columnCode = generateTextColumnCode(field, column);
 			} else if (columnType === 'integer') {
-				columnCode = generateIntegerColumnCode(key, column);
+				columnCode = generateIntegerColumnCode(field, column);
 			} else if (columnType === 'json') {
-				columnCode = generateJsonColumnCode(key, column);
+				columnCode = generateJsonColumnCode(field, column);
 			} else {
 				throw new Error(
 					`Unsupported column type in schema: ${columnType}. File an issue to implement missing types.`,
 				);
 			}
-			schemaCode += `\t${key}: ${columnCode},\n`;
+			schemaCode += `\t"${field}": ${columnCode},\n`;
 		}
 	}
 	schemaCode += '});\n';
-	return schemaCode;
+	return Ok(schemaCode);
+}
+
+const COLUMN_NAME_REGEXP = /^[0-9a-zA-Z$_]+$/;
+export function isValidFieldName(name: string) {
+	return COLUMN_NAME_REGEXP.test(name);
 }
