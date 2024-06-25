@@ -1,4 +1,4 @@
-import type { CollectionConfig } from '../config/types.js';
+import type { CollectionConfig, CollectionConfigMap } from '../config/types.js';
 import { generateRelationImports, generateRelations } from '../db/relations.js';
 import { generateSchema } from '../db/schema.js';
 import { write } from '@content-thing/internal-utils/filesystem';
@@ -32,18 +32,18 @@ export function writeSchema(
 
 export function writeDBClient(
 	thingConfig: ThingConfig,
-	collections: Set<string>,
+	collectionConfigMap: CollectionConfigMap,
 ) {
 	let result = `import { Database } from 'content-thing/better-sqlite3';\n`;
 	result += `import { drizzle } from 'content-thing/drizzle-orm/better-sqlite3';\n`;
 	result += `// @ts-ignore\n`;
 	result += `import dbPath from './sqlite.db';\n`;
-	for (const collection of collections) {
+	for (const collection of collectionConfigMap.keys()) {
 		result += `import * as ${collection} from './collections/${collection}/schema.config.js';\n`;
 	}
 
 	result += `\nconst schema = {\n`;
-	for (const collection of collections) {
+	for (const collection of collectionConfigMap.keys()) {
 		result += `\t...${collection},\n`;
 	}
 	result += `};\n`;
@@ -59,10 +59,10 @@ export function writeDBClient(
 
 export function writeSchemaExports(
 	thingConfig: ThingConfig,
-	collections: Set<string>,
+	collectionConfigMap: CollectionConfigMap,
 ) {
 	let result = '';
-	for (const collection of collections) {
+	for (const collection of collectionConfigMap.keys()) {
 		result += `export * from './collections/${collection}/schema.config.js';\n`;
 	}
 	const schemaPath = path.join(thingConfig.outputDir, 'schema.js');

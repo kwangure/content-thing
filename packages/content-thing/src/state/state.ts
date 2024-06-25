@@ -30,6 +30,7 @@ import { markdownPlugin } from '../plugins/markdown/plugin.js';
 import { yamlPlugin } from '../plugins/yaml.js';
 import { plaintextPlugin } from '../plugins/plaintext.js';
 import type { ZodError } from 'zod';
+import type { CollectionConfig, CollectionConfigMap } from '../config/types.js';
 
 export let logger = createLogger();
 
@@ -43,7 +44,7 @@ export interface ThingConfig {
 
 export function createThing(thingConfig: ThingConfig) {
 	let db: DB;
-	const collectionNames: Set<string> = new Set();
+	const collectionConfigMap: CollectionConfigMap = new Map();
 	const pluginContainer = new PluginContainer([
 		jsonPlugin,
 		markdownPlugin,
@@ -76,13 +77,18 @@ export function createThing(thingConfig: ThingConfig) {
 					],
 				},
 				on: {
-					addCollection(event: StateEvent) {
+					async addCollection(event: StateEvent) {
 						const { filepath } = event.detail as { filepath: string };
 						const collection = path.basename(filepath);
-						collectionNames.add(collection);
+						const configResult = await pluginContainer.loadCollectionConfig(
+							thingConfig,
+							collection,
+						);
+						const collectionConfig = unwrapCollectionConfigResult(configResult);
+						if (!collectionConfig) return;
 
-						writeSchemaExports(thingConfig, collectionNames);
-						writeDBClient(thingConfig, collectionNames);
+						writeSchemaExports(thingConfig, collectionConfigMap);
+						writeDBClient(thingConfig, collectionConfigMap);
 					},
 					collectionFound(event: StateEvent) {
 						const { collectionsDir } = thingConfig;
@@ -138,7 +144,7 @@ export function createThing(thingConfig: ThingConfig) {
 		mkdirp(thingConfig.collectionsOutput);
 	}
 
-	function buildCollections() {
+	async function buildCollections() {
 		logInfo('Starting collection build...');
 		const dbPath = path.join(thingConfig.outputDir, 'sqlite.db');
 		db = new Database(dbPath);
@@ -150,17 +156,25 @@ export function createThing(thingConfig: ThingConfig) {
 			});
 			for (const entry of entries) {
 				if (entry.isDirectory()) {
+					const configResult = await pluginContainer.loadCollectionConfig(
+						thingConfig,
+						entry.name,
+					);
+					const collectionConfig = unwrapCollectionConfigResult(configResult);
+					if (!collectionConfig) {
+						continue;
+					}
 					collectionRootDirs.push(entry.name);
-					collectionNames.add(entry.name);
+					collectionConfigMap.set(entry.name, collectionConfig);
 				}
 			}
 		}
-		for (const collectionName of collectionNames) {
-			seedCollection(thingConfig, collectionName, db, pluginContainer);
+		for (const collectionConfig of collectionConfigMap.values()) {
+			seedCollection(thingConfig, collectionConfig, db, pluginContainer);
 		}
 
-		writeSchemaExports(thingConfig, collectionNames);
-		writeDBClient(thingConfig, collectionNames);
+		writeSchemaExports(thingConfig, collectionConfigMap);
+		writeDBClient(thingConfig, collectionConfigMap);
 	}
 
 	function watchCollectionsDir(event: StateEvent) {
@@ -182,7 +196,7 @@ export function createThing(thingConfig: ThingConfig) {
 		queueMicrotask(() => {
 			const { collectionsDir, root } = thingConfig;
 
-			for (const collection of collectionNames) {
+			for (const collection of collectionConfigMap.keys()) {
 				const collectionRoot = path.join(collectionsDir, collection);
 				logInfo(
 					`Watching collection files in '${collectionRoot.slice(
@@ -237,7 +251,8 @@ export function createThing(thingConfig: ThingConfig) {
 				root.length + 1,
 			)}'. Seeding "${collectionName}" database table.`,
 		);
-		seedCollection(thingConfig, collectionName, db, pluginContainer);
+		const collectionConfig = collectionConfigMap.get(collectionName)!;
+		seedCollection(thingConfig, collectionConfig, db, pluginContainer);
 	}
 
 	return resolveState(thing);
@@ -254,17 +269,10 @@ function isCollectionConfig(event: StateEvent) {
 
 async function seedCollection(
 	thingConfig: ThingConfig,
-	collectionName: string,
+	collectionConfig: CollectionConfig,
 	db: DB,
 	pluginContainer: PluginContainer,
 ) {
-	const configResult = await pluginContainer.loadCollectionConfig(
-		thingConfig,
-		collectionName,
-	);
-	const collectionConfig = unwrapCollectionConfigResult(configResult);
-	if (!collectionConfig) return;
-
 	writeSchema(thingConfig, collectionConfig);
 	writeValidator(thingConfig, collectionConfig);
 

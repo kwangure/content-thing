@@ -21,3 +21,4 @@ export type PluginCollectionConfig = z.input<typeof pluginCollectionConfig>;
 export type CollectionConfig = z.output<typeof collectionConfig> & {
 	name: string;
 };
+export type CollectionConfigMap = Map<string, CollectionConfig>;
