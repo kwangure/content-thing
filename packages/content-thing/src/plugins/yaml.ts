@@ -8,8 +8,8 @@ export const yamlPlugin: CollectionPlugin = {
 	setup(build) {
 		build.onCollectionConfig(
 			{ filter: { collection: { type: /^yaml$/ } } },
-			async () => {
-				return {
+			() => {
+				return Promise.resolve({
 					data: {
 						fields: {
 							_id: {
@@ -18,7 +18,7 @@ export const yamlPlugin: CollectionPlugin = {
 							},
 						},
 					},
-				};
+				});
 			},
 		);
 
@@ -27,7 +27,7 @@ export const yamlPlugin: CollectionPlugin = {
 			async ({ path }) => {
 				const { entry } = parseFilepath(path);
 				const content = await fs.readFile(path, 'utf-8');
-				const json = yaml.load(content) as Record<string, any>;
+				const json = yaml.load(content) as Record<string, unknown>;
 				return {
 					record: {
 						...json,

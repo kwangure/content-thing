@@ -5,7 +5,7 @@ export function mkdirp(dir: string) {
 	try {
 		fs.mkdirSync(dir, { recursive: true });
 	} catch (error) {
-		if ((error as any).code === 'EEXIST') {
+		if ((error as { code: string }).code === 'EEXIST') {
 			if (!fs.statSync(dir).isDirectory()) {
 				throw new Error(
 					`Cannot create directory ${dir}, a file already exists at this position`,

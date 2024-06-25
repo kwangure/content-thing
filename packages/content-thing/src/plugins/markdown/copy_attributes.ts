@@ -11,6 +11,7 @@ export function processCopyAttributes(tree: Root) {
 	});
 
 	for (const node of codeBlocks) {
+		// eslint-disable-next-line no-unsafe-optional-chaining
 		if (node.data?.attributes && 'copy' in node.data?.attributes) {
 			node.data.attributes.copy = true;
 			const lines = node.value.split(/\r\n|\r|\n/);

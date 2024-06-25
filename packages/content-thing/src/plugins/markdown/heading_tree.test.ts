@@ -7,7 +7,7 @@ import type { Root } from 'mdast';
 const processor = unified().use(remarkParse);
 
 describe('toc', () => {
-	it('creates toc from headings', async () => {
+	it('creates toc from headings', () => {
 		const parsed = processor.parse(`## h2-1\n## h2-2\nparagraph\n### h3-1`);
 		const tableOfContents = getHeadingTree(parsed);
 		expect(tableOfContents).toStrictEqual([
@@ -36,7 +36,7 @@ describe('toc', () => {
 			},
 		]);
 	});
-	it('creates toc without headings', async () => {
+	it('creates toc without headings', () => {
 		const parsed = processor.parse('paragraph-1\n\nparagraph-2');
 		const tableOfContents = getHeadingTree(parsed as Root);
 

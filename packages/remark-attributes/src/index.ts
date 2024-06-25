@@ -69,7 +69,7 @@ function parseInlineCode(
 		(nextSibling.value = nextSibling.value.replace(match[0].trimEnd(), ''));
 }
 
-function isNonEmptyObject(value: {} | null) {
+function isNonEmptyObject(value: object | null) {
 	return (
 		typeof value === 'object' && value !== null && Object.keys(value).length > 0
 	);

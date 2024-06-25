@@ -7,7 +7,7 @@ import path from 'node:path';
 
 export interface CollectionPlugin {
 	name: string;
-	setup: (build: PluginContainer) => any;
+	setup: (build: PluginContainer) => unknown;
 }
 
 interface BuildHookOptions {
@@ -40,7 +40,7 @@ interface OnLoadArgs {
 	};
 }
 export interface OnLoadResult {
-	record: Record<string, string | number> & { _id: string };
+	record: Record<string, unknown> & { _id: string };
 }
 
 export class PluginContainer {
@@ -77,11 +77,11 @@ export class PluginContainer {
 		try {
 			configContent = fs.readFileSync(configPath, 'utf-8');
 		} catch (_error) {
-			let type =
-				(_error as any).code === 'ENOENT'
+			const type =
+				(_error as { code: string }).code === 'ENOENT'
 					? ('file-not-found' as const)
 					: ('read-file-error' as const);
-			Object.assign(_error as any, { collection: collectionName });
+			Object.assign(_error as Error, { collection: collectionName });
 			return Err(type, _error as Error & { collection: string });
 		}
 
@@ -89,7 +89,7 @@ export class PluginContainer {
 		try {
 			configJSON = JSON.parse(configContent);
 		} catch (_error) {
-			Object.assign(_error as any, { collection: collectionName });
+			Object.assign(_error as Error, { collection: collectionName });
 			return Err('json-parse-error', _error as Error & { collection: string });
 		}
 
@@ -176,6 +176,7 @@ function isPlainObject(x: unknown): x is object {
 /**
  * Merge b into a, recursively, mutating a.
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function mergeInto(a: Record<string, any>, b: Record<string, any>) {
 	for (const prop in b) {
 		if (isPlainObject(b[prop])) {

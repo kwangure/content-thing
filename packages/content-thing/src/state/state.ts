@@ -32,7 +32,7 @@ import { plaintextPlugin } from '../plugins/plaintext.js';
 import type { ZodError } from 'zod';
 import type { CollectionConfig, CollectionConfigMap } from '../config/types.js';
 
-export let logger = createLogger();
+export const logger = createLogger();
 
 export interface ThingConfig {
 	collectionsDir: string;

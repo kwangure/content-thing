@@ -7,8 +7,8 @@ export const plaintextPlugin: CollectionPlugin = {
 	setup(build) {
 		build.onCollectionConfig(
 			{ filter: { collection: { type: /^plaintext$/ } } },
-			async () => {
-				return {
+			() => {
+				return Promise.resolve({
 					data: {
 						fields: {
 							_id: {
@@ -20,7 +20,7 @@ export const plaintextPlugin: CollectionPlugin = {
 							},
 						},
 					},
-				};
+				});
 			},
 		);
 

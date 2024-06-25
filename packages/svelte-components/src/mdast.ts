@@ -30,6 +30,6 @@ declare module 'mdast' {
 		highlightedTokens?: HighlightResult[];
 	}
 	interface RootData {
-		frontmatter: any;
+		frontmatter: unknown;
 	}
 }

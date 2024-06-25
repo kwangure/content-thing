@@ -26,13 +26,13 @@ format_staged_files() {
 }
 
 lint_staged_files() {
-    FILES=$(git diff --cached --name-only --diff-filter=ACMR | grep -E "\.(mjs|js|svelte)$" | sed 's| |\\ |g')
+    FILES=$(git diff --cached --name-only --diff-filter=ACMR | grep -E "\.(mjs|js|svelte|ts)$" | sed 's| |\\ |g')
     if [ -z "$FILES" ]; then
         echo "\033[0;33m\nNo files to lint.\033[0m"
         return
     fi
     export ESLINT_USE_FLAT_CONFIG=true
-    echo_command pnpm eslint --cache --fix --config ./config/eslint.config.js $FILES
+    echo_command pnpm eslint --color --cache --fix --config ./config/eslint.config.js --cache-location ./config/.eslintcache $FILES
     unset ESLINT_USE_FLAT_CONFIG
     echo_command git add $FILES
 }

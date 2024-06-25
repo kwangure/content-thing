@@ -173,7 +173,7 @@ describe('walk', () => {
 	});
 
 	it('should provide correct WalkEntry objects to the visitor', () => {
-		const receivedEntries: any[] = [];
+		const receivedEntries: unknown[] = [];
 		walk(tempDir, (info) => {
 			receivedEntries.push({
 				baseDir: info.baseDir,
