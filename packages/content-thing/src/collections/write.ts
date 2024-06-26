@@ -42,11 +42,17 @@ export function writeDBClient(
 		result += `import * as ${collection} from './collections/${collection}/schema.config.js';\n`;
 	}
 
-	result += `\nconst schema = {\n`;
-	for (const collection of collectionConfigMap.keys()) {
-		result += `\t...${collection},\n`;
+	const collections = [...collectionConfigMap.keys()];
+	if (collections.length) {
+		result += `\nconst schema = {\n`;
+		for (const collection of collectionConfigMap.keys()) {
+			result += `\t...${collection},\n`;
+		}
+		result += `};\n`;
+	} else {
+		result += `\nconst schema = /** @type {Record<string, unknown>} */({});`;
 	}
-	result += `};\n`;
+
 	result += `\n`;
 	result += `// Vite prepends file:// in production\n`;
 	result += `const normalizedDBPath = dbPath.replace(/^[a-zA-Z]+:\\/\\//, '');\n`;
