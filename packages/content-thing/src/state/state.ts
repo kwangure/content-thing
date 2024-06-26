@@ -31,6 +31,7 @@ import { yamlPlugin } from '../plugins/yaml.js';
 import { plaintextPlugin } from '../plugins/plaintext.js';
 import type { ZodError } from 'zod';
 import type { CollectionConfig, CollectionConfigMap } from '../config/types.js';
+import { validateSchemaRelations } from '../config/load.js';
 
 export const logger = createLogger();
 
@@ -169,6 +170,9 @@ export function createThing(thingConfig: ThingConfig) {
 				}
 			}
 		}
+
+		__validateSchemaRelations();
+
 		for (const collectionConfig of collectionConfigMap.values()) {
 			seedCollection(thingConfig, collectionConfig, db, pluginContainer);
 		}
@@ -209,14 +213,22 @@ export function createThing(thingConfig: ThingConfig) {
 	}
 
 	async function updateFile(event: StateEvent) {
-		const { filepath } = event.detail as { filepath: string };
+		if (
+			typeof event.detail !== 'object' ||
+			event.detail === null ||
+			!('filepath' in event.detail) ||
+			typeof event.detail.filepath !== 'string' ||
+			!('collection' in event.detail) ||
+			typeof event.detail.collection !== 'string'
+		) {
+			return;
+		}
+
+		const { filepath, collection } = event.detail;
 		const filename = path.basename(filepath);
 		if (!isReadme(filename)) return;
-		const configResult = await pluginContainer.loadCollectionConfig(
-			thingConfig,
-			(event.detail as { collection: string }).collection,
-		);
-		const collectionConfig = unwrapCollectionConfigResult(configResult);
+
+		const collectionConfig = collectionConfigMap.get(collection);
 		if (!collectionConfig) return;
 
 		// Ignore possibly malformed files being edited actively
@@ -238,20 +250,51 @@ export function createThing(thingConfig: ThingConfig) {
 		}
 	}
 
-	function __seedCollection(event: StateEvent) {
-		const { root } = thingConfig;
-		const { collection: collectionName, filepath } = event.detail as {
-			collection: string;
-			filepath: string;
-		};
-		logInfo(
-			`Config file ${
-				event.type === 'fileAdded' ? 'added' : 'changed'
-			} '${filepath.slice(
-				root.length + 1,
-			)}'. Seeding "${collectionName}" database table.`,
+	function __validateSchemaRelations() {
+		const validationResult = validateSchemaRelations(collectionConfigMap);
+		if (!validationResult.ok) {
+			for (const { message } of validationResult.error.issues) {
+				logError(message);
+			}
+		}
+	}
+
+	async function loadCollectionConfig(collection: string) {
+		const configResult = await pluginContainer.loadCollectionConfig(
+			thingConfig,
+			collection,
 		);
-		const collectionConfig = collectionConfigMap.get(collectionName)!;
+		const collectionConfig = unwrapCollectionConfigResult(configResult);
+		if (!collectionConfig) return;
+
+		collectionConfigMap.set(collection, collectionConfig);
+		return collectionConfig;
+	}
+
+	async function __seedCollection(event: StateEvent) {
+		if (
+			typeof event.detail !== 'object' ||
+			event.detail === null ||
+			!('filepath' in event.detail) ||
+			typeof event.detail.filepath !== 'string' ||
+			!('collection' in event.detail) ||
+			typeof event.detail.collection !== 'string'
+		) {
+			return;
+		}
+		const { root } = thingConfig;
+		const { collection, filepath } = event.detail;
+
+		const verb = event.type === 'fileAdded' ? 'added' : 'changed';
+		const prettyPath = filepath.slice(root.length + 1);
+		logInfo(
+			`Config file at '${prettyPath}' ${verb}. Seeding "${collection}" database table.`,
+		);
+
+		const collectionConfig = await loadCollectionConfig(collection);
+		if (!collectionConfig) return;
+
+		__validateSchemaRelations();
 		seedCollection(thingConfig, collectionConfig, db, pluginContainer);
 	}
 
