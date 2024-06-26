@@ -93,14 +93,12 @@ export function insertIntoTable(
 	try {
 		db.prepare(sql).run(...values);
 	} catch (cause) {
-		const error = new Error(
-			`Failed to insert values: ${JSON.stringify(
-				values,
-				null,
-				4,
-			)} with schema: ${JSON.stringify(config.data.fields, null, 4)}`,
-		);
-		error.cause = cause;
+		const error = cause as Error;
+		error.message = `Failed to insert values: ${JSON.stringify(
+			values,
+			null,
+			4,
+		)} with schema: ${JSON.stringify(config.data.fields, null, 4)}. \n${error.message}`;
 		throw error;
 	}
 }
