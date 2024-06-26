@@ -131,9 +131,12 @@ export function deleteFromTable(
 				values.push(value);
 			}
 		} else {
-			throw new Error(
-				`Key "${key}" is not defined in the schema for table ${config.name}.`,
-			);
+			const fields = Object.keys(config.data.fields);
+			let message = `Key "${key}" is not defined in the schema for "${config.name}" collection.`;
+			if (fields.length) {
+				message += ` Expected one of: "${fields.join(',')}"`;
+			}
+			throw new Error(message);
 		}
 	}
 
