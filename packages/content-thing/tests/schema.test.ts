@@ -7,6 +7,7 @@ import {
 	isValidFieldName,
 } from '../src/db/schema.js';
 import type {
+	CollectionConfig,
 	IntegerColumn,
 	JsonColumn,
 	TextColumn,
@@ -268,7 +269,7 @@ describe('generateSchema', () => {
 			`\t"age": integer('age').notNull(),\n` +
 			`\t"preferences": json('preferences').notNull(),\n` +
 			`});\n`;
-		const schema = generateSchema(config as any);
+		const schema = generateSchema(config as unknown as CollectionConfig);
 		assert(schema.ok);
 		expect(schema.value).toEqual(expected);
 	});
@@ -283,7 +284,7 @@ describe('generateSchema', () => {
 				},
 			},
 		};
-		expect(() => generateSchema(config as any)).toThrow(
+		expect(() => generateSchema(config as unknown as CollectionConfig)).toThrow(
 			/Unsupported column type in schema/,
 		);
 	});

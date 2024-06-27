@@ -1,4 +1,4 @@
-export function Ok<T>(value: T) {
+export function Ok<T>(value?: T) {
 	return { ok: true as const, value };
 }
 

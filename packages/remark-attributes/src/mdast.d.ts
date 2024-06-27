@@ -3,12 +3,12 @@ import 'mdast';
 declare module 'mdast' {
 	interface CodeData {
 		attributes: {
-			[x: string]: any;
+			[x: string]: unknown;
 		};
 	}
 	interface InlineCodeData {
 		attributes: {
-			[x: string]: any;
+			[x: string]: unknown;
 		};
 	}
 }

@@ -17,12 +17,12 @@
 	"wireit": {
 		"build": {
 			"dependencies": [
-				"./packages/svelte:build",
 				"./packages/content-thing:build",
 				"./packages/internal-utils:build",
 				"./packages/remark-attributes:build",
 				"./packages/remark-variables:build",
-				"./packages/remark-yaml-parse:build"
+				"./packages/remark-yaml-parse:build",
+				"./packages/svelte-components:build"
 			]
 		},
 		"format": {
@@ -37,11 +37,11 @@
 			"output": []
 		},
 		"lint": {
-			"command": "eslint \"**/*.{js,svelte}\" --color --cache --fix",
+			"command": "cross-env ESLINT_USE_FLAT_CONFIG=true eslint --color --cache --fix --config ./config/eslint.config.js --cache-location ./config/.eslintcache \"**/*.{js,svelte,ts}\"",
 			"files": [
-				"**/*.{js,svelte}",
+				"**/*.{js,svelte,ts}",
 				"!packages/*/dist/**",
-				"!packages/*/types/**",
+				"!sites/*/build/**",
 				"./config/eslint.config.js"
 			],
 			"output": []
@@ -88,6 +88,7 @@
 	},
 	"devDependencies": {
 		"@changesets/cli": "^2.26.2",
+		"cross-env": "^7.0.3",
 		"eslint": "^8.55.0",
 		"prettier": "^3.1.0",
 		"wireit": "^0.14.1"

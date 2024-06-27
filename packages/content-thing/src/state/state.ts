@@ -30,8 +30,10 @@ import { markdownPlugin } from '../plugins/markdown/plugin.js';
 import { yamlPlugin } from '../plugins/yaml.js';
 import { plaintextPlugin } from '../plugins/plaintext.js';
 import type { ZodError } from 'zod';
+import type { CollectionConfig, CollectionConfigMap } from '../config/types.js';
+import { validateSchemaRelations } from '../config/load.js';
 
-export let logger = createLogger();
+export const logger = createLogger();
 
 export interface ThingConfig {
 	collectionsDir: string;
@@ -43,7 +45,7 @@ export interface ThingConfig {
 
 export function createThing(thingConfig: ThingConfig) {
 	let db: DB;
-	const collectionNames: Set<string> = new Set();
+	const collectionConfigMap: CollectionConfigMap = new Map();
 	const pluginContainer = new PluginContainer([
 		jsonPlugin,
 		markdownPlugin,
@@ -76,13 +78,18 @@ export function createThing(thingConfig: ThingConfig) {
 					],
 				},
 				on: {
-					addCollection(event: StateEvent) {
+					async addCollection(event: StateEvent) {
 						const { filepath } = event.detail as { filepath: string };
 						const collection = path.basename(filepath);
-						collectionNames.add(collection);
+						const configResult = await pluginContainer.loadCollectionConfig(
+							thingConfig,
+							collection,
+						);
+						const collectionConfig = unwrapCollectionConfigResult(configResult);
+						if (!collectionConfig) return;
 
-						writeSchemaExports(thingConfig, collectionNames);
-						writeDBClient(thingConfig, collectionNames);
+						writeSchemaExports(thingConfig, collectionConfigMap);
+						writeDBClient(thingConfig, collectionConfigMap);
 					},
 					collectionFound(event: StateEvent) {
 						const { collectionsDir } = thingConfig;
@@ -138,7 +145,7 @@ export function createThing(thingConfig: ThingConfig) {
 		mkdirp(thingConfig.collectionsOutput);
 	}
 
-	function buildCollections() {
+	async function buildCollections() {
 		logInfo('Starting collection build...');
 		const dbPath = path.join(thingConfig.outputDir, 'sqlite.db');
 		db = new Database(dbPath);
@@ -150,17 +157,28 @@ export function createThing(thingConfig: ThingConfig) {
 			});
 			for (const entry of entries) {
 				if (entry.isDirectory()) {
+					const configResult = await pluginContainer.loadCollectionConfig(
+						thingConfig,
+						entry.name,
+					);
+					const collectionConfig = unwrapCollectionConfigResult(configResult);
+					if (!collectionConfig) {
+						continue;
+					}
 					collectionRootDirs.push(entry.name);
-					collectionNames.add(entry.name);
+					collectionConfigMap.set(entry.name, collectionConfig);
 				}
 			}
 		}
-		for (const collectionName of collectionNames) {
-			seedCollection(thingConfig, collectionName, db, pluginContainer);
+
+		__validateSchemaRelations();
+
+		for (const collectionConfig of collectionConfigMap.values()) {
+			seedCollection(thingConfig, collectionConfig, db, pluginContainer);
 		}
 
-		writeSchemaExports(thingConfig, collectionNames);
-		writeDBClient(thingConfig, collectionNames);
+		writeSchemaExports(thingConfig, collectionConfigMap);
+		writeDBClient(thingConfig, collectionConfigMap);
 	}
 
 	function watchCollectionsDir(event: StateEvent) {
@@ -182,7 +200,7 @@ export function createThing(thingConfig: ThingConfig) {
 		queueMicrotask(() => {
 			const { collectionsDir, root } = thingConfig;
 
-			for (const collection of collectionNames) {
+			for (const collection of collectionConfigMap.keys()) {
 				const collectionRoot = path.join(collectionsDir, collection);
 				logInfo(
 					`Watching collection files in '${collectionRoot.slice(
@@ -195,14 +213,22 @@ export function createThing(thingConfig: ThingConfig) {
 	}
 
 	async function updateFile(event: StateEvent) {
-		const { filepath } = event.detail as { filepath: string };
+		if (
+			typeof event.detail !== 'object' ||
+			event.detail === null ||
+			!('filepath' in event.detail) ||
+			typeof event.detail.filepath !== 'string' ||
+			!('collection' in event.detail) ||
+			typeof event.detail.collection !== 'string'
+		) {
+			return;
+		}
+
+		const { filepath, collection } = event.detail;
 		const filename = path.basename(filepath);
 		if (!isReadme(filename)) return;
-		const configResult = await pluginContainer.loadCollectionConfig(
-			thingConfig,
-			(event.detail as { collection: string }).collection,
-		);
-		const collectionConfig = unwrapCollectionConfigResult(configResult);
+
+		const collectionConfig = collectionConfigMap.get(collection);
 		if (!collectionConfig) return;
 
 		// Ignore possibly malformed files being edited actively
@@ -224,20 +250,52 @@ export function createThing(thingConfig: ThingConfig) {
 		}
 	}
 
-	function __seedCollection(event: StateEvent) {
-		const { root } = thingConfig;
-		const { collection: collectionName, filepath } = event.detail as {
-			collection: string;
-			filepath: string;
-		};
-		logInfo(
-			`Config file ${
-				event.type === 'fileAdded' ? 'added' : 'changed'
-			} '${filepath.slice(
-				root.length + 1,
-			)}'. Seeding "${collectionName}" database table.`,
+	function __validateSchemaRelations() {
+		const validationResult = validateSchemaRelations(collectionConfigMap);
+		if (!validationResult.ok) {
+			for (const { message } of validationResult.error.issues) {
+				logError(message);
+			}
+		}
+	}
+
+	async function loadCollectionConfig(collection: string) {
+		const configResult = await pluginContainer.loadCollectionConfig(
+			thingConfig,
+			collection,
 		);
-		seedCollection(thingConfig, collectionName, db, pluginContainer);
+		const collectionConfig = unwrapCollectionConfigResult(configResult);
+		if (!collectionConfig) return;
+
+		collectionConfigMap.set(collection, collectionConfig);
+		return collectionConfig;
+	}
+
+	async function __seedCollection(event: StateEvent) {
+		if (
+			typeof event.detail !== 'object' ||
+			event.detail === null ||
+			!('filepath' in event.detail) ||
+			typeof event.detail.filepath !== 'string' ||
+			!('collection' in event.detail) ||
+			typeof event.detail.collection !== 'string'
+		) {
+			return;
+		}
+		const { root } = thingConfig;
+		const { collection, filepath } = event.detail;
+
+		const verb = event.type === 'fileAdded' ? 'added' : 'changed';
+		const prettyPath = filepath.slice(root.length + 1);
+		logInfo(
+			`Config file at '${prettyPath}' ${verb}. Seeding "${collection}" database table.`,
+		);
+
+		const collectionConfig = await loadCollectionConfig(collection);
+		if (!collectionConfig) return;
+
+		__validateSchemaRelations();
+		seedCollection(thingConfig, collectionConfig, db, pluginContainer);
 	}
 
 	return resolveState(thing);
@@ -254,17 +312,10 @@ function isCollectionConfig(event: StateEvent) {
 
 async function seedCollection(
 	thingConfig: ThingConfig,
-	collectionName: string,
+	collectionConfig: CollectionConfig,
 	db: DB,
 	pluginContainer: PluginContainer,
 ) {
-	const configResult = await pluginContainer.loadCollectionConfig(
-		thingConfig,
-		collectionName,
-	);
-	const collectionConfig = unwrapCollectionConfigResult(configResult);
-	if (!collectionConfig) return;
-
 	writeSchema(thingConfig, collectionConfig);
 	writeValidator(thingConfig, collectionConfig);
 

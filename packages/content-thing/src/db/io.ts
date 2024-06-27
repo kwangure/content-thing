@@ -17,10 +17,11 @@ export function createTableFromSchema(db: Database, config: CollectionConfig) {
 	db.transaction(() => {
 		db.prepare(`DROP TABLE IF EXISTS ${config.name}`).run();
 
-		let columns = [];
+		const columns = [];
 		for (const [key, value] of Object.entries(config.data.fields || {})) {
 			let columnDef;
-			switch (value.type) {
+			const type = value.type;
+			switch (type) {
 				case 'integer':
 					columnDef = generateIntegerColumn(value, key);
 					break;
@@ -31,7 +32,7 @@ export function createTableFromSchema(db: Database, config: CollectionConfig) {
 					columnDef = generateTextColumn(value, key);
 					break;
 				default:
-					throw new Error(`Unsupported column type: ${(value as any)?.type}`);
+					throw new Error(`Unsupported column type${type ? `: ${type}` : ''}.`);
 			}
 
 			columns.push(columnDef);
@@ -54,7 +55,7 @@ export function createTableFromSchema(db: Database, config: CollectionConfig) {
 export function insertIntoTable(
 	db: Database,
 	config: CollectionConfig,
-	data: Record<string, any>,
+	data: Record<string, unknown>,
 ) {
 	const columnNames = [];
 	const placeholders = [];
@@ -63,7 +64,7 @@ export function insertIntoTable(
 	for (const [key, fieldConfig] of Object.entries(config.data.fields ?? {})) {
 		if (
 			fieldConfig.nullable !== true &&
-			(!data.hasOwnProperty(key) ||
+			(!Object.hasOwn(data, key) ||
 				data[key] === undefined ||
 				data[key] === null)
 		) {
@@ -92,14 +93,12 @@ export function insertIntoTable(
 	try {
 		db.prepare(sql).run(...values);
 	} catch (cause) {
-		const error = new Error(
-			`Failed to insert values: ${JSON.stringify(
-				values,
-				null,
-				4,
-			)} with schema: ${JSON.stringify(config.data.fields, null, 4)}`,
-		);
-		error.cause = cause;
+		const error = cause as Error;
+		error.message = `Failed to insert values: ${JSON.stringify(
+			values,
+			null,
+			4,
+		)} with schema: ${JSON.stringify(config.data.fields, null, 4)}. \n${error.message}`;
 		throw error;
 	}
 }
@@ -114,7 +113,7 @@ export function insertIntoTable(
 export function deleteFromTable(
 	db: Database,
 	config: CollectionConfig,
-	data: Record<string, any>,
+	data: Record<string, unknown>,
 ) {
 	const conditions = [];
 	const values = [];
@@ -130,9 +129,12 @@ export function deleteFromTable(
 				values.push(value);
 			}
 		} else {
-			throw new Error(
-				`Key "${key}" is not defined in the schema for table ${config.name}.`,
-			);
+			const fields = Object.keys(config.data.fields);
+			let message = `Key "${key}" is not defined in the schema for "${config.name}" collection.`;
+			if (fields.length) {
+				message += ` Expected one of: "${fields.join(',')}"`;
+			}
+			throw new Error(message);
 		}
 	}
 
@@ -160,8 +162,9 @@ export function dropTable(db: Database, config: CollectionConfig) {
  * @param value - The value to validate.
  * @param fieldConfig - The field configuration object.
  */
-function validateValue(value: any, fieldConfig: ColumnType) {
-	switch (fieldConfig.type) {
+function validateValue(value: unknown, fieldConfig: ColumnType) {
+	const type = fieldConfig.type;
+	switch (type) {
 		case 'integer':
 			if (typeof value !== 'number' || !Number.isInteger(value)) {
 				throw new Error(`Invalid value for integer type: ${value}`);
@@ -180,8 +183,7 @@ function validateValue(value: any, fieldConfig: ColumnType) {
 			}
 			return;
 		default:
-			// @ts-expect-error
-			throw new Error(`Unsupported type: ${fieldConfig.type}`);
+			throw new Error(`Unsupported type${type ? `: ${type}` : ''}.`);
 	}
 }
 

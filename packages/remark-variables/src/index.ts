@@ -3,9 +3,9 @@ import { visit } from 'unist-util-visit';
 import type { Plugin } from 'unified';
 import type { Root } from 'mdast';
 
-function hasValue<T extends Object>(
+function hasValue<T extends object>(
 	thing: T,
-): thing is Extract<T, { value: any }> {
+): thing is Extract<T, { value: unknown }> {
 	return 'value' in thing;
 }
 

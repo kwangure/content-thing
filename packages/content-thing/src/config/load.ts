@@ -1,4 +1,6 @@
 import { z } from 'zod';
+import type { CollectionConfigMap } from './types';
+import { Err, Ok } from '../result.js';
 
 export const drizzleColumn = z
 	.object({
@@ -96,3 +98,51 @@ export const pluginCollectionConfig = z
 		data: collectionData.default({}),
 	})
 	.strict();
+
+export function validateSchemaRelations(configMap: CollectionConfigMap) {
+	const issues = [];
+	for (const [collectionName, config] of configMap.entries()) {
+		const relations = config.data.relations;
+		if (!relations) continue;
+
+		for (const relation of Object.values(relations)) {
+			const relatedConfig = configMap.get(relation.collection);
+			if (!relatedConfig) {
+				issues.push({
+					message: `Collection config of "${collectionName}" references non-existent collection "${relation.collection}".`,
+				});
+			}
+			if (relation.type === 'one') {
+				if (!(relation.field in config.data.fields)) {
+					const fields = Object.keys(config.data.fields);
+					let message = `Collection config of "${collectionName}" references non-existent field in own config.`;
+					if (fields.length) {
+						message += ` Expected one of: "${fields.join('", "')}".`;
+					}
+					issues.push({ message });
+				}
+				if (
+					relatedConfig &&
+					!(relation.reference in relatedConfig.data.fields)
+				) {
+					const fields = Object.keys(relatedConfig.data.fields);
+					let message = `Collection config of "${collectionName}" references non-existent field "${relation.reference}" in "${relation.collection}" collection.`;
+					if (fields.length) {
+						message += ` Expected one of: "${fields.join('", "')}".`;
+					}
+					issues.push({ message });
+				}
+			}
+		}
+	}
+
+	if (issues.length) {
+		const error = new Error(`Invalid config relations.`) as Error & {
+			issues: typeof issues;
+		};
+		error.issues = issues;
+		return Err('invalid-schema', error);
+	}
+
+	return Ok();
+}

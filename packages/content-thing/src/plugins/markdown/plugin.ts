@@ -27,8 +27,8 @@ export const markdownPlugin: CollectionPlugin = {
 
 		build.onCollectionConfig(
 			{ filter: { collection: { type: /^markdown$/ } } },
-			async () => {
-				return {
+			() => {
+				return Promise.resolve({
 					data: {
 						fields: {
 							_id: {
@@ -45,7 +45,7 @@ export const markdownPlugin: CollectionPlugin = {
 							},
 						},
 					},
-				};
+				});
 			},
 		);
 
@@ -62,7 +62,7 @@ export const markdownPlugin: CollectionPlugin = {
 				const tableOfContents = getHeadingTree(transformedTree as Root);
 				return {
 					record: {
-						...transformedTree.data?.frontmatter,
+						...(transformedTree.data?.frontmatter ?? {}),
 						_content: transformedTree,
 						_id: entry.id,
 						_headingTree: tableOfContents,

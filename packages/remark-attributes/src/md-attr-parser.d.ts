@@ -1,10 +1,10 @@
 declare module 'md-attr-parser' {
 	interface ParseConfig {
-		defaultValue?: any;
+		defaultValue?: unknown;
 	}
 
 	interface ParseResult {
-		prop: Record<string, any>;
+		prop: Record<string, unknown>;
 		eaten: string;
 	}
 
