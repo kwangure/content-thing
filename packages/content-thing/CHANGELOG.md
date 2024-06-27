@@ -1,5 +1,12 @@
 # content-thing
 
+## 0.0.24
+
+### Patch Changes
+
+- 2b60b20: Validate table column names
+- 23b2f8b: Validate relations
+
 ## 0.0.23
 
 ### Patch Changes
