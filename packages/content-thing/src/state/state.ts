@@ -9,6 +9,7 @@ import {
 	atomic,
 	compound,
 	emitEvent,
+	fromPromise,
 	resolveState,
 	type StateEvent,
 } from 'hine';
@@ -68,74 +69,81 @@ export function createThing(thingConfig: ThingConfig) {
 					afterEntry: [clearGeneratedFiles, buildCollections],
 				},
 			}),
-			atomic('watch', {
+			compound('watch', {
+				initial: 'building',
 				hooks: {
-					afterEntry: [
-						clearGeneratedFiles,
-						buildCollections,
-						watchCollections,
-						watchCollectionsDir,
-					],
+					afterEntry: clearGeneratedFiles,
 				},
-				on: {
-					async addCollection(event: StateEvent) {
-						const { filepath } = event.detail as { filepath: string };
-						const collection = path.basename(filepath);
-						const configResult = await pluginContainer.loadCollectionConfig(
-							thingConfig,
-							collection,
-						);
-						const collectionConfig = unwrapCollectionConfigResult(configResult);
-						if (!collectionConfig) return;
+				children: [
+					fromPromise('building', buildCollections(), {
+						on: { resolve: 'watching' },
+					}),
+					atomic('watching', {
+						hooks: {
+							afterEntry: [watchCollections, watchCollectionsDir],
+						},
+						on: {
+							async addCollection(event: StateEvent) {
+								const { filepath } = event.detail as { filepath: string };
+								const collection = path.basename(filepath);
+								const configResult = await pluginContainer.loadCollectionConfig(
+									thingConfig,
+									collection,
+								);
+								const collectionConfig =
+									unwrapCollectionConfigResult(configResult);
+								if (!collectionConfig) return;
 
-						writeSchemaExports(thingConfig, collectionConfigMap);
-						writeDBClient(thingConfig, collectionConfigMap);
-					},
-					collectionFound(event: StateEvent) {
-						const { collectionsDir } = thingConfig;
-						const collectionRoot = path.join(
-							collectionsDir,
-							event.detail as string,
-						);
-						const watcher = chokidar.watch(collectionRoot, {
-							ignoreInitial: true,
-						});
+								writeSchemaExports(thingConfig, collectionConfigMap);
+								writeDBClient(thingConfig, collectionConfigMap);
+							},
+							collectionFound(event: StateEvent) {
+								const { collectionsDir } = thingConfig;
+								const collectionRoot = path.join(
+									collectionsDir,
+									event.detail as string,
+								);
+								const watcher = chokidar.watch(collectionRoot, {
+									ignoreInitial: true,
+								});
 
-						watcher.on('add', (filepath) => {
-							emitEvent(event.currentTarget, 'fileAdded', {
-								collection: event.detail,
-								filepath,
-							});
-						});
+								watcher.on('add', (filepath) => {
+									emitEvent(event.currentTarget, 'fileAdded', {
+										collection: event.detail,
+										filepath,
+									});
+								});
 
-						watcher.on('change', (filepath) => {
-							emitEvent(event.currentTarget, 'fileChanged', {
-								collection: event.detail,
-								filepath,
-							});
-						});
-					},
-					fileAdded: [
-						{
-							if: isCollectionConfig,
-							run: __seedCollection,
+								watcher.on('change', (filepath) => {
+									emitEvent(event.currentTarget, 'fileChanged', {
+										collection: event.detail,
+										filepath,
+									});
+								});
+							},
+							fileAdded: [
+								{
+									if: isCollectionConfig,
+									run: __seedCollection,
+								},
+								{
+									if: (event: StateEvent) => !isCollectionConfig(event),
+									run: updateFile,
+								},
+							],
+							fileChanged: [
+								{
+									if: isCollectionConfig,
+									run: __seedCollection,
+								},
+								{
+									if: (event: StateEvent) => !isCollectionConfig(event),
+									run: updateFile,
+								},
+							],
 						},
-						{
-							if: (event: StateEvent) => !isCollectionConfig(event),
-							run: updateFile,
-						},
-					],
-					fileChanged: [
-						{
-							if: isCollectionConfig,
-							run: __seedCollection,
-						},
-						{
-							if: (event: StateEvent) => !isCollectionConfig(event),
-							run: updateFile,
-						},
-					],
-				},
+					}),
+				],
 			}),
 		],
 	});
