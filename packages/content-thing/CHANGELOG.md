@@ -1,5 +1,11 @@
 # content-thing
 
+## 0.0.25
+
+### Patch Changes
+
+- bbd5715: Fix watching nested collections
+
 ## 0.0.24
 
 ### Patch Changes
