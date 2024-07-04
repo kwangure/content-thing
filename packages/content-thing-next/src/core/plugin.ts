@@ -1,5 +1,6 @@
 import type { ValidatedContentThingConfig } from '../config/config.js';
 import type { DropLast, Last, MaybePromise, Simplify } from '../types.js';
+import type { Asset } from './graph.js';
 
 export interface Plugin {
 	name: string;
@@ -18,6 +19,7 @@ export type ConfigResolvedCallback = (
 ) => void;
 
 export type LoadIdCallback = (id: string) => MaybePromise<{ value: unknown }>;
+export type LoadDependenciesCallback = (asset: Asset) => MaybePromise<string[]>;
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type BeforeCallback<T> = T extends (...args: infer A) => unknown
@@ -65,6 +67,10 @@ interface BundleContext {
 	addEntryAssetIds(callback: AddEntryAssetIdsCallback): void;
 	configResolved(callback: ConfigResolvedCallback): void;
 	loadId(options: CallbackOptions, callback: LoadIdCallback): void;
+	loadDependencies(
+		options: CallbackOptions,
+		callback: LoadDependenciesCallback,
+	): void;
 }
 
 type MonitorContext = PrependBeforeAfter<BundleContext>;
@@ -82,6 +88,16 @@ export class PluginDriver {
 		beforeLoadId: [] as [CallbackOptions, BeforeCallback<LoadIdCallback>][],
 		loadId: [] as [CallbackOptions, LoadIdCallback][],
 		afterLoadId: [] as [CallbackOptions, AfterCallback<LoadIdCallback>][],
+
+		beforeLoadDependencies: [] as [
+			CallbackOptions,
+			BeforeCallback<LoadDependenciesCallback>,
+		][],
+		loadDependencies: [] as [CallbackOptions, LoadDependenciesCallback][],
+		afterLoadDependencies: [] as [
+			CallbackOptions,
+			AfterCallback<LoadDependenciesCallback>,
+		][],
 	};
 	#plugins;
 	constructor(plugins: Plugin[]) {
@@ -119,6 +135,9 @@ export class PluginDriver {
 				loadId(options, callback) {
 					callbacks.loadId.push([options, callback]);
 				},
+				loadDependencies(options, callback) {
+					callbacks.loadDependencies.push([options, callback]);
+				},
 			});
 		}
 	}
@@ -154,6 +173,28 @@ export class PluginDriver {
 
 		return loadResult;
 	}
+	async loadDependencies(asset: Asset) {
+		let loadResult;
+		for (const [options, callback] of this.#callbacks.loadDependencies) {
+			if (!options.filter.test(asset.id)) continue;
+			for (const [beforeOptions, beforeCallback] of this.#callbacks
+				.beforeLoadDependencies) {
+				if (!beforeOptions.filter.test(asset.id)) continue;
+				beforeCallback(asset);
+			}
+			const _loadResultMaybePromise = callback(asset);
+			const _loadResult = await _loadResultMaybePromise;
+			for (const [afterOptions, afterCallback] of this.#callbacks
+				.afterLoadDependencies) {
+				if (!afterOptions.filter.test(asset.id)) continue;
+				afterCallback(_loadResultMaybePromise);
+			}
+			loadResult = { ..._loadResult, id: asset };
+			break;
+		}
+
+		return loadResult;
+	}
 	monitor() {
 		const callbacks = this.#callbacks;
 		for (const plugin of this.#plugins) {
@@ -175,6 +216,12 @@ export class PluginDriver {
 				},
 				afterLoadId(options, callback) {
 					callbacks.afterLoadId.push([options, callback]);
+				},
+				beforeLoadDependencies(options, callback) {
+					callbacks.beforeLoadDependencies.push([options, callback]);
+				},
+				afterLoadDependencies(options, callback) {
+					callbacks.afterLoadDependencies.push([options, callback]);
 				},
 			});
 		}

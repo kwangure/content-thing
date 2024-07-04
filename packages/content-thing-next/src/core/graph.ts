@@ -1,13 +1,28 @@
 import type { ValidatedContentThingConfig } from '../config/config.js';
 import { PluginDriver, type Plugin } from './plugin.js';
 
+interface Logger {
+	info(message: string): void;
+	warn(message: string): void;
+	error(message: string): void;
+}
+
 export class AssetGraph {
 	#assets = new Map<string, Asset>();
-	#entryAssetIds = new Set<string>();
+	#dependencyMap = new Map<string, Set<string>>();
+	#pendingAssetIds = new Set<string>();
+	#pendingAssets = new Map<string, Asset>();
 	#config;
+	#logger;
 	#pluginDriver;
-	constructor(config: ValidatedContentThingConfig, plugins: Plugin[]) {
+
+	constructor(
+		config: ValidatedContentThingConfig,
+		plugins: Plugin[],
+		logger: Logger,
+	) {
 		this.#config = config;
+		this.#logger = logger;
 		this.#pluginDriver = new PluginDriver(plugins);
 	}
 	async bundle() {
@@ -21,10 +36,61 @@ export class AssetGraph {
 		const entryAssetIds = await this.#pluginDriver.addEntryAssetIds();
 
 		for (const assetId of entryAssetIds) {
-			this.#entryAssetIds.add(assetId);
+			this.#pendingAssetIds.add(assetId);
 		}
 	}
-	#generateAssetGraph() {}
+	async #generateAssetGraph() {
+		while (this.#pendingAssetIds.size > 0) {
+			const loadPromises = [];
+			for (const assetId of this.#pendingAssetIds) {
+				const loadPromise = async () => {
+					this.#pendingAssetIds.delete(assetId);
+					const loadResult = await this.#pluginDriver.loadId(assetId);
+					if (!loadResult) {
+						this.#logger.error(`Unable to load id '${assetId}'`);
+						return;
+					}
+					this.#pendingAssets.set(
+						assetId,
+						new Asset(assetId, loadResult.value),
+					);
+				};
+				loadPromises.push(loadPromise());
+			}
+			await Promise.all(loadPromises);
+
+			const dependencyPromises = [];
+			for (const [id, asset] of this.#pendingAssets) {
+				const dependencyPromise = async () => {
+					const dependenciesResult =
+						await this.#pluginDriver.loadDependencies(asset);
+
+					let assetDependencies = this.#dependencyMap.get(id);
+					if (!assetDependencies) {
+						assetDependencies = new Set();
+						this.#dependencyMap.set(id, assetDependencies);
+					}
+
+					if (dependenciesResult) {
+						for (const dependency of dependenciesResult) {
+							if (
+								!this.#assets.has(dependency) &&
+								!this.#pendingAssets.has(dependency)
+							) {
+								this.#pendingAssetIds.add(dependency);
+							}
+							assetDependencies.add(dependency);
+						}
+					}
+
+					this.#assets.set(id, asset);
+					this.#pendingAssets.delete(id);
+				};
+				dependencyPromises.push(dependencyPromise());
+			}
+			await Promise.all(dependencyPromises);
+		}
+	}
 }
 
 export class Asset {
