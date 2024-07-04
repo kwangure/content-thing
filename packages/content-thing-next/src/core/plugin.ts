@@ -19,11 +19,12 @@ export type ConfigResolvedCallback = (
 
 export type LoadIdCallback = (id: string) => MaybePromise<{ value: unknown }>;
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
 type BeforeCallback<T> = T extends (...args: infer A) => unknown
 	? (...args: { [K in keyof A]?: A[K] }) => void
 	: never;
 
-type AfterCallback<T> = T extends (...args: unknown[]) => infer R
+type AfterCallback<T> = T extends (...args: any[]) => infer R
 	? (value?: R) => void
 	: never;
 
@@ -35,8 +36,8 @@ type AfterCallback<T> = T extends (...args: unknown[]) => infer R
 type PrependBeforeAfter<T> = Simplify<
 	{
 		[K in keyof T as `before${Capitalize<string & K>}`]: T[K] extends (
-			...args: unknown[]
-		) => unknown
+			...args: any[]
+		) => any
 			? (
 					...args: [
 						...head: DropLast<Parameters<T[K]>>,
@@ -46,8 +47,8 @@ type PrependBeforeAfter<T> = Simplify<
 			: T[K];
 	} & {
 		[K in keyof T as `after${Capitalize<string & K>}`]: T[K] extends (
-			...args: unknown[]
-		) => unknown
+			...args: any[]
+		) => any
 			? (
 					...args: [
 						...head: DropLast<Parameters<T[K]>>,
@@ -57,6 +58,8 @@ type PrependBeforeAfter<T> = Simplify<
 			: T[K];
 	}
 >;
+
+/* eslint-enable @typescript-eslint/no-explicit-any */
 
 interface BundleContext {
 	addEntryAssetIds(callback: AddEntryAssetIdsCallback): void;
