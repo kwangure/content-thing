@@ -3,6 +3,8 @@ import path from 'node:path';
 import type { Plugin } from '../../core/plugin.js';
 import type { ValidatedContentThingConfig } from '../../config/config.js';
 
+const COLLECTION_CONFIG_REGEXP = /^(.*\/)([^/]+)\/collection\.config\.json$/;
+
 export const collectionConfigPlugin: Plugin = {
 	name: 'content-thing-collection-config',
 	bundle(build) {
@@ -35,7 +37,7 @@ export const collectionConfigPlugin: Plugin = {
 			return configFiles;
 		});
 
-		build.loadId({ filter: /\/collection.config.json$/ }, (id) => {
+		build.loadId({ filter: COLLECTION_CONFIG_REGEXP }, (id) => {
 			const contents = fs.readFileSync(id, 'utf-8');
 			const value = JSON.parse(contents);
 

@@ -173,27 +173,29 @@ export class PluginDriver {
 
 		return loadResult;
 	}
-	async loadDependencies(asset: Asset) {
-		let loadResult;
+	async loadDependencies(asset: Asset): Promise<string[]> {
+		const loadResultPromises = [];
 		for (const [options, callback] of this.#callbacks.loadDependencies) {
-			if (!options.filter.test(asset.id)) continue;
-			for (const [beforeOptions, beforeCallback] of this.#callbacks
-				.beforeLoadDependencies) {
-				if (!beforeOptions.filter.test(asset.id)) continue;
-				beforeCallback(asset);
-			}
-			const _loadResultMaybePromise = callback(asset);
-			const _loadResult = await _loadResultMaybePromise;
-			for (const [afterOptions, afterCallback] of this.#callbacks
-				.afterLoadDependencies) {
-				if (!afterOptions.filter.test(asset.id)) continue;
-				afterCallback(_loadResultMaybePromise);
-			}
-			loadResult = { ..._loadResult, id: asset };
-			break;
+			const loadDependencyPromise = async () => {
+				if (!options.filter.test(asset.id)) return [];
+				for (const [beforeOptions, beforeCallback] of this.#callbacks
+					.beforeLoadDependencies) {
+					if (!beforeOptions.filter.test(asset.id)) continue;
+					beforeCallback(asset);
+				}
+				const _loadResultMaybePromise = callback(asset);
+				const _loadResult = await _loadResultMaybePromise;
+				for (const [afterOptions, afterCallback] of this.#callbacks
+					.afterLoadDependencies) {
+					if (!afterOptions.filter.test(asset.id)) continue;
+					afterCallback(_loadResultMaybePromise);
+				}
+				return _loadResult;
+			};
+			loadResultPromises.push(loadDependencyPromise());
 		}
 
-		return loadResult;
+		return (await Promise.all(loadResultPromises)).flat();
 	}
 	monitor() {
 		const callbacks = this.#callbacks;
