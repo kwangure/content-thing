@@ -1,5 +1,4 @@
-import { describe, it } from 'node:test';
-import assert from 'node:assert';
+import { assert, describe, it } from 'vitest';
 import { StructuredID } from '../src/vite.js';
 
 describe('StructuredID', () => {

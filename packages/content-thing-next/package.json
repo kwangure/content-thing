@@ -1,11 +1,10 @@
 {
-	"name": "@content-thing/internal-utils",
-	"version": "0.0.1",
+	"name": "content-thing-next",
 	"scripts": {
 		"build": "wireit",
+		"dev": "wireit",
 		"pre-commit": "wireit",
 		"publint": "wireit",
-		"release": "wireit",
 		"test": "wireit"
 	},
 	"wireit": {
@@ -13,12 +12,17 @@
 			"command": "tsc --build",
 			"files": [
 				"src/**/*.{js,ts}",
-				"tests/**/*.{js,ts}",
-				"tsconfig.json"
+				"tsconfig.json",
+				"../../config/tsconfig.base.json"
 			],
 			"output": [
-				"dist"
+				"types"
 			]
+		},
+		"dev": {
+			"command": "tsc --build --watch",
+			"service": true,
+			"files": []
 		},
 		"publint": {
 			"command": "publint",
@@ -56,13 +60,9 @@
 		}
 	},
 	"exports": {
-		"./filesystem": {
-			"types": "./dist/filesystem.d.ts",
-			"default": "./dist/filesystem.js"
-		},
-		"./vite": {
-			"types": "./dist/vite.d.ts",
-			"default": "./dist/vite.js"
+		".": {
+			"types": "./dist/index.d.ts",
+			"default": "./dist/index.js"
 		}
 	},
 	"files": [
@@ -71,11 +71,14 @@
 		"!**/*.spec.*"
 	],
 	"devDependencies": {
-		"@types/node": "^20.14.0",
-		"publint": "^0.1.16",
-		"typescript": "^5.1.6",
+		"@types/node": "^20.14.9",
+		"publint": "^0.2.6",
+		"typescript": "^5.4.5",
+		"vite": "^5.3.2",
 		"vitest": "^1.6.0"
 	},
-	"license": "MIT",
-	"type": "module"
+	"type": "module",
+	"dependencies": {
+		"valibot": "^0.35.0"
+	}
 }
