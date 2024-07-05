@@ -13,13 +13,12 @@ export interface CallbackOptions {
 }
 
 export type AddEntryAssetIdsCallback = () => MaybePromise<string[]>;
-
 export type ConfigResolvedCallback = (
 	config: ValidatedContentThingConfig,
 ) => void;
-
 export type LoadIdCallback = (id: string) => MaybePromise<{ value: unknown }>;
 export type LoadDependenciesCallback = (asset: Asset) => MaybePromise<string[]>;
+export type TransformAssetCallback = (asset: Asset) => MaybePromise<Asset>;
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type BeforeCallback<T> = T extends (...args: infer A) => unknown
@@ -71,6 +70,10 @@ interface BundleContext {
 		options: CallbackOptions,
 		callback: LoadDependenciesCallback,
 	): void;
+	transformAsset(
+		options: CallbackOptions,
+		callback: TransformAssetCallback,
+	): void;
 }
 
 type MonitorContext = PrependBeforeAfter<BundleContext>;
@@ -97,6 +100,16 @@ export class PluginDriver {
 		afterLoadDependencies: [] as [
 			CallbackOptions,
 			AfterCallback<LoadDependenciesCallback>,
+		][],
+
+		beforeTransformAsset: [] as [
+			CallbackOptions,
+			BeforeCallback<TransformAssetCallback>,
+		][],
+		transformAsset: [] as [CallbackOptions, TransformAssetCallback][],
+		afterTransformAsset: [] as [
+			CallbackOptions,
+			AfterCallback<TransformAssetCallback>,
 		][],
 	};
 	#plugins;
@@ -137,6 +150,9 @@ export class PluginDriver {
 				},
 				loadDependencies(options, callback) {
 					callbacks.loadDependencies.push([options, callback]);
+				},
+				transformAsset(options, callback) {
+					callbacks.transformAsset.push([options, callback]);
 				},
 			});
 		}
@@ -197,6 +213,25 @@ export class PluginDriver {
 
 		return (await Promise.all(loadResultPromises)).flat();
 	}
+	async transformAsset(asset: Asset): Promise<Asset> {
+		for (const [options, callback] of this.#callbacks.transformAsset) {
+			if (!options.filter.test(asset.id)) continue;
+			for (const [beforeOptions, beforeCallback] of this.#callbacks
+				.beforeTransformAsset) {
+				if (!beforeOptions.filter.test(asset.id)) continue;
+				beforeCallback(asset);
+			}
+			const _transformResultMaybePromise = callback(asset);
+			await _transformResultMaybePromise;
+			for (const [afterOptions, afterCallback] of this.#callbacks
+				.afterTransformAsset) {
+				if (!afterOptions.filter.test(asset.id)) continue;
+				afterCallback(_transformResultMaybePromise);
+			}
+		}
+
+		return asset;
+	}
 	monitor() {
 		const callbacks = this.#callbacks;
 		for (const plugin of this.#plugins) {
@@ -224,6 +259,12 @@ export class PluginDriver {
 				},
 				afterLoadDependencies(options, callback) {
 					callbacks.afterLoadDependencies.push([options, callback]);
+				},
+				beforeTransformAsset(options, callback) {
+					callbacks.beforeTransformAsset.push([options, callback]);
+				},
+				afterTransformAsset(options, callback) {
+					callbacks.afterTransformAsset.push([options, callback]);
 				},
 			});
 		}

@@ -73,6 +73,7 @@
 		"!**/*.spec.*"
 	],
 	"devDependencies": {
+		"@svelte-thing/components": "^0.0.26",
 		"@types/node": "^20.14.9",
 		"publint": "^0.2.6",
 		"typescript": "^5.4.5",
@@ -81,6 +82,14 @@
 	},
 	"type": "module",
 	"dependencies": {
-		"valibot": "^0.35.0"
+		"@content-thing/internal-utils": "^0.0.2",
+		"@content-thing/remark-attributes": "^0.0.3",
+		"@types/mdast": "^4.0.1",
+		"mdast-util-to-markdown": "^2.1.0",
+		"remark-parse": "^11.0.0",
+		"unified": "^11.0.3",
+		"unist-util-visit": "^5.0.0",
+		"valibot": "^0.35.0",
+		"yaml": "^2.4.5"
 	}
 }

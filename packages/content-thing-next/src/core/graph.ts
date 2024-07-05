@@ -59,6 +59,12 @@ export class AssetGraph {
 			}
 			await Promise.all(loadPromises);
 
+			const transformPromises = [];
+			for (const asset of this.#pendingAssets.values()) {
+				transformPromises.push(this.#pluginDriver.transformAsset(asset));
+			}
+			await Promise.all(transformPromises);
+
 			const dependencyPromises = [];
 			for (const [id, asset] of this.#pendingAssets) {
 				const dependencyPromise = async () => {
@@ -106,5 +112,8 @@ export class Asset {
 	}
 	get value() {
 		return this.#value;
+	}
+	set value(value) {
+		this.#value = value;
 	}
 }
