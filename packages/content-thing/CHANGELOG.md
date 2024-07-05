@@ -1,5 +1,12 @@
 # content-thing
 
+## 0.0.26
+
+### Patch Changes
+
+- Updated dependencies [f4a21ba]
+  - @content-thing/internal-utils@0.0.2
+
 ## 0.0.25
 
 ### Patch Changes

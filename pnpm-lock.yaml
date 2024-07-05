@@ -51,8 +51,8 @@ importers:
   packages/content-thing:
     dependencies:
       '@content-thing/internal-utils':
-        specifier: ^0.0.1
-        version: 0.0.1
+        specifier: ^0.0.2
+        version: 0.0.2
       '@content-thing/remark-attributes':
         specifier: ^0.0.3
         version: 0.0.3
@@ -443,8 +443,8 @@ packages:
   '@codemirror/view@6.26.3':
     resolution: {integrity: sha512-gmqxkPALZjkgSxIeeweY/wGQXBfwTUaLs8h7OKtSwfbj9Ct3L11lD+u1sS7XHppxFQoMDiMDp07P9f3I2jWOHw==}
 
-  '@content-thing/internal-utils@0.0.1':
-    resolution: {integrity: sha512-oMQD5eqwWi9h+bI7Z1qxEhDi/xVfF5gM2f7ksNKk9BRoVtvU/LD1wIoXKfJS3oSirzA4Q9uLo7zuXP0p40ps2Q==}
+  '@content-thing/internal-utils@0.0.2':
+    resolution: {integrity: sha512-Xrxb5AhBkOIFtrWCiyJYNsjMcA7lF04d8ibRVD/qA5IzIW0Sl2W2iPuW/mCZsAJ5QCQJSnmK4y/w1aQFzX+xHQ==}
 
   '@content-thing/remark-attributes@0.0.3':
     resolution: {integrity: sha512-AN3xSBYpuyTkN5YLX2HDzrfeg0ncfp4S+Ld2vJWSGgIMiqnw2KPbejeAZbcyvjfpcfd/H2wnvOZoWa74NeBJQA==}
@@ -3678,7 +3678,7 @@ snapshots:
       style-mod: 4.1.2
       w3c-keyname: 2.2.8
 
-  '@content-thing/internal-utils@0.0.1': {}
+  '@content-thing/internal-utils@0.0.2': {}
 
   '@content-thing/remark-attributes@0.0.3':
     dependencies:

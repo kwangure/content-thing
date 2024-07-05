@@ -16,8 +16,7 @@ export function getCollectionEntries(
 	const collectionDir = path.join(thingConfig.collectionsDir, collection.name);
 	walk(collectionDir, (file) => {
 		if (!isReadme(file.name)) return;
-		const fullPath = path.join(file.fullPath);
-		collectionEntries.push(fullPath);
+		collectionEntries.push(path.join(file.path, file.name));
 	});
 
 	return collectionEntries;
