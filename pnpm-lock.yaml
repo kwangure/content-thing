@@ -161,14 +161,17 @@ importers:
   packages/internal-utils:
     devDependencies:
       '@types/node':
-        specifier: ^20.4.10
-        version: 20.5.9
+        specifier: ^20.14.0
+        version: 20.14.9
       publint:
         specifier: ^0.1.16
         version: 0.1.16
       typescript:
         specifier: ^5.1.6
         version: 5.2.2
+      vitest:
+        specifier: ^1.6.0
+        version: 1.6.0(@types/node@20.14.9)
 
   packages/remark-attributes:
     dependencies:

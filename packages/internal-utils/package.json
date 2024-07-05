@@ -47,7 +47,7 @@
 			]
 		},
 		"test": {
-			"command": "node --test --test-reporter spec",
+			"command": "vitest run",
 			"files": [
 				"src/**/*.{js,ts}",
 				"tests/**/*.{js,ts}"
@@ -71,9 +71,10 @@
 		"!**/*.spec.*"
 	],
 	"devDependencies": {
-		"@types/node": "^20.4.10",
+		"@types/node": "^20.14.0",
 		"publint": "^0.1.16",
-		"typescript": "^5.1.6"
+		"typescript": "^5.1.6",
+		"vitest": "^1.6.0"
 	},
 	"license": "MIT",
 	"type": "module"
