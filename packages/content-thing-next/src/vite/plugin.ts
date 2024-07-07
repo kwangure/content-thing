@@ -6,7 +6,6 @@ import { AssetGraph } from '../core/graph.js';
 import type { Plugin, ResolvedConfig } from 'vite';
 import {
 	collectionConfigPlugin,
-	drizzlePlugin,
 	markdownPlugin,
 	yamlPlugin,
 } from '../plugins/index.js';
@@ -27,7 +26,7 @@ export function content(options?: ContentThingOptions): Plugin {
 			});
 			const graph = new AssetGraph(
 				validatedConfig,
-				[collectionConfigPlugin, markdownPlugin, yamlPlugin, drizzlePlugin],
+				[collectionConfigPlugin, markdownPlugin, yamlPlugin],
 				viteConfig.logger,
 			);
 			await graph.bundle();
