@@ -1,14 +1,14 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import type { Plugin } from '../../core/plugin.js';
-import type { ValidatedContentThingConfig } from '../../config/config.js';
+import type { ValidatedContentThingOptions } from '../../config/options.js';
 
 const COLLECTION_CONFIG_REGEXP = /^(.*\/)([^/]+)\/collection\.config\.json$/;
 
 export const collectionConfigPlugin: Plugin = {
 	name: 'content-thing-collection-config',
 	bundle(build) {
-		let contentThingConfig: ValidatedContentThingConfig;
+		let contentThingConfig: ValidatedContentThingOptions;
 
 		build.configResolved((_config) => {
 			contentThingConfig = _config;

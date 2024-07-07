@@ -65,6 +65,34 @@
 		".": {
 			"types": "./dist/index.d.ts",
 			"default": "./dist/index.js"
+		},
+		"./db": {
+			"types": "./dist/plugins/drizzle/index.d.ts",
+			"default": "./dist/plugins/drizzle/index.js"
+		},
+		"./better-sqlite3": {
+			"types": "./dist/packages/better-sqlite3/index.d.ts",
+			"default": "./dist/packages/better-sqlite3/index.js"
+		},
+		"./drizzle-orm": {
+			"types": "./dist/packages/drizzle-orm/index.d.ts",
+			"default": "./dist/packages/drizzle-orm/index.js"
+		},
+		"./drizzle-orm/better-sqlite3": {
+			"types": "./dist/packages/drizzle-orm/better-sqlite3.d.ts",
+			"default": "./dist/packages/drizzle-orm/better-sqlite3.js"
+		},
+		"./drizzle-orm/sqlite-core": {
+			"types": "./dist/packages/drizzle-orm/sqlite.d.ts",
+			"default": "./dist/packages/drizzle-orm/sqlite.js"
+		},
+		"./drizzle-zod": {
+			"types": "./dist/packages/drizzle-zod.d.ts",
+			"default": "./dist/packages/drizzle-zod.js"
+		},
+		"./mdast": {
+			"types": "./dist/packages/mdast.d.ts",
+			"default": "./dist/packages/mdast.js"
 		}
 	},
 	"files": [
@@ -74,6 +102,7 @@
 	],
 	"devDependencies": {
 		"@svelte-thing/components": "^0.0.26",
+		"@sveltejs/kit": "^2.0.0",
 		"@types/node": "^20.14.9",
 		"publint": "^0.2.6",
 		"typescript": "^5.4.5",
@@ -84,7 +113,9 @@
 	"dependencies": {
 		"@content-thing/internal-utils": "^0.0.2",
 		"@content-thing/remark-attributes": "^0.0.3",
+		"@signalapp/better-sqlite3": "^8.6.0",
 		"@types/mdast": "^4.0.1",
+		"drizzle-orm": "^0.28.5",
 		"mdast-util-to-markdown": "^2.1.0",
 		"remark-parse": "^11.0.0",
 		"unified": "^11.0.3",

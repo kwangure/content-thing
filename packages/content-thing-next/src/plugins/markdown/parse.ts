@@ -12,7 +12,7 @@ export async function parseMarkdownSections(
 	markdown: string,
 	filepath: string,
 ) {
-	const regex = /^---\s*[\r\n]+(.*?)[\r\n]+---\s*([\s\S]*)$/;
+	const regex = /^---\s*[\r\n]+([\s\S]*?)\s*[\r\n]+---\s*([\s\S]*)$/;
 	const match = markdown.match(regex);
 
 	const frontmatter = match ? YAML.parse(match[1].trim()) : {};

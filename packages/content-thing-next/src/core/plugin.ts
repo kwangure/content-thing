@@ -1,10 +1,10 @@
-import type { ValidatedContentThingConfig } from '../config/config.js';
+import type { ValidatedContentThingOptions } from '../config/options.js';
 import type { DropLast, Last, MaybePromise, Simplify } from '../types.js';
 import type { Asset } from './graph.js';
 
 export interface Plugin {
 	name: string;
-	bundle(bundler: BundleContext): unknown;
+	bundle?(bundler: BundleContext): unknown;
 	monitor?(monitor: MonitorContext): unknown;
 }
 
@@ -14,11 +14,12 @@ export interface CallbackOptions {
 
 export type AddEntryAssetIdsCallback = () => MaybePromise<string[]>;
 export type ConfigResolvedCallback = (
-	config: ValidatedContentThingConfig,
+	config: ValidatedContentThingOptions,
 ) => void;
 export type LoadIdCallback = (id: string) => MaybePromise<{ value: unknown }>;
 export type LoadDependenciesCallback = (asset: Asset) => MaybePromise<string[]>;
 export type TransformAssetCallback = (asset: Asset) => MaybePromise<Asset>;
+export type WriteAssetCallback = (asset: Asset) => MaybePromise<void>;
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type BeforeCallback<T> = T extends (...args: infer A) => unknown
@@ -74,6 +75,7 @@ interface BundleContext {
 		options: CallbackOptions,
 		callback: TransformAssetCallback,
 	): void;
+	writeAsset(options: CallbackOptions, callback: WriteAssetCallback): void;
 }
 
 type MonitorContext = PrependBeforeAfter<BundleContext>;
@@ -111,6 +113,16 @@ export class PluginDriver {
 			CallbackOptions,
 			AfterCallback<TransformAssetCallback>,
 		][],
+
+		beforeWriteAsset: [] as [
+			CallbackOptions,
+			BeforeCallback<WriteAssetCallback>,
+		][],
+		writeAsset: [] as [CallbackOptions, WriteAssetCallback][],
+		afterWriteAsset: [] as [
+			CallbackOptions,
+			AfterCallback<WriteAssetCallback>,
+		][],
 	};
 	#plugins;
 	constructor(plugins: Plugin[]) {
@@ -138,7 +150,7 @@ export class PluginDriver {
 	bundle() {
 		const callbacks = this.#callbacks;
 		for (const plugin of this.#plugins) {
-			plugin.bundle({
+			plugin.bundle?.({
 				addEntryAssetIds(callback) {
 					callbacks.addEntryAssetIds.push(callback);
 				},
@@ -154,10 +166,13 @@ export class PluginDriver {
 				transformAsset(options, callback) {
 					callbacks.transformAsset.push([options, callback]);
 				},
+				writeAsset(options, callback) {
+					callbacks.writeAsset.push([options, callback]);
+				},
 			});
 		}
 	}
-	configResolved(config: ValidatedContentThingConfig) {
+	configResolved(config: ValidatedContentThingOptions) {
 		for (const callback of this.#callbacks.configResolved) {
 			for (const beforeCallback of this.#callbacks.beforeConfigResolved) {
 				beforeCallback(config);
@@ -232,6 +247,23 @@ export class PluginDriver {
 
 		return asset;
 	}
+	async writeAsset(asset: Asset): Promise<void> {
+		for (const [options, callback] of this.#callbacks.writeAsset) {
+			if (!options.filter.test(asset.id)) continue;
+			for (const [beforeOptions, beforeCallback] of this.#callbacks
+				.beforeWriteAsset) {
+				if (!beforeOptions.filter.test(asset.id)) continue;
+				beforeCallback(asset);
+			}
+			const _writeResultMaybePromise = callback(asset);
+			await _writeResultMaybePromise;
+			for (const [afterOptions, afterCallback] of this.#callbacks
+				.afterWriteAsset) {
+				if (!afterOptions.filter.test(asset.id)) continue;
+				afterCallback(_writeResultMaybePromise);
+			}
+		}
+	}
 	monitor() {
 		const callbacks = this.#callbacks;
 		for (const plugin of this.#plugins) {
@@ -265,6 +297,12 @@ export class PluginDriver {
 				},
 				afterTransformAsset(options, callback) {
 					callbacks.afterTransformAsset.push([options, callback]);
+				},
+				beforeWriteAsset(options, callback) {
+					callbacks.beforeWriteAsset.push([options, callback]);
+				},
+				afterWriteAsset(options, callback) {
+					callbacks.afterWriteAsset.push([options, callback]);
 				},
 			});
 		}

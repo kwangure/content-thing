@@ -1,1 +1,2 @@
-export { collection } from './plugin.js';
+export { content } from './plugin.js';
+export { extendSvelteConfig } from './svelte-kit.js';

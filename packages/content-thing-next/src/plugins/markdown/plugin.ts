@@ -5,16 +5,52 @@ import type { Plugin } from '../../core/plugin.js';
 import { walk } from '@content-thing/internal-utils/filesystem';
 import { parseFilepath } from '../../utils/filepath.js';
 import { parseMarkdownSections } from './parse.js';
+import { mergeInto } from '../../utils/object.js';
 
 const README_REGEXP = /(^|\/)readme\.md$/i;
-const COLLECTION_CONFIG_REGEXP = /(.*\/)collection\.config\.json$/;
+const COLLECTION_CONFIG_REGEXP = /\/([^/]+)\/collection\.config\.json$/;
 
-export const collectionConfigPlugin: Plugin = {
+export const markdownPlugin: Plugin = {
 	name: 'content-thing-markdown',
 	bundle(build) {
 		build.loadId({ filter: README_REGEXP }, (id) => {
 			const value = fs.readFileSync(id, 'utf-8');
 			return { value };
+		});
+
+		build.transformAsset({ filter: COLLECTION_CONFIG_REGEXP }, (asset) => {
+			if (
+				typeof asset.value !== 'object' ||
+				asset.value === null ||
+				!('type' in asset.value) ||
+				asset.value.type !== 'markdown'
+			)
+				return asset;
+
+			const match = asset.id.match(COLLECTION_CONFIG_REGEXP);
+			if (!match) return asset;
+
+			mergeInto(asset.value, {
+				name: match[1],
+				data: {
+					fields: {
+						_id: {
+							type: 'text',
+							primaryKey: true,
+						},
+						_headingTree: {
+							type: 'json',
+							jsDocType: "import('content-thing').TocEntry[]",
+						},
+						_content: {
+							type: 'json',
+							jsDocType: "import('content-thing-next/mdast').Root",
+						},
+					},
+				},
+			});
+
+			return asset;
 		});
 
 		build.transformAsset({ filter: README_REGEXP }, async (asset) => {

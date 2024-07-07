@@ -1,7 +1,14 @@
 import { visit } from 'unist-util-visit';
 import { toMarkdown } from 'mdast-util-to-markdown';
 import type { Root } from 'mdast';
-import type { TocEntry } from '../../types.js';
+
+export interface TocEntry {
+	value: string;
+	id: string;
+	hash: string;
+	depth: 1 | 2 | 3;
+	children: TocEntry[];
+}
 
 const LEADING_DASH_RE = /^-+/;
 const LEADING_HASH_RE = /^#+\s*/;
