@@ -32,3 +32,5 @@ declare module 'mdast' {
 		frontmatter: unknown;
 	}
 }
+
+export * from 'mdast';

@@ -1,6 +1,6 @@
 import type { ValidatedContentThingOptions } from '../config/options.js';
 import type { DropLast, Last, MaybePromise, Simplify } from '../types.js';
-import type { Asset } from './graph.js';
+import type { Asset, AssetGraph, Bundle } from './graph.js';
 
 export interface Plugin {
 	name: string;
@@ -13,13 +13,20 @@ export interface CallbackOptions {
 }
 
 export type AddEntryAssetIdsCallback = () => MaybePromise<string[]>;
+export type CreateBundleCallback = (
+	graph: AssetGraph,
+) => MaybePromise<{ id: string; meta?: Record<string, unknown> }[]>;
 export type ConfigResolvedCallback = (
 	config: ValidatedContentThingOptions,
 ) => void;
 export type LoadIdCallback = (id: string) => MaybePromise<{ value: unknown }>;
 export type LoadDependenciesCallback = (asset: Asset) => MaybePromise<string[]>;
 export type TransformAssetCallback = (asset: Asset) => MaybePromise<Asset>;
-export type WriteAssetCallback = (asset: Asset) => MaybePromise<void>;
+export type TransformBundleCallback = (args: {
+	bundle: Bundle;
+	graph: AssetGraph;
+}) => MaybePromise<Bundle>;
+export type WriteBundleCallback = (bundle: Bundle) => MaybePromise<void>;
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type BeforeCallback<T> = T extends (...args: infer A) => unknown
@@ -75,7 +82,9 @@ interface BundleContext {
 		options: CallbackOptions,
 		callback: TransformAssetCallback,
 	): void;
-	writeAsset(options: CallbackOptions, callback: WriteAssetCallback): void;
+	createBundle(callback: CreateBundleCallback): void;
+	transformBundle(callback: TransformBundleCallback): void;
+	writeBundle(callback: WriteBundleCallback): void;
 }
 
 type MonitorContext = PrependBeforeAfter<BundleContext>;
@@ -89,6 +98,10 @@ export class PluginDriver {
 		beforeConfigResolved: [] as BeforeCallback<ConfigResolvedCallback>[],
 		configResolved: [] as ConfigResolvedCallback[],
 		afterConfigResolved: [] as AfterCallback<ConfigResolvedCallback>[],
+
+		beforeCreateBundle: [] as BeforeCallback<CreateBundleCallback>[],
+		createBundle: [] as CreateBundleCallback[],
+		afterCreateBundle: [] as AfterCallback<CreateBundleCallback>[],
 
 		beforeLoadId: [] as [CallbackOptions, BeforeCallback<LoadIdCallback>][],
 		loadId: [] as [CallbackOptions, LoadIdCallback][],
@@ -114,15 +127,13 @@ export class PluginDriver {
 			AfterCallback<TransformAssetCallback>,
 		][],
 
-		beforeWriteAsset: [] as [
-			CallbackOptions,
-			BeforeCallback<WriteAssetCallback>,
-		][],
-		writeAsset: [] as [CallbackOptions, WriteAssetCallback][],
-		afterWriteAsset: [] as [
-			CallbackOptions,
-			AfterCallback<WriteAssetCallback>,
-		][],
+		beforeTransformBundle: [] as BeforeCallback<TransformBundleCallback>[],
+		transformBundle: [] as TransformBundleCallback[],
+		afterTransformBundle: [] as AfterCallback<TransformBundleCallback>[],
+
+		beforeWriteBundle: [] as BeforeCallback<WriteBundleCallback>[],
+		writeBundle: [] as WriteBundleCallback[],
+		afterWriteBundle: [] as AfterCallback<WriteBundleCallback>[],
 	};
 	#plugins;
 	constructor(plugins: Plugin[]) {
@@ -157,6 +168,9 @@ export class PluginDriver {
 				configResolved(callback) {
 					callbacks.configResolved.push(callback);
 				},
+				createBundle(callback) {
+					callbacks.createBundle.push(callback);
+				},
 				loadId(options, callback) {
 					callbacks.loadId.push([options, callback]);
 				},
@@ -166,8 +180,11 @@ export class PluginDriver {
 				transformAsset(options, callback) {
 					callbacks.transformAsset.push([options, callback]);
 				},
-				writeAsset(options, callback) {
-					callbacks.writeAsset.push([options, callback]);
+				transformBundle(callback) {
+					callbacks.transformBundle.push(callback);
+				},
+				writeBundle(callback) {
+					callbacks.writeBundle.push(callback);
 				},
 			});
 		}
@@ -183,6 +200,24 @@ export class PluginDriver {
 			}
 		}
 	}
+	async createBundle(graph: AssetGraph) {
+		const bundlePromises = [];
+		for (const callback of this.#callbacks.createBundle) {
+			const loadBundle = async () => {
+				for (const beforeCallback of this.#callbacks.beforeCreateBundle) {
+					beforeCallback(graph);
+				}
+				const bundleConfigs = await callback(graph);
+				for (const afterCallback of this.#callbacks.afterCreateBundle) {
+					afterCallback(bundleConfigs);
+				}
+				return bundleConfigs;
+			};
+			bundlePromises.push(loadBundle());
+		}
+		return (await Promise.all(bundlePromises)).flat();
+	}
+
 	async loadId(id: string) {
 		let loadResult;
 		for (const [options, callback] of this.#callbacks.loadId) {
@@ -236,31 +271,35 @@ export class PluginDriver {
 				if (!beforeOptions.filter.test(asset.id)) continue;
 				beforeCallback(asset);
 			}
-			const _transformResultMaybePromise = callback(asset);
-			await _transformResultMaybePromise;
+			const _transformResult = await callback(asset);
 			for (const [afterOptions, afterCallback] of this.#callbacks
 				.afterTransformAsset) {
 				if (!afterOptions.filter.test(asset.id)) continue;
-				afterCallback(_transformResultMaybePromise);
+				afterCallback(_transformResult);
 			}
 		}
 
 		return asset;
 	}
-	async writeAsset(asset: Asset): Promise<void> {
-		for (const [options, callback] of this.#callbacks.writeAsset) {
-			if (!options.filter.test(asset.id)) continue;
-			for (const [beforeOptions, beforeCallback] of this.#callbacks
-				.beforeWriteAsset) {
-				if (!beforeOptions.filter.test(asset.id)) continue;
-				beforeCallback(asset);
+	async transformBundle(args: { bundle: Bundle; graph: AssetGraph }) {
+		for (const callback of this.#callbacks.transformBundle) {
+			for (const beforeCallback of this.#callbacks.beforeTransformBundle) {
+				beforeCallback(args);
 			}
-			const _writeResultMaybePromise = callback(asset);
-			await _writeResultMaybePromise;
-			for (const [afterOptions, afterCallback] of this.#callbacks
-				.afterWriteAsset) {
-				if (!afterOptions.filter.test(asset.id)) continue;
-				afterCallback(_writeResultMaybePromise);
+			const bundleConfig = await callback(args);
+			for (const afterCallback of this.#callbacks.afterTransformBundle) {
+				afterCallback(bundleConfig);
+			}
+		}
+	}
+	async writeBundle(bundle: Bundle): Promise<void> {
+		for (const callback of this.#callbacks.writeBundle) {
+			for (const beforeCallback of this.#callbacks.beforeWriteBundle) {
+				beforeCallback(bundle);
+			}
+			const writeResult = await callback(bundle);
+			for (const afterCallback of this.#callbacks.afterWriteBundle) {
+				afterCallback(writeResult);
 			}
 		}
 	}
@@ -280,6 +319,18 @@ export class PluginDriver {
 				afterConfigResolved(callback) {
 					callbacks.afterConfigResolved.push(callback);
 				},
+				beforeCreateBundle(callback) {
+					callbacks.beforeCreateBundle.push(callback);
+				},
+				afterCreateBundle(callback) {
+					callbacks.afterCreateBundle.push(callback);
+				},
+				beforeTransformBundle(callback) {
+					callbacks.beforeTransformBundle.push(callback);
+				},
+				afterTransformBundle(callback) {
+					callbacks.afterTransformBundle.push(callback);
+				},
 				beforeLoadId(options, callback) {
 					callbacks.beforeLoadId.push([options, callback]);
 				},
@@ -298,11 +349,11 @@ export class PluginDriver {
 				afterTransformAsset(options, callback) {
 					callbacks.afterTransformAsset.push([options, callback]);
 				},
-				beforeWriteAsset(options, callback) {
-					callbacks.beforeWriteAsset.push([options, callback]);
+				beforeWriteBundle(callback) {
+					callbacks.beforeWriteBundle.push(callback);
 				},
-				afterWriteAsset(options, callback) {
-					callbacks.afterWriteAsset.push([options, callback]);
+				afterWriteBundle(callback) {
+					callbacks.afterWriteBundle.push(callback);
 				},
 			});
 		}

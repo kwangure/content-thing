@@ -27,20 +27,15 @@ export const markdownPlugin: Plugin = {
 			)
 				return asset;
 
-			const match = asset.id.match(COLLECTION_CONFIG_REGEXP);
-			if (!match) return asset;
-
 			mergeInto(asset.value, {
-				name: match[1],
 				data: {
 					fields: {
 						_id: {
-							type: 'text',
-							primaryKey: true,
+							type: 'string',
 						},
 						_headingTree: {
 							type: 'json',
-							jsDocType: "import('content-thing').TocEntry[]",
+							jsDocType: "import('content-thing-next').TocEntry[]",
 						},
 						_content: {
 							type: 'json',

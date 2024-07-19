@@ -3,10 +3,11 @@ import {
 	type ContentThingOptions,
 } from '../config/options.js';
 import { AssetGraph } from '../core/graph.js';
-import type { Plugin, ResolvedConfig } from 'vite';
+import type { LogErrorOptions, LogOptions, Plugin, ResolvedConfig } from 'vite';
 import {
 	collectionConfigPlugin,
 	markdownPlugin,
+	memdbPlugin,
 	yamlPlugin,
 } from '../plugins/index.js';
 import fs from 'node:fs';
@@ -24,10 +25,29 @@ export function content(options?: ContentThingOptions): Plugin {
 			const validatedConfig = parseContentThingOptions(options, {
 				rootDir: viteConfig.root,
 			});
+			const patchOptions = (options?: LogOptions) => {
+				if (!options) options = {};
+				if (!('timestamp' in options)) {
+					options.timestamp = true;
+				}
+				return options;
+			};
+			const { error, info, warn } = viteConfig.logger;
+			const logger = Object.assign(viteConfig.logger, {
+				error(message: string, options?: LogErrorOptions) {
+					error(message, patchOptions(options));
+				},
+				info(message: string, options?: LogOptions) {
+					info(message, patchOptions(options));
+				},
+				warn(message: string, options?: LogOptions) {
+					warn(message, patchOptions(options));
+				},
+			});
 			const graph = new AssetGraph(
 				validatedConfig,
-				[collectionConfigPlugin, markdownPlugin, yamlPlugin],
-				viteConfig.logger,
+				[collectionConfigPlugin, markdownPlugin, yamlPlugin, memdbPlugin],
+				logger,
 			);
 			await graph.bundle();
 

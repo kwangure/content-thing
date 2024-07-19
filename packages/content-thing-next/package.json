@@ -65,6 +65,10 @@
 		".": {
 			"types": "./dist/index.d.ts",
 			"default": "./dist/index.js"
+		},
+		"./mdast": {
+			"types": "./dist/plugins/markdown/mdast.d.ts",
+			"default": "./dist/plugins/markdown/mdast.js"
 		}
 	},
 	"files": [

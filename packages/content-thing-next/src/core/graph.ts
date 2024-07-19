@@ -1,14 +1,10 @@
+import type { Logger } from 'vite';
 import type { ValidatedContentThingOptions } from '../config/options.js';
 import { PluginDriver, type Plugin } from './plugin.js';
 
-interface Logger {
-	info(message: string): void;
-	warn(message: string): void;
-	error(message: string): void;
-}
-
 export class AssetGraph {
 	#assets = new Map<string, Asset>();
+	#bundles = new Map<string, Bundle>();
 	#dependencyMap = new Map<string, Set<string>>();
 	#dependentMap = new Map<string, Set<string>>();
 	#pendingAssetIds = new Set<string>();
@@ -27,21 +23,29 @@ export class AssetGraph {
 		this.#pluginDriver = new PluginDriver(plugins);
 	}
 
-	async bundle() {
-		this.#pluginDriver.bundle();
-		this.#pluginDriver.monitor();
-		this.#pluginDriver.configResolved(this.#config);
-		await this.#addEntryAssetIds();
-		await this.#generateAssetGraph();
-		await this.#writeAssets();
-	}
-
 	async #addEntryAssetIds() {
 		const entryAssetIds = await this.#pluginDriver.addEntryAssetIds();
 
 		for (const assetId of entryAssetIds) {
 			this.#pendingAssetIds.add(assetId);
 		}
+	}
+
+	async #createBundles() {
+		const bundleConfigs = await this.#pluginDriver.createBundle(this);
+		for (const { id, meta } of bundleConfigs) {
+			this.#bundles.set(id, new Bundle(id, meta));
+		}
+	}
+
+	async #transformBundles() {
+		const bundlePromises = [];
+		for (const bundle of this.#bundles.values()) {
+			bundlePromises.push(
+				this.#pluginDriver.transformBundle({ bundle, graph: this }),
+			);
+		}
+		await Promise.all(bundlePromises);
 	}
 
 	async #generateAssetGraph() {
@@ -110,12 +114,27 @@ export class AssetGraph {
 		}
 	}
 
-	async #writeAssets() {
-		const writeAssetPromises = [];
-		for (const asset of this.#assets.values()) {
-			writeAssetPromises.push(this.#pluginDriver.writeAsset(asset));
+	async #writeBundles() {
+		const writeBundlePromises = [];
+		for (const bundle of this.#bundles.values()) {
+			writeBundlePromises.push(this.#pluginDriver.writeBundle(bundle));
 		}
-		await Promise.all(writeAssetPromises);
+		await Promise.all(writeBundlePromises);
+	}
+
+	async bundle() {
+		this.#pluginDriver.bundle();
+		this.#pluginDriver.monitor();
+		this.#pluginDriver.configResolved(this.#config);
+		await this.#addEntryAssetIds();
+		await this.#generateAssetGraph();
+		await this.#createBundles();
+		await this.#transformBundles();
+		await this.#writeBundles();
+	}
+
+	get assets() {
+		return Array.from(this.#assets.values());
 	}
 
 	getAsset(id: string): Asset | undefined {
@@ -189,5 +208,30 @@ export class Asset {
 
 	get entryAssets(): Asset[] {
 		return this.#graph.getEntryAssets(this.#id);
+	}
+}
+
+export class Bundle {
+	#id;
+	#assets = new Set<Asset>();
+	#meta: unknown;
+	constructor(id: string, meta: unknown) {
+		this.#id = id;
+		this.#meta = meta;
+	}
+	addAsset(asset: Asset) {
+		this.#assets.add(asset);
+	}
+	get assets() {
+		return Array.from(this.#assets);
+	}
+	deleteAsset(asset: Asset) {
+		this.#assets.delete(asset);
+	}
+	get id() {
+		return this.#id;
+	}
+	get meta() {
+		return this.#meta;
 	}
 }

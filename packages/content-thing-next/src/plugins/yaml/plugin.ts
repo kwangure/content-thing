@@ -26,16 +26,11 @@ export const yamlPlugin: Plugin = {
 			)
 				return asset;
 
-			const match = asset.id.match(COLLECTION_CONFIG_REGEXP);
-			if (!match) return asset;
-
 			mergeInto(asset.value, {
-				name: match[1],
 				data: {
 					fields: {
 						_id: {
-							type: 'text',
-							primaryKey: true,
+							type: 'string',
 						},
 					},
 				},

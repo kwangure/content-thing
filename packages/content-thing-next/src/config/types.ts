@@ -1,26 +1,18 @@
 import {
 	collectionConfig,
-	drizzleIntegerColumn,
-	drizzleJsonColumn,
-	drizzleManyRelation,
-	drizzleOneRelation,
-	drizzleTextColumn,
-	pluginCollectionConfig,
+	integerField,
+	jsonField,
+	stringField,
 } from './schema.js';
 import * as v from 'valibot';
 
-export type TextColumn = v.InferOutput<typeof drizzleTextColumn>;
-export type IntegerColumn = v.InferOutput<typeof drizzleIntegerColumn>;
-export type JsonColumn = v.InferOutput<typeof drizzleJsonColumn>;
-export type ColumnType = IntegerColumn | JsonColumn | TextColumn;
+export type StringField = v.InferOutput<typeof stringField>;
+export type IntegerField = v.InferOutput<typeof integerField>;
+export type JsonField = v.InferOutput<typeof jsonField>;
+export type FieldType = IntegerField | JsonField | StringField;
 
-export type OneRelation = v.InferOutput<typeof drizzleOneRelation>;
-export type ManyRelation = v.InferOutput<typeof drizzleManyRelation>;
-
-export type PluginCollectionConfig = v.InferInput<
-	typeof pluginCollectionConfig
->;
 export type CollectionConfig = v.InferOutput<typeof collectionConfig> & {
 	name: string;
+	filepath: string;
 };
 export type CollectionConfigMap = Map<string, CollectionConfig>;

@@ -1,3 +1,5 @@
+export function Ok<T>(value: T): { ok: true; value: T };
+export function Ok(value: undefined): { ok: true };
 export function Ok<T>(value?: T) {
 	return { ok: true as const, value };
 }
