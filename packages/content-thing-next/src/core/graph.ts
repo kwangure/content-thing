@@ -124,7 +124,6 @@ export class AssetGraph {
 
 	async bundle() {
 		this.#pluginDriver.bundle();
-		this.#pluginDriver.monitor();
 		this.#pluginDriver.configResolved(this.#config);
 		await this.#addEntryAssetIds();
 		await this.#generateAssetGraph();
