@@ -35,11 +35,11 @@ export const markdownPlugin: Plugin = {
 						},
 						_headingTree: {
 							type: 'json',
-							jsDocType: "import('content-thing-next').TocEntry[]",
+							jsDocType: "import('content-thing').TocEntry[]",
 						},
 						_content: {
 							type: 'json',
-							jsDocType: "import('content-thing-next/mdast').Root",
+							jsDocType: "import('content-thing/mdast').Root",
 						},
 					},
 				},
