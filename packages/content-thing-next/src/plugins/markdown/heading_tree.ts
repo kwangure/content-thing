@@ -45,11 +45,6 @@ export function getHeadingTree(tree: Root) {
 		}
 		stack[stack.length - 1].children.push(tocEntry);
 		stack.push(tocEntry);
-
-		node.data = {
-			...node.data,
-			...tocEntry,
-		};
 	});
 
 	return dummyRoot.children;

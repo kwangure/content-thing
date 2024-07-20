@@ -97,7 +97,6 @@ function generateDatabaseFile(
 		} else {
 			return schemaResult;
 		}
-		code += `\t\t'${name}': ${schemaResult.value},\n`;
 	}
 	code += '\t},\n';
 	code += '\t[\n';

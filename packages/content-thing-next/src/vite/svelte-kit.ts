@@ -14,7 +14,7 @@ export function extendSvelteConfig(config: Config) {
 		config.kit.alias = {};
 	}
 
-	config.kit.alias['thing:data'] = './.svelte-kit/content-thing/collections/';
+	config.kit.alias['thing:data'] = './.collections/collections/';
 
 	if (!config.kit.typescript) {
 		config.kit.typescript = {};
@@ -24,18 +24,7 @@ export function extendSvelteConfig(config: Config) {
 	config.kit.typescript.config = (config) => {
 		__config?.(config);
 
-		// TypeScript requires relative URLs if baseUrl is not provided
-		const pathEntries: string[][] = Object.values(config.compilerOptions.paths);
-		for (const entries of pathEntries) {
-			for (let i = 0; i < entries.length; i++) {
-				const entry = entries[i];
-				if (entry.startsWith('content-thing')) {
-					entries[i] = `./${entry}`;
-				}
-			}
-		}
-
-		config.include.push('./content-thing/**/*.js', './content-thing/**/*.ts');
+		config.include.push('../.collections/**/*.js', '../.collections/**/*.ts');
 	};
 
 	return config;

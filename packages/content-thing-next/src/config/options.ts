@@ -15,7 +15,7 @@ function isNotRelativeOrAbsoluteMessage(value: v.CheckIssue<string>) {
 const defaultConfig = {
 	files: {
 		collectionsDir: 'src/collections',
-		outputDir: '.svelte-kit/content-thing',
+		outputDir: '.collections',
 	},
 };
 

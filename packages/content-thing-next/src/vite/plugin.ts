@@ -1,6 +1,7 @@
 import {
 	parseContentThingOptions,
 	type ContentThingOptions,
+	type ValidatedContentThingOptions,
 } from '../config/options.js';
 import { AssetGraph } from '../core/graph.js';
 import type { LogErrorOptions, LogOptions, Plugin, ResolvedConfig } from 'vite';
@@ -19,10 +20,12 @@ import path from 'node:path';
 export function content(options?: ContentThingOptions): Plugin {
 	let command: ResolvedConfig['command'];
 	let outputDir: string;
+	let assetGraph: AssetGraph;
+	let validatedConfig: ValidatedContentThingOptions;
 	return {
 		name: 'vite-plugin-content-thing',
 		async configResolved(viteConfig) {
-			const validatedConfig = parseContentThingOptions(options, {
+			validatedConfig = parseContentThingOptions(options, {
 				rootDir: viteConfig.root,
 			});
 			const patchOptions = (options?: LogOptions) => {
@@ -44,15 +47,23 @@ export function content(options?: ContentThingOptions): Plugin {
 					warn(message, patchOptions(options));
 				},
 			});
-			const graph = new AssetGraph(
+			assetGraph = new AssetGraph(
 				validatedConfig,
 				[collectionConfigPlugin, markdownPlugin, yamlPlugin, memdbPlugin],
 				logger,
 			);
-			await graph.bundle();
+			await assetGraph.bundle();
 
 			command = viteConfig.command;
 			outputDir = validatedConfig.files.outputDir;
+		},
+		configureServer(server) {
+			server.watcher.on('all', async (_, path) => {
+				if (path.startsWith(validatedConfig.files.collectionsDir)) {
+					await assetGraph.reset();
+					await assetGraph.bundle();
+				}
+			});
 		},
 		load(id) {
 			if (!id.endsWith('sqlite.db')) return;

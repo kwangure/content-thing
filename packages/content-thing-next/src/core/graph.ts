@@ -172,6 +172,15 @@ export class AssetGraph {
 		visit(id);
 		return Array.from(entryAssets);
 	}
+
+	reset() {
+		this.#assets.clear();
+		this.#bundles.clear();
+		this.#dependencyMap.clear();
+		this.#dependentMap.clear();
+		this.#pendingAssetIds.clear();
+		this.#pendingAssets.clear();
+	}
 }
 
 export class Asset {
