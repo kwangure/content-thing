@@ -18,7 +18,6 @@
 		"build": {
 			"dependencies": [
 				"./packages/content-thing:build",
-				"./packages/content-thing-next:build",
 				"./packages/internal-utils:build",
 				"./packages/remark-attributes:build",
 				"./packages/remark-variables:build",
@@ -51,7 +50,6 @@
 			"dependencies": [
 				"./packages/svelte-components:pre-commit",
 				"./packages/content-thing:pre-commit",
-				"./packages/content-thing-next:pre-commit",
 				"./packages/internal-utils:pre-commit",
 				"./packages/remark-attributes:pre-commit",
 				"./packages/remark-variables:pre-commit",
@@ -63,7 +61,6 @@
 			"dependencies": [
 				"./packages/svelte-components:release",
 				"./packages/content-thing:release",
-				"./packages/content-thing-next:release",
 				"./packages/internal-utils:release",
 				"./packages/remark-attributes:release",
 				"./packages/remark-variables:release",
@@ -73,7 +70,6 @@
 		"test": {
 			"dependencies": [
 				"./packages/content-thing:test",
-				"./packages/content-thing-next:test",
 				"./packages/internal-utils:test",
 				"./packages/remark-attributes:test",
 				"./packages/remark-variables:test",

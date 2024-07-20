@@ -1,73 +1,95 @@
-import fs from 'node:fs/promises';
-import { unified } from 'unified';
-import remarkParse from 'remark-parse';
-import remarkStringify from 'remark-stringify';
-import remarkFrontmatter from 'remark-frontmatter';
-import { remarkYamlParse } from '@content-thing/remark-yaml-parse';
-import { remarkAttributes } from '@content-thing/remark-attributes';
-import { remarkVariables } from '@content-thing/remark-variables';
-import type { CollectionPlugin } from '../index.js';
-import { parseFilepath } from '../../helpers/filepath.js';
+import fs from 'node:fs';
 import { getHeadingTree } from './heading_tree.js';
-import type { Root } from 'mdast';
-import { processCopyAttributes } from './copy_attributes.js';
-import { processFileAttributes } from './file_attributes.js';
-import { highlightCodeBlocks } from './highlight_code.js';
+import path from 'node:path';
+import type { Plugin } from '../../core/plugin.js';
+import { walk } from '@content-thing/internal-utils/filesystem';
+import { parseFilepath } from '../../utils/filepath.js';
+import { parseMarkdownSections } from './parse.js';
+import { mergeInto } from '../../utils/object.js';
 
-export const markdownPlugin: CollectionPlugin = {
-	name: 'collection-plugin-markdown',
-	setup(build) {
-		const processor = unified()
-			.use(remarkParse)
-			.use(remarkStringify)
-			.use(remarkFrontmatter)
-			.use(remarkYamlParse)
-			.use(remarkAttributes)
-			.use(remarkVariables);
+const README_REGEXP = /(^|\/)readme\.md$/i;
+const COLLECTION_CONFIG_REGEXP = /\/([^/]+)\/collection\.config\.json$/;
 
-		build.onCollectionConfig(
-			{ filter: { collection: { type: /^markdown$/ } } },
-			() => {
-				return Promise.resolve({
-					data: {
-						fields: {
-							_id: {
-								type: 'text',
-								primaryKey: true,
-							},
-							_headingTree: {
-								type: 'json',
-								jsDocType: "import('content-thing').TocEntry[]",
-							},
-							_content: {
-								type: 'json',
-								jsDocType: "import('content-thing/mdast').Root",
-							},
+export const markdownPlugin: Plugin = {
+	name: 'content-thing-markdown',
+	bundle(build) {
+		build.loadId({ filter: README_REGEXP }, (id) => {
+			const value = fs.readFileSync(id, 'utf-8');
+			return { value };
+		});
+
+		build.transformAsset({ filter: COLLECTION_CONFIG_REGEXP }, (asset) => {
+			if (
+				typeof asset.value !== 'object' ||
+				asset.value === null ||
+				!('type' in asset.value) ||
+				asset.value.type !== 'markdown'
+			)
+				return asset;
+
+			mergeInto(asset.value, {
+				data: {
+					fields: {
+						_id: {
+							type: 'string',
+						},
+						_headingTree: {
+							type: 'json',
+							jsDocType: "import('content-thing-next').TocEntry[]",
+						},
+						_content: {
+							type: 'json',
+							jsDocType: "import('content-thing-next/mdast').Root",
 						},
 					},
-				});
-			},
-		);
+				},
+			});
 
-		build.onLoad(
-			{ filter: { collection: { type: /^markdown$/ } } },
-			async ({ path }) => {
-				const { entry } = parseFilepath(path);
-				const content = await fs.readFile(path, 'utf-8');
-				const tree = processor.parse(content);
-				const transformedTree = processor.runSync(tree);
-				processFileAttributes(transformedTree, path);
-				processCopyAttributes(transformedTree);
-				await highlightCodeBlocks(transformedTree);
-				const tableOfContents = getHeadingTree(transformedTree as Root);
-				return {
-					record: {
-						...(transformedTree.data?.frontmatter ?? {}),
-						_content: transformedTree,
-						_id: entry.id,
-						_headingTree: tableOfContents,
-					},
-				};
+			return asset;
+		});
+
+		build.transformAsset({ filter: README_REGEXP }, async (asset) => {
+			if (typeof asset.value !== 'string') return asset;
+
+			const { entry } = parseFilepath(asset.id);
+			const { frontmatter, content } = await parseMarkdownSections(
+				asset.value,
+				asset.id,
+			);
+			const tableOfContents = getHeadingTree(content);
+
+			asset.value = {
+				record: {
+					...frontmatter,
+					_content: content,
+					_id: entry.id,
+					_headingTree: tableOfContents,
+				},
+			};
+
+			return asset;
+		});
+
+		build.loadDependencies(
+			{ filter: COLLECTION_CONFIG_REGEXP },
+			({ id, value }) => {
+				if (
+					typeof value !== 'object' ||
+					value === null ||
+					!('type' in value) ||
+					value.type !== 'markdown'
+				)
+					return [];
+
+				const collectionDir = path.dirname(id);
+				const markdownEntries: string[] = [];
+				walk(collectionDir, (dirent) => {
+					if (dirent.name.match(README_REGEXP) && dirent.isFile()) {
+						markdownEntries.push(path.join(dirent.path, dirent.name));
+					}
+				});
+
+				return markdownEntries;
 			},
 		);
 	},
