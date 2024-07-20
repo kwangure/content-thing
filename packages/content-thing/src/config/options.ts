@@ -1,8 +1,11 @@
 import * as v from 'valibot';
 import path from 'node:path';
 
+function isRelativeOrAbsolute(value: string) {
+	return (value[0] === '.' && value[1] === '/') || value[0] === '/';
+}
 function isNotRelativeOrAbsolute(value: string) {
-	return value[0] === '.' || value[0] === '/';
+	return !isRelativeOrAbsolute(value);
 }
 
 function isNotRelativeOrAbsoluteMessage(value: v.CheckIssue<string>) {
@@ -12,6 +15,7 @@ function isNotRelativeOrAbsoluteMessage(value: v.CheckIssue<string>) {
 const defaultConfig = {
 	files: {
 		collectionsDir: 'src/collections',
+		outputDir: '.collections',
 	},
 };
 
@@ -27,6 +31,14 @@ export const ContentThingOptionsSchema = v.optional(
 					),
 					defaultConfig.files.collectionsDir,
 				),
+				outputDir: v.optional(
+					v.pipe(
+						v.string(),
+						v.nonEmpty(),
+						v.check(isNotRelativeOrAbsolute, isNotRelativeOrAbsoluteMessage),
+					),
+					defaultConfig.files.outputDir,
+				),
 			}),
 			defaultConfig.files,
 		),
@@ -37,7 +49,7 @@ export const ContentThingOptionsSchema = v.optional(
 export type ContentThingOptions = v.InferInput<
 	typeof ContentThingOptionsSchema
 >;
-export type ValidatedContentThingConfig = ReturnType<
+export type ValidatedContentThingOptions = ReturnType<
 	typeof parseContentThingOptions
 >;
 
@@ -52,14 +64,23 @@ export function parseContentThingOptions(
 	const { rootDir } = options;
 	const WithRootDirSchema = v.pipe(
 		ContentThingOptionsSchema,
-		v.transform((value) => ({
-			...value,
-			files: {
-				...value.files,
-				collectionsDir: path.join(rootDir, value.files.collectionsDir),
-				rootDir,
-			},
-		})),
+		v.transform((value) => {
+			const collectionsDir = path.join(rootDir, value.files.collectionsDir);
+			const outputDir = path.join(rootDir, value.files.outputDir);
+			const collectionsOutputDir = path.join(outputDir, 'collections');
+			const dbFilepath = path.join(outputDir, 'sqlite.db');
+			return {
+				...value,
+				files: {
+					...value.files,
+					collectionsDir,
+					collectionsOutputDir,
+					outputDir,
+					dbFilepath,
+					rootDir,
+				},
+			};
+		}),
 	);
 	return v.parse(WithRootDirSchema, value);
 }

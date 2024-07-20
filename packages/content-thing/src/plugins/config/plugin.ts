@@ -1,21 +1,21 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import type { Plugin } from '../../core/plugin.js';
-import type { ValidatedContentThingConfig } from '../../config/config.js';
+import type { ValidatedContentThingOptions } from '../../config/options.js';
 
-const COLLECTION_CONFIG_REGEXP = /^(.*\/)([^/]+)\/collection\.config\.json$/;
+const COLLECTION_CONFIG_REGEXP = /\/([^/]+)\/collection\.config\.json$/;
 
 export const collectionConfigPlugin: Plugin = {
 	name: 'content-thing-collection-config',
 	bundle(build) {
-		let contentThingConfig: ValidatedContentThingConfig;
+		let validatedOptions: ValidatedContentThingOptions;
 
 		build.configResolved((_config) => {
-			contentThingConfig = _config;
+			validatedOptions = _config;
 		});
 
 		build.addEntryAssetIds(() => {
-			const { collectionsDir } = contentThingConfig.files;
+			const { collectionsDir } = validatedOptions.files;
 			if (!fs.existsSync(collectionsDir)) return [];
 
 			const configFiles = [];
@@ -38,8 +38,11 @@ export const collectionConfigPlugin: Plugin = {
 		});
 
 		build.loadId({ filter: COLLECTION_CONFIG_REGEXP }, (id) => {
+			const match = id.match(COLLECTION_CONFIG_REGEXP)!;
 			const contents = fs.readFileSync(id, 'utf-8');
 			const value = JSON.parse(contents);
+			value.filepath = id;
+			value.name = match[1];
 
 			return { value };
 		});

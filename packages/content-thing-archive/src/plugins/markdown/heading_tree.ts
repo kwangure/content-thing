@@ -1,14 +1,7 @@
 import { visit } from 'unist-util-visit';
 import { toMarkdown } from 'mdast-util-to-markdown';
 import type { Root } from 'mdast';
-
-export interface TocEntry {
-	value: string;
-	id: string;
-	hash: string;
-	depth: 1 | 2 | 3;
-	children: TocEntry[];
-}
+import type { TocEntry } from '../../types.js';
 
 const LEADING_DASH_RE = /^-+/;
 const LEADING_HASH_RE = /^#+\s*/;
@@ -45,6 +38,11 @@ export function getHeadingTree(tree: Root) {
 		}
 		stack[stack.length - 1].children.push(tocEntry);
 		stack.push(tocEntry);
+
+		node.data = {
+			...node.data,
+			...tocEntry,
+		};
 	});
 
 	return dummyRoot.children;

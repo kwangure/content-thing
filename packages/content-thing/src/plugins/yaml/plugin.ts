@@ -1,19 +1,18 @@
 import fs from 'node:fs';
-import { getHeadingTree } from './heading_tree.js';
 import path from 'node:path';
 import type { Plugin } from '../../core/plugin.js';
 import { walk } from '@content-thing/internal-utils/filesystem';
+import YAML from 'yaml';
 import { parseFilepath } from '../../utils/filepath.js';
-import { parseMarkdownSections } from './parse.js';
 import { mergeInto } from '../../utils/object.js';
 
-const README_REGEXP = /(^|\/)readme\.md$/i;
+const YAML_REGEXP = /(^|\/)readme\.(yaml|yml)$/i;
 const COLLECTION_CONFIG_REGEXP = /\/([^/]+)\/collection\.config\.json$/;
 
-export const markdownPlugin: Plugin = {
-	name: 'content-thing-markdown',
+export const yamlPlugin: Plugin = {
+	name: 'content-thing-yaml',
 	bundle(build) {
-		build.loadId({ filter: README_REGEXP }, (id) => {
+		build.loadId({ filter: YAML_REGEXP }, (id) => {
 			const value = fs.readFileSync(id, 'utf-8');
 			return { value };
 		});
@@ -23,7 +22,7 @@ export const markdownPlugin: Plugin = {
 				typeof asset.value !== 'object' ||
 				asset.value === null ||
 				!('type' in asset.value) ||
-				asset.value.type !== 'markdown'
+				asset.value.type !== 'yaml'
 			)
 				return asset;
 
@@ -33,14 +32,6 @@ export const markdownPlugin: Plugin = {
 						_id: {
 							type: 'string',
 						},
-						_headingTree: {
-							type: 'json',
-							jsDocType: "import('content-thing-next').TocEntry[]",
-						},
-						_content: {
-							type: 'json',
-							jsDocType: "import('content-thing-next/mdast').Root",
-						},
 					},
 				},
 			});
@@ -48,22 +39,15 @@ export const markdownPlugin: Plugin = {
 			return asset;
 		});
 
-		build.transformAsset({ filter: README_REGEXP }, async (asset) => {
+		build.transformAsset({ filter: YAML_REGEXP }, (asset) => {
 			if (typeof asset.value !== 'string') return asset;
 
 			const { entry } = parseFilepath(asset.id);
-			const { frontmatter, content } = await parseMarkdownSections(
-				asset.value,
-				asset.id,
-			);
-			const tableOfContents = getHeadingTree(content);
-
+			const value = YAML.parse(asset.value);
 			asset.value = {
 				record: {
-					...frontmatter,
-					_content: content,
+					...value,
 					_id: entry.id,
-					_headingTree: tableOfContents,
 				},
 			};
 
@@ -77,14 +61,14 @@ export const markdownPlugin: Plugin = {
 					typeof value !== 'object' ||
 					value === null ||
 					!('type' in value) ||
-					value.type !== 'markdown'
+					value.type !== 'yaml'
 				)
 					return [];
 
 				const collectionDir = path.dirname(id);
 				const markdownEntries: string[] = [];
 				walk(collectionDir, (dirent) => {
-					if (dirent.name.match(README_REGEXP) && dirent.isFile()) {
+					if (dirent.name.match(YAML_REGEXP) && dirent.isFile()) {
 						markdownEntries.push(path.join(dirent.path, dirent.name));
 					}
 				});
