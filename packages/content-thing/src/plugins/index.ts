@@ -1,4 +1,4 @@
-export { collectionConfigPlugin } from './config/plugin.js';
-export { markdownPlugin } from './markdown/plugin.js';
-export { memdbPlugin } from './memdb/plugin.js';
-export { yamlPlugin } from './yaml/plugin.js';
+export * from './config/plugin.js';
+export * from './markdown/plugin.js';
+export * from './memdb/plugin.js';
+export * from './yaml/plugin.js';
