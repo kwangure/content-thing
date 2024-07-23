@@ -25,7 +25,7 @@ export const memdbPlugin: Plugin = {
 				const match = asset.id.match(COLLECTION_CONFIG_REGEXP);
 				if (!match) continue;
 				bundleConfigs.push({
-					id: `${match[1]}-collection`,
+					id: `${match[1]}-collection-query`,
 					meta: {
 						collectionConfig: asset.value,
 					},
@@ -35,14 +35,11 @@ export const memdbPlugin: Plugin = {
 		});
 
 		build.transformBundle(({ bundle, graph }) => {
-			if (
-				typeof bundle.meta !== 'object' ||
-				bundle.meta === null ||
-				!('collectionConfig' in bundle.meta)
-			)
-				return bundle;
+			if (!bundle.id.endsWith('collection-query')) return bundle;
 
-			const collectionConfig = bundle.meta.collectionConfig as CollectionConfig;
+			const { collectionConfig } = bundle.meta as {
+				collectionConfig: CollectionConfig;
+			};
 			const collectionAssets = graph.getDependencies(collectionConfig.filepath);
 			for (const asset of collectionAssets) {
 				bundle.addAsset(asset);
@@ -52,14 +49,11 @@ export const memdbPlugin: Plugin = {
 		});
 
 		build.writeBundle((bundle) => {
-			if (
-				typeof bundle.meta !== 'object' ||
-				bundle.meta === null ||
-				!('collectionConfig' in bundle.meta)
-			)
-				return;
+			if (!bundle.id.endsWith('collection-query')) return;
 
-			const collectionConfig = bundle.meta.collectionConfig as CollectionConfig;
+			const { collectionConfig } = bundle.meta as {
+				collectionConfig: CollectionConfig;
+			};
 			const code = generateDatabaseFile(collectionConfig, bundle.assets);
 			if (!code.ok) {
 				code.error.message = `Failed to generate database file for collection "${collectionConfig.name}" at "${collectionConfig.filepath}". ${code.error.message}`;
@@ -89,7 +83,7 @@ function generateDatabaseFile(
 	let code = '// This file is auto-generated. Do not edit directly.\n';
 	code +=
 		'import { createTable, custom, string, number } from "@content-thing/memdb";\n\n';
-	code += `export const ${collectionConfig.name} = createTable({\n`;
+	code += `export const ${collectionConfig.name}Table = createTable({\n`;
 	for (const [name, field] of Object.entries(collectionConfig.data.fields)) {
 		const schemaResult = fieldToSchema(name, field);
 		if (schemaResult.ok) {
