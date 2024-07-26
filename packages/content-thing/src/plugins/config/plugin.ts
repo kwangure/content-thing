@@ -2,6 +2,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import type { Plugin } from '../../core/plugin.js';
 import type { ValidatedContentThingOptions } from '../../config/options.js';
+import { collectionConfigSchema } from '../../config/schema.js';
+import * as v from 'valibot';
 
 const COLLECTION_CONFIG_REGEXP = /\/([^/]+)\/collection\.config\.json$/;
 
@@ -44,7 +46,24 @@ export const collectionConfigPlugin: Plugin = {
 			value.filepath = id;
 			value.name = match[1];
 
-			return { value };
+			const collectionConfig = v.safeParse(collectionConfigSchema, value);
+			if (collectionConfig.success) {
+				return { value: collectionConfig.output };
+			}
+
+			let errorMessage = `Invalid collection config at "${id}".`;
+			for (const issue of collectionConfig.issues) {
+				errorMessage += `\n\t- ${issue.message}`;
+				const path = issue.path
+					?.map((item) => ('key' in item ? item.key : ''))
+					.join('.');
+				if (path) {
+					errorMessage += ` at path "${path}"`;
+				}
+				errorMessage += '.';
+			}
+
+			throw Error(errorMessage);
 		});
 	},
 };
