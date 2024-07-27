@@ -1,5 +1,11 @@
 # content-thing
 
+## 0.0.30
+
+### Patch Changes
+
+- 9707711: Implement full-text search
+
 ## 0.0.29
 
 ### Patch Changes

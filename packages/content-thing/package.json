@@ -1,6 +1,6 @@
 {
 	"name": "content-thing",
-	"version": "0.0.29",
+	"version": "0.0.30",
 	"description": "A basic CMS for SvelteKit apps",
 	"scripts": {
 		"build": "wireit",
