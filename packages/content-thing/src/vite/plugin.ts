@@ -10,9 +10,10 @@ import {
 	markdownPlugin,
 	memdbPlugin,
 	yamlPlugin,
-} from '../plugins/index.js';
+} from '../plugins/node.js';
 import fs from 'node:fs';
 import path from 'node:path';
+import { searchPlugin } from '../plugins/search/node.js';
 
 /**
  * A Vite plugin to handle static content
@@ -24,6 +25,15 @@ export function content(options?: ContentThingOptions): Plugin {
 	let validatedConfig: ValidatedContentThingOptions;
 	return {
 		name: 'vite-plugin-content-thing',
+		config() {
+			return {
+				server: {
+					fs: {
+						allow: ['./.collections/'],
+					},
+				},
+			};
+		},
 		async configResolved(viteConfig) {
 			validatedConfig = parseContentThingOptions(options, {
 				rootDir: viteConfig.root,
@@ -49,7 +59,13 @@ export function content(options?: ContentThingOptions): Plugin {
 			});
 			assetGraph = new AssetGraph(
 				validatedConfig,
-				[collectionConfigPlugin, markdownPlugin, yamlPlugin, memdbPlugin],
+				[
+					collectionConfigPlugin,
+					markdownPlugin,
+					yamlPlugin,
+					memdbPlugin,
+					searchPlugin,
+				],
 				logger,
 			);
 			await assetGraph.bundle();
