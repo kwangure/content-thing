@@ -14,7 +14,7 @@ export function extendSvelteConfig(config: Config) {
 		config.kit.alias = {};
 	}
 
-	config.kit.alias['thing:data'] = './.collections/collections/';
+	config.kit.alias['$collections'] = './.collections/collections/';
 
 	if (!config.kit.typescript) {
 		config.kit.typescript = {};

@@ -6,6 +6,9 @@ import { walk } from '@content-thing/internal-utils/filesystem';
 import { parseFilepath } from '../../utils/filepath.js';
 import { parseMarkdownSections } from './parse.js';
 import { mergeInto } from '../../utils/object.js';
+import type { SearchMeta } from '../search/node.js';
+
+export { mdastToString } from './mdastToString.js';
 
 const README_REGEXP = /(^|\/)readme\.md$/i;
 const COLLECTION_CONFIG_REGEXP = /\/([^/]+)\/collection\.config\.json$/;
@@ -92,5 +95,26 @@ export const markdownPlugin: Plugin = {
 				return markdownEntries;
 			},
 		);
+
+		build.transformBundle(({ bundle }) => {
+			if (!bundle.id.endsWith('collection-search')) return bundle;
+
+			const { fields } = bundle.meta as SearchMeta;
+			for (const [field, serializer] of fields) {
+				if (field === '_content') {
+					serializer.imports = new Map([
+						[
+							'content-thing',
+							{
+								namedImports: ['mdastToString'],
+							},
+						],
+					]);
+					serializer.serializer = 'mdastToString';
+				}
+			}
+
+			return bundle;
+		});
 	},
 };

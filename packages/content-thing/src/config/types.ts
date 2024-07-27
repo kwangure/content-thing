@@ -1,17 +1,17 @@
 import {
-	collectionConfig,
-	integerField,
-	jsonField,
-	stringField,
+	collectionConfigSchema,
+	integerFieldSchema,
+	jsonFieldSchema,
+	stringFieldSchema,
 } from './schema.js';
 import * as v from 'valibot';
 
-export type StringField = v.InferOutput<typeof stringField>;
-export type IntegerField = v.InferOutput<typeof integerField>;
-export type JsonField = v.InferOutput<typeof jsonField>;
+export type StringField = v.InferOutput<typeof stringFieldSchema>;
+export type IntegerField = v.InferOutput<typeof integerFieldSchema>;
+export type JsonField = v.InferOutput<typeof jsonFieldSchema>;
 export type FieldType = IntegerField | JsonField | StringField;
 
-export type CollectionConfig = v.InferOutput<typeof collectionConfig> & {
+export type CollectionConfig = v.InferOutput<typeof collectionConfigSchema> & {
 	name: string;
 	filepath: string;
 };
