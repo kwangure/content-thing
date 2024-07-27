@@ -1,0 +1,16 @@
+{
+	"extends": "../../config/tsconfig.base.json",
+	"compilerOptions": {
+		"noEmit": true
+	},
+	"references": [
+		{
+			"path": "src"
+		},
+		{
+			"path": "tests"
+		}
+	],
+	// Exclude references and emitted output
+	"exclude": ["src", "tests", "dist"]
+}

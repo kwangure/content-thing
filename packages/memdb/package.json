@@ -1,0 +1,81 @@
+{
+	"name": "@content-thing/memdb",
+	"version": "0.0.3",
+	"scripts": {
+		"build": "wireit",
+		"dev": "wireit",
+		"pre-commit": "wireit",
+		"publint": "wireit",
+		"test": "wireit"
+	},
+	"wireit": {
+		"build": {
+			"command": "tsc --build",
+			"files": [
+				"src/**/*.{js,ts}",
+				"tsconfig.json",
+				"../../config/tsconfig.base.json"
+			],
+			"output": [
+				"types"
+			]
+		},
+		"dev": {
+			"command": "tsc --build --watch",
+			"service": true,
+			"files": []
+		},
+		"publint": {
+			"command": "publint",
+			"dependencies": [
+				"build"
+			],
+			"files": [
+				"src/**",
+				"types/**",
+				"package.json"
+			],
+			"output": []
+		},
+		"pre-commit": {
+			"dependencies": [
+				"build",
+				"publint",
+				"test"
+			]
+		},
+		"release": {
+			"dependencies": [
+				"build",
+				"publint",
+				"test"
+			]
+		},
+		"test": {
+			"command": "vitest run",
+			"files": [
+				"src/**/*.{js,ts}",
+				"tests/**/*.{js,ts}"
+			],
+			"output": []
+		}
+	},
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"default": "./dist/index.js"
+		}
+	},
+	"files": [
+		"dist",
+		"!**/*.test.*",
+		"!**/*.spec.*"
+	],
+	"devDependencies": {
+		"@types/node": "^20.10.5",
+		"publint": "^0.2.6",
+		"typescript": "^5.5.3",
+		"vitest": "^1.6.0"
+	},
+	"type": "module"
+}
