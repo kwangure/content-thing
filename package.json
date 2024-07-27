@@ -19,6 +19,7 @@
 			"dependencies": [
 				"./packages/content-thing:build",
 				"./packages/internal-utils:build",
+				"./packages/memdb:build",
 				"./packages/remark-attributes:build",
 				"./packages/remark-variables:build",
 				"./packages/remark-yaml-parse:build",
@@ -51,6 +52,7 @@
 				"./packages/svelte-components:pre-commit",
 				"./packages/content-thing:pre-commit",
 				"./packages/internal-utils:pre-commit",
+				"./packages/memdb:pre-commit",
 				"./packages/remark-attributes:pre-commit",
 				"./packages/remark-variables:pre-commit",
 				"./packages/remark-yaml-parse:pre-commit"
@@ -62,6 +64,7 @@
 				"./packages/svelte-components:release",
 				"./packages/content-thing:release",
 				"./packages/internal-utils:release",
+				"./packages/memdb:release",
 				"./packages/remark-attributes:release",
 				"./packages/remark-variables:release",
 				"./packages/remark-yaml-parse:release"
@@ -71,6 +74,7 @@
 			"dependencies": [
 				"./packages/content-thing:test",
 				"./packages/internal-utils:test",
+				"./packages/memdb:test",
 				"./packages/remark-attributes:test",
 				"./packages/remark-variables:test",
 				"./packages/remark-yaml-parse:test"
