@@ -1,6 +1,6 @@
 {
 	"name": "content-thing",
-	"version": "0.0.30",
+	"version": "0.0.31",
 	"description": "A basic CMS for SvelteKit apps",
 	"scripts": {
 		"build": "wireit",
@@ -88,7 +88,7 @@
 	},
 	"type": "module",
 	"dependencies": {
-		"@content-thing/internal-utils": "^0.0.2",
+		"@content-thing/internal-utils": "^0.0.3",
 		"@content-thing/remark-attributes": "^0.0.3",
 		"@types/mdast": "^4.0.1",
 		"mdast-util-to-markdown": "^2.1.0",

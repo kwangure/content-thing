@@ -1,5 +1,13 @@
 # content-thing
 
+## 0.0.31
+
+### Patch Changes
+
+- 7253de1: Improve Windows filepath handling
+- Updated dependencies [7253de1]
+  - @content-thing/internal-utils@0.0.3
+
 ## 0.0.30
 
 ### Patch Changes
