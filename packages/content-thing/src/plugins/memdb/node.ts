@@ -7,7 +7,7 @@ import { write } from '@content-thing/internal-utils/filesystem';
 import { fieldToSchema } from './schema.js';
 import { Ok } from '../../utils/result.js';
 
-const COLLECTION_CONFIG_REGEXP = /\/([^/]+)\/collection\.config\.json$/;
+const COLLECTION_CONFIG_REGEXP = /[/\\]([^/\\]+)[/\\]collection\.config\.json$/;
 
 export const memdbPlugin: Plugin = {
 	name: 'content-thing-memdb',

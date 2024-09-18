@@ -5,7 +5,7 @@ import type { CollectionConfig } from '../../config/types.js';
 import { write } from '@content-thing/internal-utils/filesystem';
 import { Ok } from '../../utils/result.js';
 
-const COLLECTION_CONFIG_REGEXP = /\/([^/]+)\/collection\.config\.json$/;
+const COLLECTION_CONFIG_REGEXP = /[/\\]([^/\\]+)[/\\]collection\.config\.json$/;
 
 export interface SearchImportList {
 	defaultImport?: string;
