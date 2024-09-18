@@ -10,8 +10,8 @@ import type { SearchMeta } from '../search/node.js';
 
 export { mdastToString } from './mdastToString.js';
 
-const README_REGEXP = /(^|\/)readme\.md$/i;
-const COLLECTION_CONFIG_REGEXP = /\/([^/]+)\/collection\.config\.json$/;
+const README_REGEXP = /(?:^|[/\\])readme\.md$/i;
+const COLLECTION_CONFIG_REGEXP = /[/\\]([^/\\]+)[/\\]collection\.config\.json$/;
 
 export const markdownPlugin: Plugin = {
 	name: 'content-thing-markdown',

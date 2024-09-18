@@ -5,7 +5,7 @@ import type { ValidatedContentThingOptions } from '../../config/options.js';
 import { collectionConfigSchema } from '../../config/schema.js';
 import * as v from 'valibot';
 
-const COLLECTION_CONFIG_REGEXP = /\/([^/]+)\/collection\.config\.json$/;
+const COLLECTION_CONFIG_REGEXP = /[/\\]([^/\\]+)[/\\]collection\.config\.json$/;
 
 export const collectionConfigPlugin: Plugin = {
 	name: 'content-thing-collection-config',

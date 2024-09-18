@@ -9,7 +9,7 @@ echo_command() {
     shift 2
 
     # Print the command and arguments with formatting
-    echo "\n> \033[1;36m$cmd\033[0m $first_arg \033[0;90m$*\033[0m"
+    printf "\n> \033[1;36m$cmd\033[0m $first_arg \033[0;90m$*\033[0m"
 
     # Execute the original command with all arguments
     "$cmd" "$first_arg" "$@"
@@ -18,7 +18,7 @@ echo_command() {
 format_staged_files() {
     FILES=$(git diff --cached --name-only --diff-filter=ACMR | grep -E "\.(css|html|mjs|js|json|md|ts|svelte|yaml)$" | sed 's| |\\ |g')
     if [ -z "$FILES" ]; then
-        echo "\033[0;33m\nNo files to format.\033[0m"
+        printf "\033[0;33m\nNo files to format.\033[0m"
         return
     fi
     echo_command pnpm prettier $FILES --cache --write --config ./config/prettier.config.mjs --ignore-path ./config/.prettierignore
@@ -28,7 +28,7 @@ format_staged_files() {
 lint_staged_files() {
     FILES=$(git diff --cached --name-only --diff-filter=ACMR | grep -E "\.(mjs|js|svelte|ts)$" | sed 's| |\\ |g')
     if [ -z "$FILES" ]; then
-        echo "\033[0;33m\nNo files to lint.\033[0m"
+        printf "\033[0;33m\nNo files to lint.\033[0m"
         return
     fi
     export ESLINT_USE_FLAT_CONFIG=true

@@ -4,7 +4,6 @@
 		"checkJs": true,
 		"composite": true,
 		"declaration": true,
-		"exactOptionalPropertyTypes": true,
 		"forceConsistentCasingInFileNames": true,
 		"isolatedModules": true,
 		"module": "esnext",

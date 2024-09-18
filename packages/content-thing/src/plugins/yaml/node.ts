@@ -6,8 +6,8 @@ import YAML from 'yaml';
 import { parseFilepath } from '../../utils/filepath.js';
 import { mergeInto } from '../../utils/object.js';
 
-const YAML_REGEXP = /(^|\/)readme\.(yaml|yml)$/i;
-const COLLECTION_CONFIG_REGEXP = /\/([^/]+)\/collection\.config\.json$/;
+const YAML_REGEXP = /(?:^|[/\\])readme\.(yaml|yml)$/i;
+const COLLECTION_CONFIG_REGEXP = /[/\\]([^/\\]+)[/\\]collection\.config\.json$/;
 
 export const yamlPlugin: Plugin = {
 	name: 'content-thing-yaml',
