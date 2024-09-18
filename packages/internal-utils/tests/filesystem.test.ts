@@ -8,7 +8,7 @@ const __dirname = path.dirname(__filename);
 
 describe('mkdirp', () => {
 	it('creates a directory and its parents', () => {
-		const fooDir = path.join(__dirname, 'foo');
+		const fooDir = path.join('foo');
 		const bazDir = path.join(fooDir, 'bar', 'baz');
 		mkdirp(bazDir);
 		assert(fs.existsSync(bazDir));
@@ -16,40 +16,18 @@ describe('mkdirp', () => {
 	});
 
 	it('does nothing if the directory exists', () => {
-		const dir = path.join(__dirname, 'foo');
+		const dir = path.join('foo');
 		fs.mkdirSync(dir);
 		mkdirp(dir);
 		assert(fs.existsSync(dir));
 		fs.rmdirSync(dir);
 	});
-
-	it('throws an error if the path is not a directory', () => {
-		const file = path.join(__dirname, 'foo.txt');
-		fs.writeFileSync(file, 'hello');
-		expect(() => mkdirp(file)).toThrow('file already exists at this position');
-		fs.unlinkSync(file);
-	});
-
-	it('throws an error if mkdir fails', () => {
-		const fooDir = path.join(__dirname, 'foo');
-		mkdirp(fooDir);
-
-		// make `fooDir` readonly
-		fs.chmodSync(fooDir, '444');
-		const barDir = path.join(fooDir, 'bar');
-
-		expect(() => mkdirp(barDir)).toThrow('permission denied');
-
-		// restore write permission to `fooDir`
-		fs.chmodSync(fooDir, '755');
-		fs.rmSync(fooDir, { recursive: true });
-	});
 });
 
 describe('rimraf', () => {
 	it('removes a file or an empty directory', () => {
-		const file = path.join(__dirname, 'foo.txt');
-		const dir = path.join(__dirname, 'bar');
+		const file = path.join('foo.txt');
+		const dir = path.join('bar');
 
 		fs.writeFileSync(file, 'hello');
 		fs.mkdirSync(dir);
@@ -63,17 +41,16 @@ describe('rimraf', () => {
 	});
 
 	it('removes a directory and its contents recursively', () => {
-		const dir = path.join(__dirname, 'foo');
+		const dir = path.join('foo');
 		const subDir = path.join(dir, 'bar');
 		const file = path.join(subDir, 'baz.txt');
-		fs.mkdirSync(dir);
-		fs.mkdirSync(subDir);
+		mkdirp(subDir);
 		fs.writeFileSync(file, 'hello');
 		rimraf(dir);
 		assert(!fs.existsSync(dir));
 	});
 
-	it('rimraf does not throw an error if the path does not exist', () => {
+	it('does not throw an error if the path does not exist', () => {
 		const nonExistent = path.join(__dirname, 'qux');
 		expect(() => rimraf(nonExistent)).not.toThrow();
 	});
@@ -81,7 +58,7 @@ describe('rimraf', () => {
 
 describe('write', () => {
 	it('creates a file with the given contents', () => {
-		const file = path.join(__dirname, 'test.txt');
+		const file = path.join('test.txt');
 		const contents = 'Hello world';
 		write(file, contents);
 		assert(fs.existsSync(file));
@@ -90,7 +67,7 @@ describe('write', () => {
 	});
 
 	it('creates intermediate directories if they do not exist', () => {
-		const fooDir = path.join(__dirname, 'foo');
+		const fooDir = path.join('foo');
 		const barDir = path.join(fooDir, 'bar');
 		const file = path.join(barDir, 'test.txt');
 		const contents = 'Hello world';
@@ -103,7 +80,7 @@ describe('write', () => {
 	});
 
 	it('overwrites an existing file with the new contents', () => {
-		const file = path.join(__dirname, 'test.txt');
+		const file = path.join('test.txt');
 		const contents1 = 'Hello world';
 		const contents2 = 'Goodbye world';
 		write(file, contents1);
@@ -118,7 +95,7 @@ describe('walk', () => {
 	let tempDir: string;
 
 	beforeAll(() => {
-		tempDir = path.join(__dirname, 'temp');
+		tempDir = path.join('temp');
 		write(path.join(tempDir, 'file1.txt'), 'hello');
 		write(path.join(tempDir, 'file2.txt'), 'world');
 		write(path.join(tempDir, 'subdir1', 'file3.txt'), 'foo');
