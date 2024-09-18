@@ -2,8 +2,10 @@ import { cwd } from 'node:process';
 import path from 'node:path';
 
 export function parseFilepath(filepath: string) {
-	const matcher = new RegExp(`${cwd()}/src/collections/([^/]+)/(.+)/([^/]+)$`);
-	const match = matcher.exec(filepath);
+	const matcher = new RegExp(
+		`${cwd().replace(/\\/g, '/') /* posixify */}/src/collections/([^/]+)/(.+)/([^/]+)$`,
+	);
+	const match = matcher.exec(filepath.replace(/\\/g, '/') /* posixify */);
 	if (!match) {
 		throw Error(`Filepath '${filepath}' is not a valid collection entry.`);
 	}
