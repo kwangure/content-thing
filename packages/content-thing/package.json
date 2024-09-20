@@ -78,7 +78,6 @@
 		"!**/*.spec.*"
 	],
 	"devDependencies": {
-		"@svelte-thing/components": "^0.0.26",
 		"@sveltejs/kit": "^2.0.0",
 		"@types/node": "^20.14.9",
 		"publint": "^0.2.6",
@@ -90,6 +89,7 @@
 	"dependencies": {
 		"@content-thing/internal-utils": "^0.0.3",
 		"@content-thing/remark-attributes": "^0.0.3",
+		"@svelte-thing/components": "^0.0.29",
 		"@types/mdast": "^4.0.1",
 		"mdast-util-to-markdown": "^2.1.0",
 		"remark-parse": "^11.0.0",

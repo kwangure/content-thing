@@ -56,6 +56,9 @@ importers:
       '@content-thing/remark-attributes':
         specifier: ^0.0.3
         version: 0.0.3
+      '@svelte-thing/components':
+        specifier: ^0.0.29
+        version: 0.0.29(@fig/lezer-bash@1.2.5)(@lezer/common@1.2.1)(@lezer/cpp@1.1.2)(@lezer/css@1.1.8)(@lezer/highlight@1.2.0)(@lezer/html@1.3.9)(@lezer/javascript@1.4.16)(@lezer/json@1.0.2)(@lezer/lr@1.4.0)(@lezer/python@1.1.13)(@lezer/rust@1.0.2)(@replit/codemirror-lang-svelte@6.0.0(@codemirror/autocomplete@6.16.0(@codemirror/language@6.10.1)(@codemirror/state@6.4.1)(@codemirror/view@6.26.3)(@lezer/common@1.2.1))(@codemirror/lang-css@6.2.1(@codemirror/view@6.26.3))(@codemirror/lang-html@6.4.9)(@codemirror/lang-javascript@6.2.2)(@codemirror/language@6.10.1)(@codemirror/state@6.4.1)(@codemirror/view@6.26.3)(@lezer/common@1.2.1)(@lezer/highlight@1.2.0)(@lezer/javascript@1.4.16)(@lezer/lr@1.4.0))(@sveltejs/kit@2.0.0(@sveltejs/vite-plugin-svelte@3.0.1(svelte@5.0.0-next.251)(vite@5.3.4(@types/node@20.14.9)))(svelte@5.0.0-next.251)(vite@5.3.4(@types/node@20.14.9)))(svelte@5.0.0-next.251)
       '@types/mdast':
         specifier: ^4.0.1
         version: 4.0.1
@@ -78,9 +81,6 @@ importers:
         specifier: ^2.4.5
         version: 2.4.5
     devDependencies:
-      '@svelte-thing/components':
-        specifier: ^0.0.26
-        version: 0.0.26(@fig/lezer-bash@1.2.5)(@lezer/common@1.2.1)(@lezer/cpp@1.1.2)(@lezer/css@1.1.8)(@lezer/highlight@1.2.0)(@lezer/html@1.3.9)(@lezer/javascript@1.4.16)(@lezer/json@1.0.2)(@lezer/lr@1.4.0)(@lezer/python@1.1.13)(@lezer/rust@1.0.2)(@replit/codemirror-lang-svelte@6.0.0(@codemirror/autocomplete@6.16.0(@codemirror/language@6.10.1)(@codemirror/state@6.4.1)(@codemirror/view@6.26.3)(@lezer/common@1.2.1))(@codemirror/lang-css@6.2.1(@codemirror/view@6.26.3))(@codemirror/lang-html@6.4.9)(@codemirror/lang-javascript@6.2.2)(@codemirror/language@6.10.1)(@codemirror/state@6.4.1)(@codemirror/view@6.26.3)(@lezer/common@1.2.1)(@lezer/highlight@1.2.0)(@lezer/javascript@1.4.16)(@lezer/lr@1.4.0))(@sveltejs/kit@2.0.0(@sveltejs/vite-plugin-svelte@3.0.1(svelte@5.0.0-next.251)(vite@5.3.4(@types/node@20.14.9)))(svelte@5.0.0-next.251)(vite@5.3.4(@types/node@20.14.9)))(svelte@5.0.0-next.251)
       '@sveltejs/kit':
         specifier: ^2.0.0
         version: 2.0.0(@sveltejs/vite-plugin-svelte@3.0.1(svelte@5.0.0-next.251)(vite@5.3.4(@types/node@20.14.9)))(svelte@5.0.0-next.251)(vite@5.3.4(@types/node@20.14.9))
@@ -874,8 +874,8 @@ packages:
   '@sinclair/typebox@0.27.8':
     resolution: {integrity: sha512-+Fj43pSMwJs4KRrH/938Uf+uAELIgVBmQzg/q1YG10djyfA3TnrU8N8XzqCh/okZdszqBQTZf96idMfE5lnwTA==}
 
-  '@svelte-thing/components@0.0.26':
-    resolution: {integrity: sha512-kfbv0tUf0io4j9Fbfeb6fpzoKsawCLaHVlfogQhSx6ELWSLQMQ7J85PVUAZjG8wEA45UncmyJLTpYFUGyOUCZg==}
+  '@svelte-thing/components@0.0.29':
+    resolution: {integrity: sha512-mhw5EZyt2LS6cEW5Vw+wKFQp9aSOkxLndBcZ3w1gtFRTk5fHxigln78MZpbx4L/c7AUhttDyPoHe92lwJtG0aA==}
     peerDependencies:
       '@fig/lezer-bash': ^1.2.5
       '@lezer/common': ^1.1.0
@@ -3636,7 +3636,7 @@ snapshots:
 
   '@sinclair/typebox@0.27.8': {}
 
-  '@svelte-thing/components@0.0.26(@fig/lezer-bash@1.2.5)(@lezer/common@1.2.1)(@lezer/cpp@1.1.2)(@lezer/css@1.1.8)(@lezer/highlight@1.2.0)(@lezer/html@1.3.9)(@lezer/javascript@1.4.16)(@lezer/json@1.0.2)(@lezer/lr@1.4.0)(@lezer/python@1.1.13)(@lezer/rust@1.0.2)(@replit/codemirror-lang-svelte@6.0.0(@codemirror/autocomplete@6.16.0(@codemirror/language@6.10.1)(@codemirror/state@6.4.1)(@codemirror/view@6.26.3)(@lezer/common@1.2.1))(@codemirror/lang-css@6.2.1(@codemirror/view@6.26.3))(@codemirror/lang-html@6.4.9)(@codemirror/lang-javascript@6.2.2)(@codemirror/language@6.10.1)(@codemirror/state@6.4.1)(@codemirror/view@6.26.3)(@lezer/common@1.2.1)(@lezer/highlight@1.2.0)(@lezer/javascript@1.4.16)(@lezer/lr@1.4.0))(@sveltejs/kit@2.0.0(@sveltejs/vite-plugin-svelte@3.0.1(svelte@5.0.0-next.251)(vite@5.3.4(@types/node@20.14.9)))(svelte@5.0.0-next.251)(vite@5.3.4(@types/node@20.14.9)))(svelte@5.0.0-next.251)':
+  '@svelte-thing/components@0.0.29(@fig/lezer-bash@1.2.5)(@lezer/common@1.2.1)(@lezer/cpp@1.1.2)(@lezer/css@1.1.8)(@lezer/highlight@1.2.0)(@lezer/html@1.3.9)(@lezer/javascript@1.4.16)(@lezer/json@1.0.2)(@lezer/lr@1.4.0)(@lezer/python@1.1.13)(@lezer/rust@1.0.2)(@replit/codemirror-lang-svelte@6.0.0(@codemirror/autocomplete@6.16.0(@codemirror/language@6.10.1)(@codemirror/state@6.4.1)(@codemirror/view@6.26.3)(@lezer/common@1.2.1))(@codemirror/lang-css@6.2.1(@codemirror/view@6.26.3))(@codemirror/lang-html@6.4.9)(@codemirror/lang-javascript@6.2.2)(@codemirror/language@6.10.1)(@codemirror/state@6.4.1)(@codemirror/view@6.26.3)(@lezer/common@1.2.1)(@lezer/highlight@1.2.0)(@lezer/javascript@1.4.16)(@lezer/lr@1.4.0))(@sveltejs/kit@2.0.0(@sveltejs/vite-plugin-svelte@3.0.1(svelte@5.0.0-next.251)(vite@5.3.4(@types/node@20.14.9)))(svelte@5.0.0-next.251)(vite@5.3.4(@types/node@20.14.9)))(svelte@5.0.0-next.251)':
     dependencies:
       '@fig/lezer-bash': 1.2.5
       '@lezer/common': 1.2.1
