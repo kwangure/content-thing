@@ -1,5 +1,11 @@
 # content-thing
 
+## 0.0.33
+
+### Patch Changes
+
+- f8c0698: Upgrade components
+
 ## 0.0.32
 
 ### Patch Changes
