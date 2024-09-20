@@ -4,8 +4,7 @@ import type { ValidatedContentThingOptions } from '../../config/options.js';
 import type { CollectionConfig } from '../../config/types.js';
 import type { Asset } from '../../core/graph.js';
 import { write } from '@content-thing/internal-utils/filesystem';
-import { fieldToSchema } from './schema.js';
-import { Ok } from '../../utils/result.js';
+import { Err, Ok } from '../../utils/result.js';
 
 const COLLECTION_CONFIG_REGEXP = /[/\\]([^/\\]+)[/\\]collection\.config\.json$/;
 
@@ -80,18 +79,41 @@ function generateDatabaseFile(
 	collectionConfig: CollectionConfig,
 	assets: Asset[],
 ) {
-	let code = '// This file is auto-generated. Do not edit directly.\n';
-	code +=
-		'import { createTable, custom, string, number } from "@content-thing/memdb";\n\n';
-	code += `export const ${collectionConfig.name}Table = createTable({\n`;
-	for (const [name, field] of Object.entries(collectionConfig.data.fields)) {
-		const schemaResult = fieldToSchema(name, field);
-		if (schemaResult.ok) {
-			code += `\t\t'${name}': ${schemaResult.value},\n`;
-		} else {
-			return schemaResult;
+	const imports = new Set(['createTable']);
+	function createTable() {
+		let code = `export const ${collectionConfig.name}Table = createTable({\n`;
+		for (const [name, field] of Object.entries(collectionConfig.data.fields)) {
+			let schemaFunc;
+			if (field.type === 'string') {
+				imports.add('string');
+				schemaFunc = `string('${name}')`;
+			} else if (field.type === 'integer') {
+				imports.add('number');
+				schemaFunc = `number('${name}')`;
+			} else if (field.type === 'json') {
+				imports.add('custom');
+				schemaFunc = `/** @type {ReturnType<typeof custom<'${name}', ${field.jsDocType}>>} */(custom('${name}'))`;
+			} else {
+				/* eslint-disable @typescript-eslint/no-unused-vars */
+				// Will type-error if new fields are unhandled
+				const exhaustiveCheck: never = field;
+
+				return Err(
+					'field-type-not-found',
+					new Error(`Field type not found for field "${name}".`),
+				);
+			}
+
+			code += `\t\t'${name}': ${schemaFunc},\n`;
 		}
+		return Ok(code);
 	}
+	const table = createTable();
+	if (!table.ok) return table;
+
+	let code = '// This file is auto-generated. Do not edit directly.\n';
+	code += `import { ${Array.from(imports).join(', ')} } from "@content-thing/memdb";\n\n`;
+	code += table.value;
 	code += '\t},\n';
 	code += '\t[\n';
 	for (const asset of assets) {

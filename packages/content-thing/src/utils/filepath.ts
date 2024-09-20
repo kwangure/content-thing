@@ -1,11 +1,14 @@
 import { cwd } from 'node:process';
 import path from 'node:path';
 
+const posixify = (string: string) => string.replace(/\\/g, '/');
+
 export function parseFilepath(filepath: string) {
+	// Posixify filepath to ensure consistent ids cross-platform
 	const matcher = new RegExp(
-		`${cwd().replace(/\\/g, '/') /* posixify */}/src/collections/([^/]+)/(.+)/([^/]+)$`,
+		`${posixify(cwd())}/src/collections/([^/]+)/(.+)/([^/]+)$`,
 	);
-	const match = matcher.exec(filepath.replace(/\\/g, '/') /* posixify */);
+	const match = matcher.exec(posixify(filepath));
 	if (!match) {
 		throw Error(`Filepath '${filepath}' is not a valid collection entry.`);
 	}

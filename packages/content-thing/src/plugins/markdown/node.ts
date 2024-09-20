@@ -1,12 +1,12 @@
-import fs from 'node:fs';
-import { getHeadingTree } from './heading_tree.js';
-import path from 'node:path';
 import type { Plugin } from '../../core/plugin.js';
-import { walk } from '@content-thing/internal-utils/filesystem';
+import type { SearchMeta } from '../search/node.js';
+import fs from 'node:fs';
+import path from 'node:path';
+import { getHeadingTree } from './heading_tree.js';
+import { mergeInto } from '../../utils/object.js';
 import { parseFilepath } from '../../utils/filepath.js';
 import { parseMarkdownSections } from './parse.js';
-import { mergeInto } from '../../utils/object.js';
-import type { SearchMeta } from '../search/node.js';
+import { walk } from '@content-thing/internal-utils/filesystem';
 
 export { mdastToString } from './mdastToString.js';
 
