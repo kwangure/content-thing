@@ -1,5 +1,11 @@
 # content-thing
 
+## 0.0.32
+
+### Patch Changes
+
+- 291dd84: Emit markdown as Svelte components
+
 ## 0.0.31
 
 ### Patch Changes
