@@ -18,7 +18,10 @@ export type CreateBundleCallback = (
 export type ConfigResolvedCallback = (
 	config: ValidatedContentThingOptions,
 ) => void;
-export type LoadIdCallback = (id: string) => MaybePromise<{ value: unknown }>;
+export type LoadIdCallback = (
+	id: string,
+	graph: AssetGraph,
+) => MaybePromise<{ value: unknown }>;
 export type LoadDependenciesCallback = (asset: Asset) => MaybePromise<string[]>;
 export type TransformAssetCallback = (asset: Asset) => MaybePromise<Asset>;
 export type TransformBundleCallback = (args: {
@@ -112,12 +115,12 @@ export class PluginDriver {
 		return (await Promise.all(bundlePromises)).flat();
 	}
 
-	async loadId(id: string) {
+	async loadId(id: string, graph: AssetGraph) {
 		// Serial - First
 		let loadResult;
 		for (const [options, callback] of this.#callbacks.loadId) {
 			if (!options.filter.test(id)) continue;
-			loadResult = { ...(await callback(id)), id };
+			loadResult = { ...(await callback(id, graph)), id };
 			break;
 		}
 

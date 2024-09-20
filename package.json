@@ -22,8 +22,7 @@
 				"./packages/memdb:build",
 				"./packages/remark-attributes:build",
 				"./packages/remark-variables:build",
-				"./packages/remark-yaml-parse:build",
-				"./packages/svelte-components:build"
+				"./packages/remark-yaml-parse:build"
 			]
 		},
 		"format": {
@@ -49,7 +48,6 @@
 		},
 		"pre-commit": {
 			"dependencies": [
-				"./packages/svelte-components:pre-commit",
 				"./packages/content-thing:pre-commit",
 				"./packages/internal-utils:pre-commit",
 				"./packages/memdb:pre-commit",
@@ -61,7 +59,6 @@
 		"release": {
 			"command": "changeset publish",
 			"dependencies": [
-				"./packages/svelte-components:release",
 				"./packages/content-thing:release",
 				"./packages/internal-utils:release",
 				"./packages/memdb:release",

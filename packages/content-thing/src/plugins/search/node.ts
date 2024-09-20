@@ -44,7 +44,7 @@ export const searchPlugin: Plugin = {
 				const collectionConfig = asset.value as CollectionConfig;
 
 				const fields: FieldMap = new Map();
-				for (const fieldName of collectionConfig.data.search) {
+				for (const fieldName of collectionConfig.data.search.fields) {
 					const field = collectionConfig.data.fields[fieldName];
 					let serializer = '';
 					if (field.type === 'string') {

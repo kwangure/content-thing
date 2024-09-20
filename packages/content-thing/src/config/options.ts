@@ -7,15 +7,15 @@ function isRelativeOrAbsolute(value: string) {
 function isNotRelativeOrAbsolute(value: string) {
 	return !isRelativeOrAbsolute(value);
 }
-
 function isNotRelativeOrAbsoluteMessage(value: v.CheckIssue<string>) {
-	return `Expected a path that is not relative (starts with ".") or absolute (starts with "/"). Found "${value.input}" instead.`;
+	return `Expected a path that is neither relative (starting with ".") or absolute (starting with "/"). Found "${value.input}" instead.`;
 }
 
 const defaultConfig = {
 	files: {
 		collectionsDir: 'src/collections',
 		outputDir: '.collections',
+		routesDir: 'src/routes',
 	},
 };
 
@@ -38,6 +38,14 @@ export const ContentThingOptionsSchema = v.optional(
 						v.check(isNotRelativeOrAbsolute, isNotRelativeOrAbsoluteMessage),
 					),
 					defaultConfig.files.outputDir,
+				),
+				routesDir: v.optional(
+					v.pipe(
+						v.string(),
+						v.nonEmpty(),
+						v.check(isNotRelativeOrAbsolute, isNotRelativeOrAbsoluteMessage),
+					),
+					defaultConfig.files.routesDir,
 				),
 			}),
 			defaultConfig.files,
@@ -66,17 +74,21 @@ export function parseContentThingOptions(
 		ContentThingOptionsSchema,
 		v.transform((value) => {
 			const collectionsDir = path.join(rootDir, value.files.collectionsDir);
+			const collectionsMirrorDir = path.join(
+				rootDir,
+				value.files.routesDir,
+				'(collections)',
+			);
 			const outputDir = path.join(rootDir, value.files.outputDir);
 			const collectionsOutputDir = path.join(outputDir, 'collections');
-			const dbFilepath = path.join(outputDir, 'sqlite.db');
 			return {
 				...value,
 				files: {
 					...value.files,
 					collectionsDir,
+					collectionsMirrorDir,
 					collectionsOutputDir,
 					outputDir,
-					dbFilepath,
 					rootDir,
 				},
 			};

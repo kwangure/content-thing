@@ -9,11 +9,12 @@ import {
 	collectionConfigPlugin,
 	markdownPlugin,
 	memdbPlugin,
+	searchPlugin,
+	sveltePlugin,
 	yamlPlugin,
 } from '../plugins/node.js';
 import fs from 'node:fs';
 import path from 'node:path';
-import { searchPlugin } from '../plugins/search/node.js';
 
 /**
  * A Vite plugin to handle static content
@@ -65,6 +66,7 @@ export function content(options?: ContentThingOptions): Plugin {
 					yamlPlugin,
 					memdbPlugin,
 					searchPlugin,
+					sveltePlugin,
 				],
 				logger,
 			);

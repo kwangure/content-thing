@@ -54,7 +54,7 @@ export class AssetGraph {
 			for (const assetId of this.#pendingAssetIds) {
 				const loadPromise = async () => {
 					this.#pendingAssetIds.delete(assetId);
-					const loadResult = await this.#pluginDriver.loadId(assetId);
+					const loadResult = await this.#pluginDriver.loadId(assetId, this);
 					if (!loadResult) {
 						this.#logger.error(`Unable to load id '${assetId}'`);
 						return;
@@ -206,15 +206,15 @@ export class Asset {
 		this.#value = value;
 	}
 
-	get dependencyAssets(): Asset[] {
+	get dependencies(): Asset[] {
 		return this.#graph.getDependencies(this.#id);
 	}
 
-	get dependentAssets(): Asset[] {
+	get dependents(): Asset[] {
 		return this.#graph.getDependents(this.#id);
 	}
 
-	get entryAssets(): Asset[] {
+	get entryPoints(): Asset[] {
 		return this.#graph.getEntryAssets(this.#id);
 	}
 }

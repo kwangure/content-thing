@@ -7,11 +7,13 @@ export const integerFieldSchema = v.strictObject({
 
 export const stringFieldSchema = v.strictObject({
 	type: v.literal('string'),
+	nullable: v.optional(v.boolean(), false),
 });
 
 export const jsonFieldSchema = v.strictObject({
 	type: v.literal('json'),
 	jsDocType: v.optional(v.string(), 'any'),
+	nullable: v.optional(v.boolean(), false),
 });
 
 export const collectionData = v.strictObject({
@@ -22,7 +24,12 @@ export const collectionData = v.strictObject({
 		),
 		{},
 	),
-	search: v.optional(v.array(v.string()), []),
+	search: v.optional(
+		v.strictObject({
+			fields: v.optional(v.array(v.string()), []),
+		}),
+		{ fields: [] as string[] },
+	),
 });
 
 export const collectionConfigSchema = v.strictObject({
