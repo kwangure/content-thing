@@ -4,7 +4,7 @@ import {
 	type ValidatedContentThingOptions,
 } from '../config/options.js';
 import { AssetGraph } from '../core/graph.js';
-import type { LogErrorOptions, LogOptions, Plugin, ResolvedConfig } from 'vite';
+import type { LogErrorOptions, LogOptions, Plugin } from 'vite';
 import {
 	collectionConfigPlugin,
 	markdownPlugin,
@@ -13,31 +13,30 @@ import {
 	sveltePlugin,
 	yamlPlugin,
 } from '../plugins/node.js';
-import fs from 'node:fs';
-import path from 'node:path';
+import { cwd } from 'node:process';
+import { createLogger } from 'vite';
 
 /**
  * A Vite plugin to handle static content
  */
 export function content(options?: ContentThingOptions): Plugin {
-	let command: ResolvedConfig['command'];
-	let outputDir: string;
 	let assetGraph: AssetGraph;
 	let validatedConfig: ValidatedContentThingOptions;
 	return {
 		name: 'vite-plugin-content-thing',
-		config() {
-			return {
-				server: {
-					fs: {
-						allow: ['./.collections/'],
-					},
-				},
-			};
-		},
-		async configResolved(viteConfig) {
+		async config() {
+			/**
+			 * Ideally, we should be running in `configResolved` when the
+			 * `import('vite').ResolvedConfig['root']` directory is known to
+			 * exist but SvelteKit doesn't. It inits in the `config()` hook and
+			 * assumes `ResolvedConfig['root']` is `process.cwd()`...so we do
+			 * that too.
+			 *
+			 * We need to run before SvelteKit so that we can emit the `+page.svelte`
+			 * files before it starts collecting them
+			 */
 			validatedConfig = parseContentThingOptions(options, {
-				rootDir: viteConfig.root,
+				rootDir: cwd(),
 			});
 			const patchOptions = (options?: LogOptions) => {
 				if (!options) options = {};
@@ -46,8 +45,9 @@ export function content(options?: ContentThingOptions): Plugin {
 				}
 				return options;
 			};
-			const { error, info, warn } = viteConfig.logger;
-			const logger = Object.assign(viteConfig.logger, {
+			const viteLogger = createLogger();
+			const { error, info, warn } = viteLogger;
+			const logger = Object.assign(viteLogger, {
 				error(message: string, options?: LogErrorOptions) {
 					error(message, patchOptions(options));
 				},
@@ -72,8 +72,13 @@ export function content(options?: ContentThingOptions): Plugin {
 			);
 			await assetGraph.bundle();
 
-			command = viteConfig.command;
-			outputDir = validatedConfig.files.outputDir;
+			return {
+				server: {
+					fs: {
+						allow: ['./.collections/'],
+					},
+				},
+			};
 		},
 		configureServer(server) {
 			server.watcher.on('all', async (_, path) => {
@@ -82,19 +87,6 @@ export function content(options?: ContentThingOptions): Plugin {
 					await assetGraph.bundle();
 				}
 			});
-		},
-		load(id) {
-			if (!id.endsWith('sqlite.db')) return;
-			const dbPath = path.join(outputDir, 'sqlite.db');
-			if (command === 'serve') {
-				return `export default ${JSON.stringify(dbPath)}`;
-			}
-			const referenceId = this.emitFile({
-				type: 'asset',
-				name: 'sqlite.db',
-				source: fs.readFileSync(dbPath),
-			});
-			return `export default import.meta.ROLLUP_FILE_URL_${referenceId};\n`;
 		},
 	};
 }
