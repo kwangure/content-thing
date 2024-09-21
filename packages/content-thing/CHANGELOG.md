@@ -1,5 +1,11 @@
 # content-thing
 
+## 0.0.34
+
+### Patch Changes
+
+- d42c8d2: Fix issue preventing build
+
 ## 0.0.33
 
 ### Patch Changes
