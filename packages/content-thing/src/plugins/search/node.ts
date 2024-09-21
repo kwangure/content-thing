@@ -49,7 +49,7 @@ export const searchPlugin: Plugin = {
 					let serializer = '';
 					if (field.type === 'string') {
 						serializer = '';
-					} else if (field.type === 'integer') {
+					} else if (field.type === 'number') {
 						serializer = 'String';
 					} else if (field.type === 'json') {
 						serializer = 'JSON.stringify';

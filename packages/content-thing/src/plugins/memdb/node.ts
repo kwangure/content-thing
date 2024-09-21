@@ -4,7 +4,6 @@ import type { ValidatedContentThingOptions } from '../../config/options.js';
 import type { CollectionConfig } from '../../config/types.js';
 import type { Asset } from '../../core/graph.js';
 import { write } from '@content-thing/internal-utils/filesystem';
-import { Err, Ok } from '../../utils/result.js';
 
 const COLLECTION_CONFIG_REGEXP = /[/\\]([^/\\]+)[/\\]collection\.config\.json$/;
 
@@ -54,16 +53,11 @@ export const memdbPlugin: Plugin = {
 				collectionConfig: CollectionConfig;
 			};
 			const code = generateDatabaseFile(collectionConfig, bundle.assets);
-			if (!code.ok) {
-				code.error.message = `Failed to generate database file for collection "${collectionConfig.name}" at "${collectionConfig.filepath}". ${code.error.message}`;
-				throw code.error;
-			}
-
 			const outputFilepath = path.join(
 				validatedOptions.files.collectionsOutputDir,
 				collectionConfig.name + '.js',
 			);
-			write(outputFilepath, code.value);
+			write(outputFilepath, code);
 
 			return;
 		});
@@ -79,41 +73,22 @@ function generateDatabaseFile(
 	collectionConfig: CollectionConfig,
 	assets: Asset[],
 ) {
-	const imports = new Set(['createTable']);
-	function createTable() {
-		let code = `export const ${collectionConfig.name}Table = createTable({\n`;
-		for (const [name, field] of Object.entries(collectionConfig.data.fields)) {
-			let schemaFunc;
-			if (field.type === 'string') {
-				imports.add('string');
-				schemaFunc = `string('${name}')`;
-			} else if (field.type === 'integer') {
-				imports.add('number');
-				schemaFunc = `number('${name}')`;
-			} else if (field.type === 'json') {
-				imports.add('custom');
-				schemaFunc = `/** @type {ReturnType<typeof custom<'${name}', ${field.jsDocType}>>} */(custom('${name}'))`;
-			} else {
-				/* eslint-disable @typescript-eslint/no-unused-vars */
-				// Will type-error if new fields are unhandled
-				const exhaustiveCheck: never = field;
-
-				return Err(
-					'field-type-not-found',
-					new Error(`Field type not found for field "${name}".`),
-				);
-			}
-
-			code += `\t\t'${name}': ${schemaFunc},\n`;
-		}
-		return Ok(code);
-	}
-	const table = createTable();
-	if (!table.ok) return table;
+	const fieldImports = new Set(['createTable']);
+	const fields = Object.entries(collectionConfig.data.fields)
+		.map(([name, field]) => {
+			fieldImports.add(field.type);
+			const schemaFunc =
+				'jsDocType' in field
+					? `/** @type {ReturnType<typeof ${field.type}<'${name}', ${field.jsDocType}>>} */(${field.type}(${name}))`
+					: `${field.type}('${name}')`;
+			return `\t\t'${name}': ${schemaFunc},\n`;
+		})
+		.join(',\n');
 
 	let code = '// This file is auto-generated. Do not edit directly.\n';
-	code += `import { ${Array.from(imports).join(', ')} } from "@content-thing/memdb";\n\n`;
-	code += table.value;
+	code += `import { ${Array.from(fieldImports).join(', ')} } from "@content-thing/memdb";\n\n`;
+	code += `export const ${collectionConfig.name}Table = createTable({\n`;
+	code += fields;
 	code += '\t},\n';
 	code += '\t[\n';
 	for (const asset of assets) {
@@ -129,5 +104,5 @@ function generateDatabaseFile(
 	code += '\t]\n';
 	code += ');\n\n';
 
-	return Ok(code);
+	return code;
 }
