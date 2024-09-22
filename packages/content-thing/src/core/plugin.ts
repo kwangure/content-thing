@@ -1,50 +1,53 @@
 import type { ValidatedContentThingOptions } from '../config/options.js';
 import type { Asset, AssetGraph, Bundle } from './graph.js';
-import type { MaybePromise } from '../types.js';
+
+type MaybePromise<T> = T | Promise<T>;
 
 export interface Plugin {
 	name: string;
 	bundle?(bundler: BundleContext): unknown;
 }
 
-export interface CallbackOptions {
-	filter: RegExp;
-}
-
-export type AddEntryAssetIdsCallback = () => MaybePromise<string[]>;
-export type CreateBundleCallback = (
+type AddEntryAssetIdsCallback = () => MaybePromise<string[]>;
+type CreateBundleCallback = (
 	graph: AssetGraph,
 ) => MaybePromise<{ id: string; meta?: Record<string, unknown> }[]>;
-export type ConfigResolvedCallback = (
-	config: ValidatedContentThingOptions,
-) => void;
-export type LoadIdCallback = (
-	id: string,
-	graph: AssetGraph,
-) => MaybePromise<{ value: unknown }>;
-export type LoadDependenciesCallback = (asset: Asset) => MaybePromise<string[]>;
-export type TransformAssetCallback = (asset: Asset) => MaybePromise<Asset>;
-export type TransformBundleCallback = (args: {
-	bundle: Bundle;
-	graph: AssetGraph;
-}) => MaybePromise<Bundle>;
-export type WriteBundleCallback = (bundle: Bundle) => MaybePromise<void>;
+type ConfigResolvedCallback = (config: ValidatedContentThingOptions) => void;
+
+interface LoadIdOptions<T extends string> {
+	filter: (arg: string) => arg is T;
+	callback: (id: T, graph: AssetGraph) => MaybePromise<{ value: unknown }>;
+}
+
+interface LoadDependenciesOptions<T extends Asset> {
+	filter: (asset: Asset) => asset is T;
+	callback: (asset: T) => MaybePromise<string[]>;
+}
+
+interface TransformAssetOptions<T extends Asset> {
+	filter: (asset: Asset) => asset is T;
+	callback: (asset: T) => MaybePromise<Asset>;
+}
+
+interface TransformBundleOptions<T extends Bundle> {
+	filter: (bundle: Bundle) => bundle is T;
+	callback: (arg: { bundle: T; graph: AssetGraph }) => MaybePromise<Bundle>;
+}
+
+interface WriteBundleOptions<T extends Bundle> {
+	filter: (bundle: Bundle) => bundle is T;
+	callback: (bundle: T) => MaybePromise<void>;
+}
 
 interface BundleContext {
 	addEntryAssetIds(callback: AddEntryAssetIdsCallback): void;
 	configResolved(callback: ConfigResolvedCallback): void;
-	loadId(options: CallbackOptions, callback: LoadIdCallback): void;
-	loadDependencies(
-		options: CallbackOptions,
-		callback: LoadDependenciesCallback,
-	): void;
-	transformAsset(
-		options: CallbackOptions,
-		callback: TransformAssetCallback,
-	): void;
+	loadId<T extends string>(options: LoadIdOptions<T>): void;
+	loadDependencies<T extends Asset>(options: LoadDependenciesOptions<T>): void;
+	transformAsset<T extends Asset>(options: TransformAssetOptions<T>): void;
 	createBundle(callback: CreateBundleCallback): void;
-	transformBundle(callback: TransformBundleCallback): void;
-	writeBundle(callback: WriteBundleCallback): void;
+	transformBundle<T extends Bundle>(options: TransformBundleOptions<T>): void;
+	writeBundle<T extends Bundle>(options: WriteBundleOptions<T>): void;
 }
 
 export class PluginDriver {
@@ -52,11 +55,11 @@ export class PluginDriver {
 		addEntryAssetIds: [] as AddEntryAssetIdsCallback[],
 		configResolved: [] as ConfigResolvedCallback[],
 		createBundle: [] as CreateBundleCallback[],
-		loadId: [] as [CallbackOptions, LoadIdCallback][],
-		loadDependencies: [] as [CallbackOptions, LoadDependenciesCallback][],
-		transformAsset: [] as [CallbackOptions, TransformAssetCallback][],
-		transformBundle: [] as TransformBundleCallback[],
-		writeBundle: [] as WriteBundleCallback[],
+		loadId: [] as LoadIdOptions<string>[],
+		loadDependencies: [] as LoadDependenciesOptions<Asset>[],
+		transformAsset: [] as TransformAssetOptions<Asset>[],
+		transformBundle: [] as TransformBundleOptions<Bundle>[],
+		writeBundle: [] as WriteBundleOptions<Bundle>[],
 	};
 	#plugins;
 	constructor(plugins: Plugin[]) {
@@ -83,20 +86,28 @@ export class PluginDriver {
 				createBundle(callback) {
 					callbacks.createBundle.push(callback);
 				},
-				loadId(options, callback) {
-					callbacks.loadId.push([options, callback]);
+				loadId(options) {
+					callbacks.loadId.push(options as unknown as LoadIdOptions<string>);
 				},
-				loadDependencies(options, callback) {
-					callbacks.loadDependencies.push([options, callback]);
+				loadDependencies(options) {
+					callbacks.loadDependencies.push(
+						options as unknown as LoadDependenciesOptions<Asset>,
+					);
 				},
-				transformAsset(options, callback) {
-					callbacks.transformAsset.push([options, callback]);
+				transformAsset(options) {
+					callbacks.transformAsset.push(
+						options as unknown as TransformAssetOptions<Asset>,
+					);
 				},
-				transformBundle(callback) {
-					callbacks.transformBundle.push(callback);
+				transformBundle(options) {
+					callbacks.transformBundle.push(
+						options as unknown as TransformBundleOptions<Bundle>,
+					);
 				},
-				writeBundle(callback) {
-					callbacks.writeBundle.push(callback);
+				writeBundle(options) {
+					callbacks.writeBundle.push(
+						options as unknown as WriteBundleOptions<Bundle>,
+					);
 				},
 			});
 		}
@@ -107,7 +118,6 @@ export class PluginDriver {
 		}
 	}
 	async createBundle(graph: AssetGraph) {
-		// Parallel - All
 		const bundlePromises = [];
 		for (const callback of this.#callbacks.createBundle) {
 			bundlePromises.push(callback(graph));
@@ -116,49 +126,43 @@ export class PluginDriver {
 	}
 
 	async loadId(id: string, graph: AssetGraph) {
-		// Serial - First
 		let loadResult;
-		for (const [options, callback] of this.#callbacks.loadId) {
-			if (!options.filter.test(id)) continue;
-			loadResult = { ...(await callback(id, graph)), id };
+		for (const options of this.#callbacks.loadId) {
+			if (!options.filter(id)) continue;
+			loadResult = { ...(await options.callback(id, graph)), id };
 			break;
 		}
-
 		return loadResult;
 	}
 	async loadDependencies(asset: Asset): Promise<string[]> {
 		const loadResultPromises = [];
-		// Serial - First
-		for (const [options, callback] of this.#callbacks.loadDependencies) {
+		for (const options of this.#callbacks.loadDependencies) {
 			const loadDependencyPromise = () => {
-				if (!options.filter.test(asset.id)) return [];
-				return callback(asset);
+				if (!options.filter(asset)) return [];
+				return options.callback(asset);
 			};
 			loadResultPromises.push(loadDependencyPromise());
 		}
-
 		return (await Promise.all(loadResultPromises)).flat();
 	}
 	async transformAsset(asset: Asset): Promise<Asset> {
-		// Serial - All
-		for (const [options, callback] of this.#callbacks.transformAsset) {
-			if (!options.filter.test(asset.id)) continue;
-			await callback(asset);
+		for (const options of this.#callbacks.transformAsset) {
+			if (!options.filter(asset)) continue;
+			asset = await options.callback(asset);
 		}
-
 		return asset;
 	}
 	async transformBundle(args: { bundle: Bundle; graph: AssetGraph }) {
-		// Serial - All
-		for (const callback of this.#callbacks.transformBundle) {
-			await callback(args);
+		for (const options of this.#callbacks.transformBundle) {
+			if (!options.filter(args.bundle)) continue;
+			await options.callback(args);
 		}
 	}
 	writeBundle(bundle: Bundle) {
 		const bundlePromises = [];
-		// Parallel - all
-		for (const callback of this.#callbacks.writeBundle) {
-			bundlePromises.push(callback(bundle));
+		for (const options of this.#callbacks.writeBundle) {
+			if (!options.filter(bundle)) continue;
+			bundlePromises.push(options.callback(bundle));
 		}
 		return Promise.all(bundlePromises);
 	}

@@ -1,11 +1,17 @@
-import path from 'node:path';
+import type { Asset, Bundle } from '../../core/graph.js';
+import type { CollectionConfig } from '../../config/types.js';
 import type { Plugin } from '../../core/plugin.js';
 import type { ValidatedContentThingOptions } from '../../config/options.js';
-import type { CollectionConfig } from '../../config/types.js';
-import type { Asset } from '../../core/graph.js';
 import { write } from '@content-thing/internal-utils/filesystem';
+import path from 'node:path';
 
 const COLLECTION_CONFIG_REGEXP = /[/\\]([^/\\]+)[/\\]collection\.config\.json$/;
+
+interface CollectionConfigBundle extends Bundle {
+	meta: {
+		collectionConfig: CollectionConfig;
+	};
+}
 
 export const memdbPlugin: Plugin = {
 	name: 'content-thing-memdb',
@@ -32,34 +38,47 @@ export const memdbPlugin: Plugin = {
 			return bundleConfigs;
 		});
 
-		build.transformBundle(({ bundle, graph }) => {
-			if (!bundle.id.endsWith('collection-query')) return bundle;
+		const isCollectionConfigBundle = (
+			bundle: Bundle,
+		): bundle is CollectionConfigBundle => {
+			return (
+				bundle.id.endsWith('collection-query') &&
+				typeof bundle.meta === 'object' &&
+				bundle.meta !== null &&
+				'collectionConfig' in bundle.meta
+			);
+		};
 
-			const { collectionConfig } = bundle.meta as {
-				collectionConfig: CollectionConfig;
-			};
-			const collectionAssets = graph.getDependencies(collectionConfig.filepath);
-			for (const asset of collectionAssets) {
-				bundle.addAsset(asset);
-			}
+		build.transformBundle({
+			filter: isCollectionConfigBundle,
+			callback: ({ bundle, graph }) => {
+				const { collectionConfig } = bundle.meta as {
+					collectionConfig: CollectionConfig;
+				};
+				const collectionAssets = graph.getDependencies(
+					collectionConfig.filepath,
+				);
+				for (const asset of collectionAssets) {
+					bundle.addAsset(asset);
+				}
 
-			return bundle;
+				return bundle;
+			},
 		});
 
-		build.writeBundle((bundle) => {
-			if (!bundle.id.endsWith('collection-query')) return;
+		build.writeBundle({
+			filter: isCollectionConfigBundle,
+			callback: (bundle) => {
+				const { collectionConfig } = bundle.meta;
+				const code = generateDatabaseFile(collectionConfig, bundle.assets);
+				const outputFilepath = path.join(
+					validatedOptions.files.collectionsOutputDir,
+					collectionConfig.name + '.js',
+				);
+				write(outputFilepath, code);
 
-			const { collectionConfig } = bundle.meta as {
-				collectionConfig: CollectionConfig;
-			};
-			const code = generateDatabaseFile(collectionConfig, bundle.assets);
-			const outputFilepath = path.join(
-				validatedOptions.files.collectionsOutputDir,
-				collectionConfig.name + '.js',
-			);
-			write(outputFilepath, code);
-
-			return;
+				return;
+			},
 		});
 	},
 };
@@ -79,11 +98,11 @@ function generateDatabaseFile(
 			fieldImports.add(field.type);
 			const schemaFunc =
 				'jsDocType' in field
-					? `/** @type {ReturnType<typeof ${field.type}<'${name}', ${field.jsDocType}>>} */(${field.type}(${name}))`
+					? `/** @type {ReturnType<typeof ${field.type}<'${name}', ${field.jsDocType}>>} */(${field.type}('${name}'))`
 					: `${field.type}('${name}')`;
 			return `\t\t'${name}': ${schemaFunc},\n`;
 		})
-		.join(',\n');
+		.join('');
 
 	let code = '// This file is auto-generated. Do not edit directly.\n';
 	code += `import { ${Array.from(fieldImports).join(', ')} } from "@content-thing/memdb";\n\n`;

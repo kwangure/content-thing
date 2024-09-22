@@ -2,6 +2,10 @@ import type { Logger } from 'vite';
 import type { ValidatedContentThingOptions } from '../config/options.js';
 import { PluginDriver, type Plugin } from './plugin.js';
 
+function isAsset(value: unknown): value is Asset {
+	return value instanceof Asset;
+}
+
 export class AssetGraph {
 	#assets = new Map<string, Asset>();
 	#bundles = new Map<string, Bundle>();
@@ -145,7 +149,7 @@ export class AssetGraph {
 		if (!dependencies) return [];
 		return Array.from(dependencies)
 			.map((depId) => this.#assets.get(depId))
-			.filter(Boolean) as Asset[];
+			.filter(isAsset);
 	}
 
 	getDependents(id: string): Asset[] {
@@ -153,7 +157,7 @@ export class AssetGraph {
 		if (!dependents) return [];
 		return Array.from(dependents)
 			.map((depId) => this.#assets.get(depId))
-			.filter(Boolean) as Asset[];
+			.filter(isAsset);
 	}
 
 	getEntryAssets(id: string): Asset[] {
