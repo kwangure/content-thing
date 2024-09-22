@@ -39,31 +39,36 @@ export const collectionConfigPlugin: Plugin = {
 			return configFiles;
 		});
 
-		build.loadId({ filter: COLLECTION_CONFIG_REGEXP }, (id) => {
-			const match = id.match(COLLECTION_CONFIG_REGEXP)!;
-			const contents = fs.readFileSync(id, 'utf-8');
-			const value = JSON.parse(contents);
-			value.filepath = id;
-			value.name = match[1];
+		build.loadId({
+			filter(id): id is string {
+				return COLLECTION_CONFIG_REGEXP.test(id);
+			},
+			callback({ id }) {
+				const match = id.match(COLLECTION_CONFIG_REGEXP)!;
+				const contents = fs.readFileSync(id, 'utf-8');
+				const value = JSON.parse(contents);
+				value.filepath = id;
+				value.name = match[1];
 
-			const collectionConfig = v.safeParse(collectionConfigSchema, value);
-			if (collectionConfig.success) {
-				return { value: collectionConfig.output };
-			}
-
-			let errorMessage = `Invalid collection config at "${id}".`;
-			for (const issue of collectionConfig.issues) {
-				errorMessage += `\n\t- ${issue.message}`;
-				const path = issue.path
-					?.map((item) => ('key' in item ? item.key : ''))
-					.join('.');
-				if (path) {
-					errorMessage += ` at path "${path}"`;
+				const collectionConfig = v.safeParse(collectionConfigSchema, value);
+				if (collectionConfig.success) {
+					return { value: collectionConfig.output };
 				}
-				errorMessage += '.';
-			}
 
-			throw Error(errorMessage);
+				let errorMessage = `Invalid collection config at "${id}".`;
+				for (const issue of collectionConfig.issues) {
+					errorMessage += `\n\t- ${issue.message}`;
+					const path = issue.path
+						?.map((item) => ('key' in item ? item.key : ''))
+						.join('.');
+					if (path) {
+						errorMessage += ` at path "${path}"`;
+					}
+					errorMessage += '.';
+				}
+
+				throw Error(errorMessage);
+			},
 		});
 	},
 };

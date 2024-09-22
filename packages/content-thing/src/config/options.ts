@@ -4,12 +4,6 @@ import path from 'node:path';
 function isRelativeOrAbsolute(value: string) {
 	return (value[0] === '.' && value[1] === '/') || value[0] === '/';
 }
-function isNotRelativeOrAbsolute(value: string) {
-	return !isRelativeOrAbsolute(value);
-}
-function isNotRelativeOrAbsoluteMessage(value: v.CheckIssue<string>) {
-	return `Expected a path that is neither relative (starting with ".") or absolute (starting with "/"). Found "${value.input}" instead.`;
-}
 
 const defaultConfig = {
 	files: {
@@ -19,34 +13,26 @@ const defaultConfig = {
 	},
 };
 
+const DirectoryFilepath = v.pipe(
+	v.string(),
+	v.nonEmpty(),
+	v.check(
+		(value) => !isRelativeOrAbsolute(value),
+		(value) =>
+			`Expected a path that is neither relative (starting with "./") or absolute (starting with "/"). Found "${value.input}" instead.`,
+	),
+);
+
 export const ContentThingOptionsSchema = v.optional(
 	v.object({
 		files: v.optional(
 			v.object({
 				collectionsDir: v.optional(
-					v.pipe(
-						v.string(),
-						v.nonEmpty(),
-						v.check(isNotRelativeOrAbsolute, isNotRelativeOrAbsoluteMessage),
-					),
+					DirectoryFilepath,
 					defaultConfig.files.collectionsDir,
 				),
-				outputDir: v.optional(
-					v.pipe(
-						v.string(),
-						v.nonEmpty(),
-						v.check(isNotRelativeOrAbsolute, isNotRelativeOrAbsoluteMessage),
-					),
-					defaultConfig.files.outputDir,
-				),
-				routesDir: v.optional(
-					v.pipe(
-						v.string(),
-						v.nonEmpty(),
-						v.check(isNotRelativeOrAbsolute, isNotRelativeOrAbsoluteMessage),
-					),
-					defaultConfig.files.routesDir,
-				),
+				outputDir: v.optional(DirectoryFilepath, defaultConfig.files.outputDir),
+				routesDir: v.optional(DirectoryFilepath, defaultConfig.files.routesDir),
 			}),
 			defaultConfig.files,
 		),

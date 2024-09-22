@@ -2,6 +2,10 @@ import type { Logger } from 'vite';
 import type { ValidatedContentThingOptions } from '../config/options.js';
 import { PluginDriver, type Plugin } from './plugin.js';
 
+function isAsset(value: unknown): value is Asset {
+	return value instanceof Asset;
+}
+
 export class AssetGraph {
 	#assets = new Map<string, Asset>();
 	#bundles = new Map<string, Bundle>();
@@ -54,7 +58,10 @@ export class AssetGraph {
 			for (const assetId of this.#pendingAssetIds) {
 				const loadPromise = async () => {
 					this.#pendingAssetIds.delete(assetId);
-					const loadResult = await this.#pluginDriver.loadId(assetId, this);
+					const loadResult = await this.#pluginDriver.loadId({
+						id: assetId,
+						graph: this,
+					});
 					if (!loadResult) {
 						this.#logger.error(`Unable to load id '${assetId}'`);
 						return;
@@ -70,15 +77,19 @@ export class AssetGraph {
 
 			const transformPromises = [];
 			for (const asset of this.#pendingAssets.values()) {
-				transformPromises.push(this.#pluginDriver.transformAsset(asset));
+				transformPromises.push(
+					this.#pluginDriver.transformAsset({ asset, graph: this }),
+				);
 			}
 			await Promise.all(transformPromises);
 
 			const dependencyPromises = [];
 			for (const [id, asset] of this.#pendingAssets) {
 				const dependencyPromise = async () => {
-					const dependenciesResult =
-						await this.#pluginDriver.loadDependencies(asset);
+					const dependenciesResult = await this.#pluginDriver.loadDependencies({
+						asset,
+						graph: this,
+					});
 
 					let assetDependencies = this.#dependencyMap.get(id);
 					if (!assetDependencies) {
@@ -117,7 +128,9 @@ export class AssetGraph {
 	async #writeBundles() {
 		const writeBundlePromises = [];
 		for (const bundle of this.#bundles.values()) {
-			writeBundlePromises.push(this.#pluginDriver.writeBundle(bundle));
+			writeBundlePromises.push(
+				this.#pluginDriver.writeBundle({ bundle, graph: this }),
+			);
 		}
 		await Promise.all(writeBundlePromises);
 	}
@@ -145,7 +158,7 @@ export class AssetGraph {
 		if (!dependencies) return [];
 		return Array.from(dependencies)
 			.map((depId) => this.#assets.get(depId))
-			.filter(Boolean) as Asset[];
+			.filter(isAsset);
 	}
 
 	getDependents(id: string): Asset[] {
@@ -153,7 +166,7 @@ export class AssetGraph {
 		if (!dependents) return [];
 		return Array.from(dependents)
 			.map((depId) => this.#assets.get(depId))
-			.filter(Boolean) as Asset[];
+			.filter(isAsset);
 	}
 
 	getEntryAssets(id: string): Asset[] {

@@ -1,9 +1,10 @@
 import path from 'node:path';
+import type { Bundle } from '../../core/graph.js';
 import type { Plugin } from '../../core/plugin.js';
 import type { ValidatedContentThingOptions } from '../../config/options.js';
 import type { CollectionConfig } from '../../config/types.js';
-import { write } from '@content-thing/internal-utils/filesystem';
 import { Ok } from '../../utils/result.js';
+import { write } from '@content-thing/internal-utils/filesystem';
 
 const COLLECTION_CONFIG_REGEXP = /[/\\]([^/\\]+)[/\\]collection\.config\.json$/;
 
@@ -19,9 +20,20 @@ export interface Field {
 
 export type FieldMap = Map<string, Field>;
 
-export interface SearchMeta {
-	collectionConfig: CollectionConfig;
-	fields: FieldMap;
+export interface SearchBundle extends Bundle {
+	meta: {
+		collectionConfig: CollectionConfig;
+		fields: FieldMap;
+	};
+}
+
+export function isSearchBundle(bundle: Bundle): bundle is SearchBundle {
+	return (
+		bundle.id.endsWith('collection-search') &&
+		typeof bundle.meta === 'object' &&
+		bundle.meta !== null &&
+		'fields' in bundle.meta
+	);
 }
 
 export const searchPlugin: Plugin = {
@@ -49,7 +61,7 @@ export const searchPlugin: Plugin = {
 					let serializer = '';
 					if (field.type === 'string') {
 						serializer = '';
-					} else if (field.type === 'integer') {
+					} else if (field.type === 'number') {
 						serializer = 'String';
 					} else if (field.type === 'json') {
 						serializer = 'JSON.stringify';
@@ -72,18 +84,19 @@ export const searchPlugin: Plugin = {
 			return bundleConfigs;
 		});
 
-		build.writeBundle((bundle) => {
-			if (!bundle.id.endsWith('collection-search')) return;
+		build.writeBundle({
+			filter: isSearchBundle,
+			callback({ bundle }) {
+				const { collectionConfig, fields } = bundle.meta;
+				const code = generateSearchFile(collectionConfig, fields);
+				const outputFilepath = path.join(
+					validatedOptions.files.collectionsOutputDir,
+					collectionConfig.name + '.search.js',
+				);
+				write(outputFilepath, code.value);
 
-			const { collectionConfig, fields } = bundle.meta as SearchMeta;
-			const code = generateSearchFile(collectionConfig, fields);
-			const outputFilepath = path.join(
-				validatedOptions.files.collectionsOutputDir,
-				collectionConfig.name + '.search.js',
-			);
-			write(outputFilepath, code.value);
-
-			return;
+				return;
+			},
 		});
 	},
 };

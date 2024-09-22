@@ -1,16 +1,16 @@
 import * as v from 'valibot';
 
-export const integerFieldSchema = v.strictObject({
-	type: v.literal('integer'),
+const numberFieldSchema = v.strictObject({
+	type: v.literal('number'),
 	nullable: v.optional(v.boolean(), false),
 });
 
-export const stringFieldSchema = v.strictObject({
+const stringFieldSchema = v.strictObject({
 	type: v.literal('string'),
 	nullable: v.optional(v.boolean(), false),
 });
 
-export const jsonFieldSchema = v.strictObject({
+const jsonFieldSchema = v.strictObject({
 	type: v.literal('json'),
 	jsDocType: v.optional(v.string(), 'any'),
 	nullable: v.optional(v.boolean(), false),
@@ -20,7 +20,11 @@ export const collectionData = v.strictObject({
 	fields: v.optional(
 		v.record(
 			v.string(),
-			v.union([integerFieldSchema, stringFieldSchema, jsonFieldSchema]),
+			v.variant('type', [
+				numberFieldSchema,
+				stringFieldSchema,
+				jsonFieldSchema,
+			]),
 		),
 		{},
 	),

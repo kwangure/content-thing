@@ -1,8 +1,9 @@
+import type { Asset } from '../../core/graph.js';
 import type { Plugin } from '../../core/plugin.js';
-import type { SearchMeta } from '../search/node.js';
 import fs from 'node:fs';
 import path from 'node:path';
 import { getHeadingTree } from './heading_tree.js';
+import { isSearchBundle } from '../search/node.js';
 import { mergeInto } from '../../utils/object.js';
 import { parseFilepath } from '../../utils/filepath.js';
 import { parseMarkdownSections } from './parse.js';
@@ -10,111 +11,135 @@ import { walk } from '@content-thing/internal-utils/filesystem';
 
 export { mdastToString } from './mdastToString.js';
 
-const README_REGEXP = /(?:^|[/\\])readme\.md$/i;
-const COLLECTION_CONFIG_REGEXP = /[/\\]([^/\\]+)[/\\]collection\.config\.json$/;
+interface ReadmeAsset extends Asset {
+	value: string;
+}
+
+interface CollectionConfigAsset extends Asset {
+	value: {
+		type: 'markdown';
+		[key: string]: unknown;
+	};
+}
 
 export const markdownPlugin: Plugin = {
 	name: 'content-thing-markdown',
 	bundle(build) {
-		build.loadId({ filter: README_REGEXP }, (id) => {
-			const value = fs.readFileSync(id, 'utf-8');
-			return { value };
+		build.loadId({
+			filter(id): id is string {
+				return /(?:^|[/\\])readme\.md$/i.test(id);
+			},
+			callback({ id }) {
+				const value = fs.readFileSync(id, 'utf-8');
+				return { value };
+			},
 		});
 
-		build.transformAsset({ filter: COLLECTION_CONFIG_REGEXP }, (asset) => {
-			if (
-				typeof asset.value !== 'object' ||
-				asset.value === null ||
-				!('type' in asset.value) ||
-				asset.value.type !== 'markdown'
-			)
-				return asset;
-
-			mergeInto(asset.value, {
-				data: {
-					fields: {
-						_id: {
-							type: 'string',
-						},
-						_headingTree: {
-							type: 'json',
-							jsDocType: "import('content-thing').TocEntry[]",
-						},
-						_content: {
-							type: 'json',
-							jsDocType: "import('content-thing/mdast').Root",
+		build.transformAsset({
+			filter(asset): asset is CollectionConfigAsset {
+				return (
+					/[/\\]([^/\\]+)[/\\]collection\.config\.json$/.test(asset.id) &&
+					typeof asset.value === 'object' &&
+					asset.value !== null &&
+					'type' in asset.value &&
+					asset.value.type === 'markdown'
+				);
+			},
+			callback({ asset }) {
+				mergeInto(asset.value, {
+					data: {
+						fields: {
+							_id: {
+								type: 'string',
+							},
+							_headingTree: {
+								type: 'json',
+								jsDocType: "import('content-thing').TocEntry[]",
+							},
+							_content: {
+								type: 'json',
+								jsDocType: "import('content-thing/mdast').Root",
+							},
 						},
 					},
-				},
-			});
+				});
 
-			return asset;
+				return asset;
+			},
 		});
 
-		build.transformAsset({ filter: README_REGEXP }, async (asset) => {
-			if (typeof asset.value !== 'string') return asset;
+		build.transformAsset({
+			filter(asset): asset is ReadmeAsset {
+				return (
+					/(?:^|[/\\])readme\.md$/i.test(asset.id) &&
+					typeof asset.value === 'string'
+				);
+			},
+			async callback({ asset }) {
+				const { entry } = parseFilepath(asset.id);
+				const { frontmatter, content } = await parseMarkdownSections(
+					asset.value,
+					asset.id,
+				);
+				const tableOfContents = getHeadingTree(content);
 
-			const { entry } = parseFilepath(asset.id);
-			const { frontmatter, content } = await parseMarkdownSections(
-				asset.value,
-				asset.id,
-			);
-			const tableOfContents = getHeadingTree(content);
+				Object.assign(asset, {
+					value: {
+						record: {
+							...frontmatter,
+							_content: content,
+							_id: entry.id,
+							_headingTree: tableOfContents,
+						},
+					},
+				});
 
-			asset.value = {
-				record: {
-					...frontmatter,
-					_content: content,
-					_id: entry.id,
-					_headingTree: tableOfContents,
-				},
-			};
-
-			return asset;
+				return asset;
+			},
 		});
 
-		build.loadDependencies(
-			{ filter: COLLECTION_CONFIG_REGEXP },
-			({ id, value }) => {
-				if (
-					typeof value !== 'object' ||
-					value === null ||
-					!('type' in value) ||
-					value.type !== 'markdown'
-				)
-					return [];
-
-				const collectionDir = path.dirname(id);
+		build.loadDependencies({
+			filter(asset): asset is CollectionConfigAsset {
+				return (
+					/[/\\]([^/\\]+)[/\\]collection\.config\.json$/.test(asset.id) &&
+					typeof asset.value === 'object' &&
+					asset.value !== null &&
+					'type' in asset.value &&
+					asset.value.type === 'markdown'
+				);
+			},
+			callback({ asset }) {
+				const collectionDir = path.dirname(asset.id);
 				const markdownEntries: string[] = [];
 				walk(collectionDir, (dirent) => {
-					if (dirent.name.match(README_REGEXP) && dirent.isFile()) {
+					if (/(?:^|[/\\])readme\.md$/i.test(dirent.name) && dirent.isFile()) {
 						markdownEntries.push(path.join(dirent.path, dirent.name));
 					}
 				});
 
 				return markdownEntries;
 			},
-		);
+		});
 
-		build.transformBundle(({ bundle }) => {
-			if (!bundle.id.endsWith('collection-search')) return bundle;
-
-			const { fields } = bundle.meta as SearchMeta;
-			for (const [field, serializer] of fields) {
-				if (field === '_content') {
-					serializer.imports = new Map([
-						[
-							'content-thing',
-							{
-								namedImports: ['mdastToString'],
-							},
-						],
-					]);
-					serializer.serializer = 'mdastToString';
+		build.transformBundle({
+			filter: isSearchBundle,
+			callback({ bundle }) {
+				for (const [field, serializer] of bundle.meta.fields) {
+					if (field === '_content') {
+						serializer.imports = new Map([
+							[
+								'content-thing',
+								{
+									namedImports: ['mdastToString'],
+								},
+							],
+						]);
+						serializer.serializer = 'mdastToString';
+					}
 				}
-			}
 
-			return bundle;
+				return bundle;
+			},
 		});
 	},
 };
