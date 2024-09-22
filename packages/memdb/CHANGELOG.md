@@ -1,5 +1,12 @@
 # @content-thing/memdb
 
+## 0.0.4
+
+### Patch Changes
+
+- 94b639d: Rename "integer" schema to "number".
+- 94b639d: Use typed filters in plugins
+
 ## 0.0.3
 
 ### Patch Changes

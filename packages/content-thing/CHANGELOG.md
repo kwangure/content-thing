@@ -1,5 +1,12 @@
 # content-thing
 
+## 0.0.35
+
+### Patch Changes
+
+- 94b639d: Rename "integer" schema to "number".
+- 94b639d: Use typed filters in plugins
+
 ## 0.0.34
 
 ### Patch Changes
