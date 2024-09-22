@@ -68,7 +68,7 @@ export const memdbPlugin: Plugin = {
 
 		build.writeBundle({
 			filter: isCollectionConfigBundle,
-			callback: (bundle) => {
+			callback({ bundle }) {
 				const { collectionConfig } = bundle.meta;
 				const code = generateDatabaseFile(collectionConfig, bundle.assets);
 				const outputFilepath = path.join(

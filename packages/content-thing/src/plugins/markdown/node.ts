@@ -29,7 +29,7 @@ export const markdownPlugin: Plugin = {
 			filter(id): id is string {
 				return /(?:^|[/\\])readme\.md$/i.test(id);
 			},
-			callback(id) {
+			callback({ id }) {
 				const value = fs.readFileSync(id, 'utf-8');
 				return { value };
 			},
@@ -45,7 +45,7 @@ export const markdownPlugin: Plugin = {
 					asset.value.type === 'markdown'
 				);
 			},
-			callback(asset) {
+			callback({ asset }) {
 				mergeInto(asset.value, {
 					data: {
 						fields: {
@@ -75,7 +75,7 @@ export const markdownPlugin: Plugin = {
 					typeof asset.value === 'string'
 				);
 			},
-			async callback(asset) {
+			async callback({ asset }) {
 				const { entry } = parseFilepath(asset.id);
 				const { frontmatter, content } = await parseMarkdownSections(
 					asset.value,
@@ -108,8 +108,8 @@ export const markdownPlugin: Plugin = {
 					asset.value.type === 'markdown'
 				);
 			},
-			callback({ id }) {
-				const collectionDir = path.dirname(id);
+			callback({ asset }) {
+				const collectionDir = path.dirname(asset.id);
 				const markdownEntries: string[] = [];
 				walk(collectionDir, (dirent) => {
 					if (/(?:^|[/\\])readme\.md$/i.test(dirent.name) && dirent.isFile()) {
@@ -123,7 +123,7 @@ export const markdownPlugin: Plugin = {
 
 		build.transformBundle({
 			filter: isSearchBundle,
-			callback: ({ bundle }) => {
+			callback({ bundle }) {
 				for (const [field, serializer] of bundle.meta.fields) {
 					if (field === '_content') {
 						serializer.imports = new Map([

@@ -86,7 +86,7 @@ export const searchPlugin: Plugin = {
 
 		build.writeBundle({
 			filter: isSearchBundle,
-			callback: (bundle) => {
+			callback({ bundle }) {
 				const { collectionConfig, fields } = bundle.meta;
 				const code = generateSearchFile(collectionConfig, fields);
 				const outputFilepath = path.join(

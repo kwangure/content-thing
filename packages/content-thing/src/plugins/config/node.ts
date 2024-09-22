@@ -43,7 +43,7 @@ export const collectionConfigPlugin: Plugin = {
 			filter(id): id is string {
 				return COLLECTION_CONFIG_REGEXP.test(id);
 			},
-			callback(id) {
+			callback({ id }) {
 				const match = id.match(COLLECTION_CONFIG_REGEXP)!;
 				const contents = fs.readFileSync(id, 'utf-8');
 				const value = JSON.parse(contents);

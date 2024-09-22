@@ -58,7 +58,10 @@ export class AssetGraph {
 			for (const assetId of this.#pendingAssetIds) {
 				const loadPromise = async () => {
 					this.#pendingAssetIds.delete(assetId);
-					const loadResult = await this.#pluginDriver.loadId(assetId, this);
+					const loadResult = await this.#pluginDriver.loadId({
+						id: assetId,
+						graph: this,
+					});
 					if (!loadResult) {
 						this.#logger.error(`Unable to load id '${assetId}'`);
 						return;
@@ -74,15 +77,19 @@ export class AssetGraph {
 
 			const transformPromises = [];
 			for (const asset of this.#pendingAssets.values()) {
-				transformPromises.push(this.#pluginDriver.transformAsset(asset));
+				transformPromises.push(
+					this.#pluginDriver.transformAsset({ asset, graph: this }),
+				);
 			}
 			await Promise.all(transformPromises);
 
 			const dependencyPromises = [];
 			for (const [id, asset] of this.#pendingAssets) {
 				const dependencyPromise = async () => {
-					const dependenciesResult =
-						await this.#pluginDriver.loadDependencies(asset);
+					const dependenciesResult = await this.#pluginDriver.loadDependencies({
+						asset,
+						graph: this,
+					});
 
 					let assetDependencies = this.#dependencyMap.get(id);
 					if (!assetDependencies) {
@@ -121,7 +128,9 @@ export class AssetGraph {
 	async #writeBundles() {
 		const writeBundlePromises = [];
 		for (const bundle of this.#bundles.values()) {
-			writeBundlePromises.push(this.#pluginDriver.writeBundle(bundle));
+			writeBundlePromises.push(
+				this.#pluginDriver.writeBundle({ bundle, graph: this }),
+			);
 		}
 		await Promise.all(writeBundlePromises);
 	}

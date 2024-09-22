@@ -7,7 +7,7 @@ import YAML from 'yaml';
 import { parseFilepath } from '../../utils/filepath.js';
 import { mergeInto } from '../../utils/object.js';
 
-const YAML_REGEXP = /(?:^|[/\\])readme\.(yaml|yml)$/i;
+const README_YAML_REGEXP = /(?:^|[/\\])readme\.(yaml|yml)$/i;
 const COLLECTION_CONFIG_REGEXP = /[/\\]([^/\\]+)[/\\]collection\.config\.json$/;
 
 interface YamlAsset extends Asset {
@@ -21,9 +21,7 @@ interface CollectionConfigAsset extends Asset {
 	};
 }
 
-const isYamlFile = (id: string): id is string => YAML_REGEXP.test(id);
-
-const isCollectionConfig = (asset: Asset): asset is CollectionConfigAsset => {
+function isCollectionConfig(asset: Asset): asset is CollectionConfigAsset {
 	return (
 		COLLECTION_CONFIG_REGEXP.test(asset.id) &&
 		typeof asset.value === 'object' &&
@@ -31,17 +29,16 @@ const isCollectionConfig = (asset: Asset): asset is CollectionConfigAsset => {
 		'type' in asset.value &&
 		asset.value.type === 'yaml'
 	);
-};
-
-const isYamlAsset = (asset: Asset): asset is YamlAsset =>
-	YAML_REGEXP.test(asset.id) && typeof asset.value === 'string';
+}
 
 export const yamlPlugin: Plugin = {
 	name: 'content-thing-yaml',
 	bundle(build) {
 		build.loadId<string>({
-			filter: isYamlFile,
-			callback: (id) => {
+			filter(id: string): id is string {
+				return README_YAML_REGEXP.test(id);
+			},
+			callback({ id }) {
 				const value = fs.readFileSync(id, 'utf-8');
 				return { value };
 			},
@@ -49,7 +46,7 @@ export const yamlPlugin: Plugin = {
 
 		build.transformAsset<CollectionConfigAsset>({
 			filter: isCollectionConfig,
-			callback: (asset) => {
+			callback({ asset }) {
 				mergeInto(asset.value, {
 					data: {
 						fields: {
@@ -65,8 +62,12 @@ export const yamlPlugin: Plugin = {
 		});
 
 		build.transformAsset<YamlAsset>({
-			filter: isYamlAsset,
-			callback: (asset) => {
+			filter(asset: Asset): asset is YamlAsset {
+				return (
+					README_YAML_REGEXP.test(asset.id) && typeof asset.value === 'string'
+				);
+			},
+			callback({ asset }) {
 				const { entry } = parseFilepath(asset.id);
 				const value = YAML.parse(asset.value);
 
@@ -85,11 +86,11 @@ export const yamlPlugin: Plugin = {
 
 		build.loadDependencies<CollectionConfigAsset>({
 			filter: isCollectionConfig,
-			callback: ({ id }) => {
-				const collectionDir = path.dirname(id);
+			callback({ asset }) {
+				const collectionDir = path.dirname(asset.id);
 				const yamlEntries: string[] = [];
 				walk(collectionDir, (dirent) => {
-					if (dirent.name.match(YAML_REGEXP) && dirent.isFile()) {
+					if (dirent.name.match(README_YAML_REGEXP) && dirent.isFile()) {
 						yamlEntries.push(path.join(dirent.path, dirent.name));
 					}
 				});

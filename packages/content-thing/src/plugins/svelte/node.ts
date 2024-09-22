@@ -43,7 +43,7 @@ export const sveltePlugin: Plugin = {
 		});
 
 		build.loadDependencies({
-			filter: (asset: Asset): asset is ReadmeAsset => {
+			filter(asset: Asset): asset is ReadmeAsset {
 				return (
 					README_REGEXP.test(asset.id) &&
 					typeof asset.value === 'object' &&
@@ -52,14 +52,16 @@ export const sveltePlugin: Plugin = {
 					typeof asset.value.record === 'object'
 				);
 			},
-			callback: ({ id }) => {
-				return [`${id}.svelte`];
+			callback: ({ asset }) => {
+				return [`${asset.id}.svelte`];
 			},
 		});
 
 		build.loadId({
-			filter: (id: string): id is string => SVELTE_REGEXP.test(id),
-			callback: (id, graph) => {
+			filter(id: string): id is string {
+				return SVELTE_REGEXP.test(id);
+			},
+			callback({ id, graph }) {
 				const mdId = id.replace(/.svelte$/, '');
 				const mdAsset = graph.getAsset(mdId) as ReadmeAsset | undefined;
 				if (!mdAsset) throw new Error(`Markdown asset not found for ${id}`);
@@ -112,7 +114,7 @@ export const sveltePlugin: Plugin = {
 
 		build.writeBundle({
 			filter: isSvelteBundle,
-			callback: (bundle) => {
+			callback({ bundle }) {
 				for (const asset of bundle.assets) {
 					const baseFilePath = asset.id
 						.replace(COLLECTIONS_ROOT_RE, '')
