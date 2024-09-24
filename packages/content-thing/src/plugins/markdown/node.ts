@@ -1,145 +1,136 @@
-import type { Asset } from '../../core/graph.js';
+import type { CollectionConfig } from '../../config/types.js';
 import type { Plugin } from '../../core/plugin.js';
+import { cwd } from 'node:process';
+import { mdastToSvelteString } from './mdastToSvelteString.js';
+import { parseMarkdownSections } from './parse.js';
+import { walk, write } from '@content-thing/internal-utils/filesystem';
 import fs from 'node:fs';
 import path from 'node:path';
-import { getHeadingTree } from './heading_tree.js';
-import { isSearchBundle } from '../search/node.js';
-import { mergeInto } from '../../utils/object.js';
 import { parseFilepath } from '../../utils/filepath.js';
-import { parseMarkdownSections } from './parse.js';
-import { walk } from '@content-thing/internal-utils/filesystem';
+import { getHeadingTree } from './heading_tree.js';
 
 export { mdastToString } from './mdastToString.js';
 
-interface ReadmeAsset extends Asset {
-	value: string;
-}
+const README_RE = /(?:^|[/\\])readme\.md$/i;
 
-interface CollectionConfigAsset extends Asset {
-	value: {
-		type: 'markdown';
-		[key: string]: unknown;
-	};
+function escapeRegExp(text: string) {
+	return text.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&');
 }
 
 export const markdownPlugin: Plugin = {
 	name: 'content-thing-markdown',
 	bundle(build) {
-		build.loadId({
-			filter(id): id is string {
-				return /(?:^|[/\\])readme\.md$/i.test(id);
-			},
-			callback({ id }) {
-				const value = fs.readFileSync(id, 'utf-8');
-				return { value };
-			},
-		});
+		const COLLECTIONS_ROOT_RE = new RegExp(
+			`^${escapeRegExp(cwd())}[\\/\\\\]src[\\/\\\\]collections`,
+		);
 
-		build.transformAsset({
-			filter(asset): asset is CollectionConfigAsset {
-				return (
-					/[/\\]([^/\\]+)[/\\]collection\.config\.json$/.test(asset.id) &&
-					typeof asset.value === 'object' &&
-					asset.value !== null &&
-					'type' in asset.value &&
-					asset.value.type === 'markdown'
-				);
-			},
-			callback({ asset }) {
-				mergeInto(asset.value, {
-					data: {
-						fields: {
-							_id: {
-								type: 'string',
-							},
-							_headingTree: {
-								type: 'json',
-								jsDocType: "import('content-thing').TocEntry[]",
-							},
-							_content: {
-								type: 'json',
-								jsDocType: "import('content-thing/mdast').Root",
-							},
-						},
+		build.transformCollectionConfig((config) => {
+			if (config.type === 'markdown') {
+				config.data.fields = {
+					...config.data.fields,
+					_id: {
+						nullable: false,
+						type: 'string',
 					},
-				});
-
-				return asset;
-			},
-		});
-
-		build.transformAsset({
-			filter(asset): asset is ReadmeAsset {
-				return (
-					/(?:^|[/\\])readme\.md$/i.test(asset.id) &&
-					typeof asset.value === 'string'
-				);
-			},
-			async callback({ asset }) {
-				const { entry } = parseFilepath(asset.id);
-				const { frontmatter, content } = await parseMarkdownSections(
-					asset.value,
-					asset.id,
-				);
-				const tableOfContents = getHeadingTree(content);
-
-				Object.assign(asset, {
-					value: {
-						record: {
-							...frontmatter,
-							_content: content,
-							_id: entry.id,
-							_headingTree: tableOfContents,
-						},
+					_headingTree: {
+						nullable: false,
+						type: 'json',
+						typeScriptType: "import('content-thing').TocEntry[]",
 					},
-				});
-
-				return asset;
-			},
+					_content: {
+						nullable: false,
+						type: 'json',
+						typeScriptType: "import('content-thing/mdast').Root",
+					},
+				};
+			}
 		});
 
-		build.loadDependencies({
-			filter(asset): asset is CollectionConfigAsset {
-				return (
-					/[/\\]([^/\\]+)[/\\]collection\.config\.json$/.test(asset.id) &&
-					typeof asset.value === 'object' &&
-					asset.value !== null &&
-					'type' in asset.value &&
-					asset.value.type === 'markdown'
-				);
-			},
-			callback({ asset }) {
-				const collectionDir = path.dirname(asset.id);
-				const markdownEntries: string[] = [];
-				walk(collectionDir, (dirent) => {
-					if (/(?:^|[/\\])readme\.md$/i.test(dirent.name) && dirent.isFile()) {
-						markdownEntries.push(path.join(dirent.path, dirent.name));
-					}
-				});
-
-				return markdownEntries;
-			},
+		build.writeCollectionConfig(({ config, options }) => {
+			if (config.type !== 'markdown') return;
+			const baseFilePath = config.filepath
+				.replace(COLLECTIONS_ROOT_RE, '')
+				.replace(/collection\.config\.json$/, '');
+			write(
+				path.join(
+					options.files.collectionsOutputDir,
+					baseFilePath,
+					'index.d.ts',
+				),
+				generateTypes(config),
+			);
+			write(
+				path.join(options.files.collectionsOutputDir, baseFilePath, 'index.js'),
+				`export {};`,
+			);
 		});
 
-		build.transformBundle({
-			filter: isSearchBundle,
-			callback({ bundle }) {
-				for (const [field, serializer] of bundle.meta.fields) {
-					if (field === '_content') {
-						serializer.imports = new Map([
-							[
-								'content-thing',
-								{
-									namedImports: ['mdastToString'],
-								},
-							],
-						]);
-						serializer.serializer = 'mdastToString';
-					}
+		build.loadCollectionItems(async ({ config, options }) => {
+			const { filepath, type } = config;
+			if (type !== 'markdown') return;
+
+			const collectionDir = path.dirname(filepath);
+			const markdownFilepaths: string[] = [];
+			walk(collectionDir, (dirent) => {
+				if (README_RE.test(dirent.name) && dirent.isFile()) {
+					markdownFilepaths.push(path.join(dirent.path, dirent.name));
 				}
+			});
 
-				return bundle;
-			},
+			for (const filepath of markdownFilepaths) {
+				const value = fs.readFileSync(filepath, 'utf-8');
+				const baseFilePath = filepath
+					.replace(COLLECTIONS_ROOT_RE, '')
+					.replace(README_RE, '');
+
+				// TODO: Validate frontmatter by config
+				const { entry } = parseFilepath(filepath);
+				const { frontmatter, content } = await parseMarkdownSections(
+					value,
+					filepath,
+				);
+				const markdownAsSvelte = mdastToSvelteString(content);
+				const svelteFilepath = path.join(
+					options.files.collectionsMirrorDir,
+					baseFilePath,
+					'+page.svelte',
+				);
+				write(svelteFilepath, markdownAsSvelte as string);
+
+				const markdownFrontmatter = generateFrontmatter(
+					Object.assign(frontmatter, {
+						_id: entry.id,
+						_headingTree: getHeadingTree(content),
+					}),
+				);
+				const frontmatterFilepath = path.join(
+					options.files.collectionsMirrorDir,
+					baseFilePath,
+					'frontmatter.js',
+				);
+				write(frontmatterFilepath, markdownFrontmatter);
+			}
+
+			return markdownFilepaths;
 		});
 	},
 };
+
+function generateFrontmatter(record: Record<string, unknown>) {
+	const __record = Object.assign({ _content: undefined }, record);
+	let code = '// This file is auto-generated. Do not edit directly.\n';
+	code += `export const frontmatter = JSON.parse(${JSON.stringify(JSON.stringify(__record))});\n`;
+	return code;
+}
+
+function generateTypes(collectionConfig: CollectionConfig) {
+	let code = '// This file is auto-generated. Do not edit directly.\n';
+	code += `export interface Frontmatter {\n`;
+	const fields = Object.entries(collectionConfig.data.fields);
+	for (const [fieldName, field] of fields) {
+		const type = 'typeScriptType' in field ? field.typeScriptType : field.type;
+		code += `\t${fieldName}: ${type};\n`;
+	}
+	code += `};\n`;
+	return code;
+}

@@ -8,9 +8,6 @@ import type { LogErrorOptions, LogOptions, Plugin } from 'vite';
 import {
 	collectionConfigPlugin,
 	markdownPlugin,
-	memdbPlugin,
-	searchPlugin,
-	sveltePlugin,
 	yamlPlugin,
 } from '../plugins/node.js';
 import { cwd } from 'node:process';
@@ -60,14 +57,7 @@ export function content(options?: ContentThingOptions): Plugin {
 			});
 			assetGraph = new AssetGraph(
 				validatedConfig,
-				[
-					collectionConfigPlugin,
-					markdownPlugin,
-					yamlPlugin,
-					memdbPlugin,
-					searchPlugin,
-					sveltePlugin,
-				],
+				[collectionConfigPlugin, markdownPlugin, yamlPlugin],
 				logger,
 			);
 			await assetGraph.bundle();

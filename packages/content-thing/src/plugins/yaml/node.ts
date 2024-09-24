@@ -1,102 +1,109 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import type { Plugin } from '../../core/plugin.js';
-import type { Asset } from '../../core/graph.js';
-import { walk } from '@content-thing/internal-utils/filesystem';
 import YAML from 'yaml';
+import type { CollectionConfig } from '../../config/types.js';
+import type { Plugin } from '../../core/plugin.js';
+import { cwd } from 'node:process';
 import { parseFilepath } from '../../utils/filepath.js';
-import { mergeInto } from '../../utils/object.js';
+import { walk, write } from '@content-thing/internal-utils/filesystem';
 
 const README_YAML_REGEXP = /(?:^|[/\\])readme\.(yaml|yml)$/i;
-const COLLECTION_CONFIG_REGEXP = /[/\\]([^/\\]+)[/\\]collection\.config\.json$/;
 
-interface YamlAsset extends Asset {
-	value: string;
+function escapeRegExp(text: string) {
+	return text.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&');
 }
 
-interface CollectionConfigAsset extends Asset {
-	value: {
-		type: 'yaml';
-		[key: string]: unknown;
-	};
-}
-
-function isCollectionConfig(asset: Asset): asset is CollectionConfigAsset {
-	return (
-		COLLECTION_CONFIG_REGEXP.test(asset.id) &&
-		typeof asset.value === 'object' &&
-		asset.value !== null &&
-		'type' in asset.value &&
-		asset.value.type === 'yaml'
-	);
-}
+const COLLECTIONS_ROOT_RE = new RegExp(
+	`^${escapeRegExp(cwd())}[\\/\\\\]src[\\/\\\\]collections`,
+);
 
 export const yamlPlugin: Plugin = {
 	name: 'content-thing-yaml',
 	bundle(build) {
-		build.loadId<string>({
-			filter(id: string): id is string {
-				return README_YAML_REGEXP.test(id);
-			},
-			callback({ id }) {
-				const value = fs.readFileSync(id, 'utf-8');
-				return { value };
-			},
-		});
-
-		build.transformAsset<CollectionConfigAsset>({
-			filter: isCollectionConfig,
-			callback({ asset }) {
-				mergeInto(asset.value, {
-					data: {
-						fields: {
-							_id: {
-								type: 'string',
-							},
-						},
+		build.transformCollectionConfig((config) => {
+			if (config.type === 'yaml') {
+				config.data.fields = {
+					...config.data.fields,
+					_id: {
+						nullable: false,
+						type: 'string',
 					},
-				});
-
-				return asset;
-			},
+				};
+			}
 		});
 
-		build.transformAsset<YamlAsset>({
-			filter(asset: Asset): asset is YamlAsset {
-				return (
-					README_YAML_REGEXP.test(asset.id) && typeof asset.value === 'string'
+		build.writeCollectionConfig(({ config, options }) => {
+			const { filepath, type } = config;
+			if (type !== 'yaml') return;
+			const baseFilePath = filepath
+				.replace(COLLECTIONS_ROOT_RE, '')
+				.replace(/collection\.config\.json$/, '');
+			write(
+				path.join(
+					options.files.collectionsOutputDir,
+					baseFilePath,
+					'index.d.ts',
+				),
+				generateTypes(config),
+			);
+			write(
+				path.join(options.files.collectionsOutputDir, baseFilePath, 'index.js'),
+				`export {};`,
+			);
+		});
+
+		build.loadCollectionItems(({ config, options }) => {
+			const { filepath, type } = config;
+			if (type !== 'yaml') return;
+
+			const collectionDir = path.dirname(filepath);
+			const yamlFilepaths: string[] = [];
+			walk(collectionDir, (dirent) => {
+				if (README_YAML_REGEXP.test(dirent.name) && dirent.isFile()) {
+					yamlFilepaths.push(path.join(dirent.path, dirent.name));
+				}
+			});
+
+			for (const filepath of yamlFilepaths) {
+				const baseFilePath = filepath
+					.replace(COLLECTIONS_ROOT_RE, '')
+					.replace(README_YAML_REGEXP, '');
+				const value = fs.readFileSync(filepath, 'utf-8');
+				// TODO: Handle malformed YAML
+				const frontmatter = YAML.parse(value);
+
+				const { entry } = parseFilepath(filepath);
+				const yamlFrontmatter = generateFrontmatter(
+					Object.assign(frontmatter, {
+						_id: entry.id,
+					}),
 				);
-			},
-			callback({ asset }) {
-				const { entry } = parseFilepath(asset.id);
-				const value = YAML.parse(asset.value);
-
-				Object.assign(asset, {
-					value: {
-						record: {
-							...value,
-							_id: entry.id,
-						},
-					},
-				});
-
-				return asset;
-			},
-		});
-
-		build.loadDependencies<CollectionConfigAsset>({
-			filter: isCollectionConfig,
-			callback({ asset }) {
-				const collectionDir = path.dirname(asset.id);
-				const yamlEntries: string[] = [];
-				walk(collectionDir, (dirent) => {
-					if (dirent.name.match(README_YAML_REGEXP) && dirent.isFile()) {
-						yamlEntries.push(path.join(dirent.path, dirent.name));
-					}
-				});
-
-				return yamlEntries;
-			},
+				const frontmatterFilepath = path.join(
+					options.files.collectionsMirrorDir,
+					baseFilePath,
+					'frontmatter.js',
+				);
+				write(frontmatterFilepath, yamlFrontmatter);
+			}
 		});
 	},
 };
+
+function generateFrontmatter(record: Record<string, unknown>) {
+	const __record = Object.assign({ _content: undefined }, record);
+	let code = '// This file is auto-generated. Do not edit directly.\n';
+	code += `export const frontmatter = JSON.parse(${JSON.stringify(JSON.stringify(__record))});\n`;
+	return code;
+}
+
+function generateTypes(collectionConfig: CollectionConfig) {
+	let code = '// This file is auto-generated. Do not edit directly.\n';
+	code += `export interface Frontmatter {\n`;
+	const fields = Object.entries(collectionConfig.data.fields);
+	for (const [fieldName, field] of fields) {
+		const type = 'typeScriptType' in field ? field.typeScriptType : field.type;
+		code += `\t${fieldName}: ${type};\n`;
+	}
+	code += `};\n`;
+	return code;
+}

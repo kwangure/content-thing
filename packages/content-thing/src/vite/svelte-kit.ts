@@ -1,10 +1,5 @@
 import type { Config } from '@sveltejs/kit';
 
-/**
- * Adds 'thing:data' and 'thing:schema' keys to the alias object inside the kit object of a given Config.
- *
- * @param config - The configuration object to update.
- */
 export function extendSvelteConfig(config: Config) {
 	if (!config.kit) {
 		config.kit = {};
@@ -15,6 +10,7 @@ export function extendSvelteConfig(config: Config) {
 	}
 
 	config.kit.alias['$collections'] = './.collections/collections/';
+	config.kit.alias['$routes'] = config.kit.files?.routes ?? './src/routes/';
 
 	if (!config.kit.typescript) {
 		config.kit.typescript = {};

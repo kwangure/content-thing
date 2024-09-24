@@ -1,7 +1,4 @@
 import * as v from 'valibot';
-import { collectionConfigSchema } from './schema.js';
+import { CollectionConfigSchema } from './schema.js';
 
-export type CollectionConfig = v.InferOutput<typeof collectionConfigSchema> & {
-	name: string;
-	filepath: string;
-};
+export type CollectionConfig = v.InferOutput<typeof CollectionConfigSchema>;
