@@ -1,8 +1,9 @@
 import * as v from 'valibot';
 import type { CollectionConfig } from '../config/types.js';
+import type { CollectionItem } from './graph.js';
 import type { ValidatedContentThingOptions } from '../config/options.js';
-import { CollectionConfigSchema } from '../config/schema.js';
 import { Err, Ok, type Result } from '../utils/result.js';
+import { CollectionConfigSchema } from '../config/schema.js';
 
 type MaybePromise<T> = T | Promise<T>;
 
@@ -11,23 +12,35 @@ export interface Plugin {
 	bundle?(bundler: BundleContext): unknown;
 }
 
-interface ProcessConfigArg {
-	readonly config: CollectionConfig;
-	readonly options: ValidatedContentThingOptions;
-}
-
 type LoadCollectionConfigCallback = (
 	filepath: string,
-) => MaybePromise<Result<unknown> | void>;
+) => MaybePromise<Result<object, Error> | void>;
 type TransformCollectionConfigCallback = (
 	config: CollectionConfig,
 ) => MaybePromise<void>;
+
+interface BaseCallbackArg {
+	readonly config: CollectionConfig;
+	readonly options: ValidatedContentThingOptions;
+}
 type WriteCollectionConfigCallback = (
-	arg: ProcessConfigArg,
+	arg: BaseCallbackArg,
 ) => MaybePromise<void>;
 
-type LoadCollectionItemsCallback = (
-	arg: ProcessConfigArg,
+type ResolveCollectionItemsCallback = (
+	arg: BaseCallbackArg,
+) => MaybePromise<string[] | undefined | void>;
+
+interface FilepathCallbackArg extends BaseCallbackArg {
+	readonly filepath: string;
+}
+type LoadCollectionItemCallback = (
+	arg: FilepathCallbackArg,
+) => MaybePromise<Result<CollectionItem, string | Error> | undefined | void>;
+
+interface ItemCallbackArg extends FilepathCallbackArg, CollectionItem {}
+type WriteCollectionItemCallback = (
+	arg: ItemCallbackArg,
 ) => MaybePromise<unknown[] | undefined | void>;
 
 interface BundleContext {
@@ -35,7 +48,9 @@ interface BundleContext {
 	transformCollectionConfig(callback: TransformCollectionConfigCallback): void;
 	writeCollectionConfig(callback: WriteCollectionConfigCallback): void;
 
-	loadCollectionItems(callback: LoadCollectionItemsCallback): void;
+	resolveCollectionItems(callback: ResolveCollectionItemsCallback): void;
+	loadCollectionItem(callback: LoadCollectionItemCallback): void;
+	writeCollectionItem(callback: WriteCollectionItemCallback): void;
 }
 
 export class PluginDriver {
@@ -44,7 +59,9 @@ export class PluginDriver {
 		transformCollectionConfig: [] as TransformCollectionConfigCallback[],
 		writeCollectionConfig: [] as WriteCollectionConfigCallback[],
 
-		loadCollectionItems: [] as LoadCollectionItemsCallback[],
+		resolveCollectionItems: [] as ResolveCollectionItemsCallback[],
+		loadCollectionItem: [] as LoadCollectionItemCallback[],
+		writeCollectionItem: [] as WriteCollectionItemCallback[],
 	};
 	#plugins;
 	constructor(plugins: Plugin[]) {
@@ -65,8 +82,14 @@ export class PluginDriver {
 					callbacks.writeCollectionConfig.push(callback);
 				},
 				/*  ----  Collection items ---- */
-				loadCollectionItems(callback) {
-					callbacks.loadCollectionItems.push(callback);
+				resolveCollectionItems(callback) {
+					callbacks.resolveCollectionItems.push(callback);
+				},
+				loadCollectionItem(callback) {
+					callbacks.loadCollectionItem.push(callback);
+				},
+				writeCollectionItem(callback) {
+					callbacks.writeCollectionItem.push(callback);
 				},
 			});
 		}
@@ -91,9 +114,20 @@ export class PluginDriver {
 			),
 		);
 	}
-	async loadCollectionItems(arg: ProcessConfigArg) {
+	async loadCollectionItem(arg: FilepathCallbackArg) {
+		for (const callback of this.#callbacks.loadCollectionItem) {
+			const item = await callback(arg);
+			if (item) return item;
+		}
+
+		return Err(
+			'load-failure',
+			`Unable to load collection item at ${JSON.stringify(arg.filepath)}.`,
+		);
+	}
+	async resolveCollectionItems(arg: BaseCallbackArg) {
 		const entryPromises = [];
-		for (const callback of this.#callbacks.loadCollectionItems) {
+		for (const callback of this.#callbacks.resolveCollectionItems) {
 			entryPromises.push(callback(arg));
 		}
 		return (await Promise.all(entryPromises))
@@ -115,17 +149,24 @@ export class PluginDriver {
 			(result) => !result.ok,
 		);
 		if (transformError) {
-			transformError.error.message = `Plugin transform produced invalid config. ${JSON.stringify(filepath)}`;
+			transformError.meta.message = `Plugin transform produced invalid config. ${JSON.stringify(filepath)}`;
 			return transformError;
 		}
 		return Ok();
 	}
-	async writeCollectionConfig(arg: ProcessConfigArg) {
+	async writeCollectionConfig(arg: BaseCallbackArg) {
 		const writePromises = [];
 		for (const callback of this.#callbacks.writeCollectionConfig) {
 			writePromises.push(callback(arg));
 		}
-		await Promise.all(writePromises);
+		await Promise.allSettled(writePromises);
+	}
+	async writeCollectionItem(arg: ItemCallbackArg) {
+		const writePromises = [];
+		for (const callback of this.#callbacks.writeCollectionItem) {
+			writePromises.push(callback(arg));
+		}
+		await Promise.allSettled(writePromises);
 	}
 }
 

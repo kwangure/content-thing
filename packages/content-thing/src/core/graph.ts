@@ -1,13 +1,23 @@
-import type { CollectionConfig } from '../config/types.js';
+import type {
+	CollectionConfig,
+	CollectionConfigFields,
+} from '../config/types.js';
 import type { Logger } from 'vite';
 import type { ValidatedContentThingOptions } from '../config/options.js';
+import { Err, Ok } from '../utils/result.js';
 import { PluginDriver, type Plugin } from './plugin.js';
 import fs from 'node:fs';
 import path from 'node:path';
 
+export interface CollectionItem {
+	readonly data: Record<string, unknown>;
+	readonly content?: string;
+}
+
 interface CollectionConfigMeta {
 	config: CollectionConfig;
-	items: unknown[];
+	resolvedFilepaths: Set<string>;
+	items: Map<string, CollectionItem>;
 }
 
 export class AssetGraph {
@@ -51,10 +61,11 @@ export class AssetGraph {
 			if (loadResult.ok) {
 				this.#collectionConfigs.set(filepath, {
 					config: loadResult.value,
-					items: [],
+					resolvedFilepaths: new Set(),
+					items: new Map(),
 				});
 			} else {
-				this.#logger.error(loadResult.error.message);
+				this.#logger.error(loadResult.meta.message);
 			}
 		}
 	}
@@ -64,7 +75,7 @@ export class AssetGraph {
 			const transformResult =
 				await this.#pluginDriver.transformCollectionConfig(config);
 			if (!transformResult.ok) {
-				this.#logger.error(transformResult.error.message);
+				this.#logger.error(transformResult.meta.message);
 			}
 		}
 	}
@@ -78,14 +89,92 @@ export class AssetGraph {
 		}
 	}
 
-	async #loadCollectionItems() {
+	async #resolveCollectionItems() {
+		const resolvePromises = [];
 		for (const configMeta of this.#collectionConfigs.values()) {
-			const { config } = configMeta;
-			configMeta.items = await this.#pluginDriver.loadCollectionItems({
-				config,
-				options: this.#options,
-			});
+			resolvePromises.push(
+				(async () => {
+					const filepaths = await this.#pluginDriver.resolveCollectionItems({
+						config: configMeta.config,
+						options: this.#options,
+					});
+					configMeta.resolvedFilepaths = new Set(filepaths);
+				})(),
+			);
 		}
+		await Promise.allSettled(resolvePromises);
+	}
+
+	async #loadCollectionItems() {
+		const loadPromises = [];
+		for (const configMeta of this.#collectionConfigs.values()) {
+			const { config, items, resolvedFilepaths } = configMeta;
+			for (const filepath of resolvedFilepaths) {
+				loadPromises.push(
+					(async () => {
+						const itemResult = await this.#pluginDriver.loadCollectionItem({
+							config,
+							filepath,
+							options: this.#options,
+						});
+						if (!itemResult.ok) {
+							this.#logger.error(
+								typeof itemResult.meta === 'string'
+									? itemResult.meta
+									: itemResult.meta.message,
+							);
+							return;
+						}
+
+						const validateItemResult = validateCollectionItem(
+							config.data.fields,
+							itemResult.value,
+						);
+						if (!validateItemResult.ok) {
+							let message = `Schema validation of file at ${JSON.stringify(filepath)} failed. `;
+							if (validateItemResult.type === 'missing-value') {
+								const { name, type } = validateItemResult.meta;
+								message += `Field ${JSON.stringify(name)} is missing value. Provide a value of type "${type}" or set the field schema as nullable.`;
+							} else if (validateItemResult.type === 'type-mismatch') {
+								const { expected, found, name, value } =
+									validateItemResult.meta;
+								message += `Invalid field ${JSON.stringify(name)} of type "${found}" found. Expect ${expected} but found ${JSON.stringify(value)} instead.`;
+							} else if (validateItemResult.type === 'unknown-field') {
+								const { expected, name } = validateItemResult.meta;
+								message += `Unknown field ${JSON.stringify(name)}.`;
+								if (expected.length) {
+									message += ` Expected one of: "${expected.join('", "')}"`;
+								}
+							} else {
+								/* eslint-disable-next-line @typescript-eslint/no-unused-vars */
+								const exhaustiveCheck: never = validateItemResult;
+							}
+							this.#logger.error(message);
+							return;
+						}
+						items.set(filepath, itemResult.value);
+					})(),
+				);
+			}
+		}
+		await Promise.allSettled(loadPromises);
+	}
+
+	async #writeCollectionItems() {
+		const writePromises = [];
+		for (const { config, items } of this.#collectionConfigs.values()) {
+			for (const [filepath, item] of items) {
+				writePromises.push(
+					this.#pluginDriver.writeCollectionItem({
+						config,
+						options: this.#options,
+						filepath,
+						...item,
+					}),
+				);
+			}
+		}
+		await Promise.allSettled(writePromises);
 	}
 
 	async bundle() {
@@ -93,10 +182,53 @@ export class AssetGraph {
 		await this.#loadCollectionConfigs();
 		await this.#transformCollectionConfigs();
 		await this.#writeCollectionConfigs();
+		await this.#resolveCollectionItems();
 		await this.#loadCollectionItems();
+		await this.#writeCollectionItems();
 	}
 
 	reset() {
 		this.#collectionConfigs.clear();
 	}
+}
+
+const fieldTypes = {
+	json: 'object',
+	number: 'number',
+	string: 'string',
+} as const;
+
+function validateCollectionItem(
+	fields: CollectionConfigFields,
+	item: CollectionItem,
+) {
+	const entries = new Map(Object.entries(fields));
+	const fieldNames = Object.keys(fields);
+	for (const [fieldName, fieldValue] of Object.entries(item.data)) {
+		const fieldSchema = entries.get(fieldName);
+		if (!fieldSchema) {
+			return Err('unknown-field', { expected: fieldNames, name: fieldName });
+		}
+
+		if (fieldValue === null || fieldValue === undefined) {
+			if (!fieldSchema.nullable) {
+				return Err('missing-value', {
+					name: fieldName,
+					type: fieldSchema.type,
+				});
+			}
+		} else {
+			const expected = fieldTypes[fieldSchema.type];
+			if (typeof fieldValue !== expected) {
+				return Err('type-mismatch', {
+					expected,
+					found: typeof fieldValue,
+					name: fieldName,
+					value: fieldValue,
+				});
+			}
+		}
+	}
+
+	return Ok();
 }

@@ -2,8 +2,8 @@ import { highlightCodeBlocks } from './highlight_code.js';
 import { processFileAttributes } from './file_attributes.js';
 import { processCopyAttributes } from './copy_attributes.js';
 import { remarkAttributes } from '@content-thing/remark-attributes';
-import remarkParse from 'remark-parse';
 import { unified } from 'unified';
+import remarkParse from 'remark-parse';
 import YAML from 'yaml';
 
 const processor = unified().use(remarkParse).use(remarkAttributes);

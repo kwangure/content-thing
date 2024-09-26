@@ -1,21 +1,19 @@
-import type { CollectionConfig } from '../../config/types.js';
 import type { Plugin } from '../../core/plugin.js';
-import { cwd } from 'node:process';
-import { mdastToSvelteString } from './mdastToSvelteString.js';
-import { parseMarkdownSections } from './parse.js';
+import { stringifyData, stringifyTypes } from '../utils/stringify.js';
 import { walk, write } from '@content-thing/internal-utils/filesystem';
+import { cwd } from 'node:process';
+import { escapeRegExp } from '../../utils/regex.js';
+import { getHeadingTree } from './heading_tree.js';
+import { mdastToSvelteString } from './mdastToSvelteString.js';
+import { Ok } from '../../utils/result.js';
+import { parseFilepath } from '../utils/filepath.js';
+import { parseMarkdownSections } from './parse.js';
 import fs from 'node:fs';
 import path from 'node:path';
-import { parseFilepath } from '../../utils/filepath.js';
-import { getHeadingTree } from './heading_tree.js';
 
 export { mdastToString } from './mdastToString.js';
 
-const README_RE = /(?:^|[/\\])readme\.md$/i;
-
-function escapeRegExp(text: string) {
-	return text.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&');
-}
+const README_MD_RE = /(?:^|[/\\])readme\.md$/i;
 
 export const markdownPlugin: Plugin = {
 	name: 'content-thing-markdown',
@@ -48,89 +46,68 @@ export const markdownPlugin: Plugin = {
 
 		build.writeCollectionConfig(({ config, options }) => {
 			if (config.type !== 'markdown') return;
-			const baseFilePath = config.filepath
-				.replace(COLLECTIONS_ROOT_RE, '')
-				.replace(/collection\.config\.json$/, '');
-			write(
-				path.join(
-					options.files.collectionsOutputDir,
-					baseFilePath,
-					'index.d.ts',
-				),
-				generateTypes(config),
+
+			const { collectionsOutputDir } = options.files;
+			const baseFilePath = path.join(
+				collectionsOutputDir,
+				config.filepath
+					.replace(COLLECTIONS_ROOT_RE, '')
+					.replace(/collection\.config\.json$/, ''),
 			);
-			write(
-				path.join(options.files.collectionsOutputDir, baseFilePath, 'index.js'),
-				`export {};`,
-			);
+			write(path.join(baseFilePath, 'index.d.ts'), stringifyTypes(config));
+			write(path.join(baseFilePath, 'index.js'), `export {};`);
 		});
 
-		build.loadCollectionItems(async ({ config, options }) => {
+		build.resolveCollectionItems(({ config }) => {
 			const { filepath, type } = config;
 			if (type !== 'markdown') return;
 
 			const collectionDir = path.dirname(filepath);
 			const markdownFilepaths: string[] = [];
 			walk(collectionDir, (dirent) => {
-				if (README_RE.test(dirent.name) && dirent.isFile()) {
+				if (README_MD_RE.test(dirent.name) && dirent.isFile()) {
 					markdownFilepaths.push(path.join(dirent.path, dirent.name));
 				}
 			});
 
-			for (const filepath of markdownFilepaths) {
-				const value = fs.readFileSync(filepath, 'utf-8');
-				const baseFilePath = filepath
-					.replace(COLLECTIONS_ROOT_RE, '')
-					.replace(README_RE, '');
-
-				// TODO: Validate frontmatter by config
-				const { entry } = parseFilepath(filepath);
-				const { frontmatter, content } = await parseMarkdownSections(
-					value,
-					filepath,
-				);
-				const markdownAsSvelte = mdastToSvelteString(content);
-				const svelteFilepath = path.join(
-					options.files.collectionsMirrorDir,
-					baseFilePath,
-					'+page.svelte',
-				);
-				write(svelteFilepath, markdownAsSvelte as string);
-
-				const markdownFrontmatter = generateFrontmatter(
-					Object.assign(frontmatter, {
-						_id: entry.id,
-						_headingTree: getHeadingTree(content),
-					}),
-				);
-				const frontmatterFilepath = path.join(
-					options.files.collectionsMirrorDir,
-					baseFilePath,
-					'frontmatter.js',
-				);
-				write(frontmatterFilepath, markdownFrontmatter);
-			}
-
 			return markdownFilepaths;
 		});
+
+		build.loadCollectionItem(async ({ config, filepath }) => {
+			if (config.type !== 'markdown') return;
+
+			const value = fs.readFileSync(filepath, 'utf-8');
+			const { frontmatter, content } = await parseMarkdownSections(
+				value,
+				filepath,
+			);
+
+			return Ok({
+				data: {
+					...frontmatter,
+					_id: parseFilepath(filepath).entry.id,
+					_headingTree: getHeadingTree(content),
+				},
+				content: mdastToSvelteString(content),
+			});
+		});
+
+		build.writeCollectionItem(
+			({ config, content, data, filepath, options }) => {
+				if (config.type !== 'markdown') return;
+
+				const { collectionsMirrorDir } = options.files;
+				const baseFilePath = path.join(
+					collectionsMirrorDir,
+					filepath.replace(COLLECTIONS_ROOT_RE, '').replace(README_MD_RE, ''),
+				);
+
+				write(path.join(baseFilePath, 'data.js'), stringifyData(data));
+
+				if (content) {
+					write(path.join(baseFilePath, '+page.svelte'), content);
+				}
+			},
+		);
 	},
 };
-
-function generateFrontmatter(record: Record<string, unknown>) {
-	const __record = Object.assign({ _content: undefined }, record);
-	let code = '// This file is auto-generated. Do not edit directly.\n';
-	code += `export const frontmatter = JSON.parse(${JSON.stringify(JSON.stringify(__record))});\n`;
-	return code;
-}
-
-function generateTypes(collectionConfig: CollectionConfig) {
-	let code = '// This file is auto-generated. Do not edit directly.\n';
-	code += `export interface Frontmatter {\n`;
-	const fields = Object.entries(collectionConfig.data.fields);
-	for (const [fieldName, field] of fields) {
-		const type = 'typeScriptType' in field ? field.typeScriptType : field.type;
-		code += `\t${fieldName}: ${type};\n`;
-	}
-	code += `};\n`;
-	return code;
-}

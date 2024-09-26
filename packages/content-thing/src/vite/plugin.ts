@@ -21,7 +21,7 @@ export function content(options?: ContentThingOptions): Plugin {
 	let validatedConfig: ValidatedContentThingOptions;
 	return {
 		name: 'vite-plugin-content-thing',
-		async config() {
+		async config(_, env) {
 			/**
 			 * Ideally, we should be running in `configResolved` when the
 			 * `import('vite').ResolvedConfig['root']` directory is known to
@@ -46,7 +46,11 @@ export function content(options?: ContentThingOptions): Plugin {
 			const { error, info, warn } = viteLogger;
 			const logger = Object.assign(viteLogger, {
 				error(message: string, options?: LogErrorOptions) {
-					error(message, patchOptions(options));
+					if (env.command === 'build') {
+						throw Error(message);
+					} else {
+						error(message, patchOptions(options));
+					}
 				},
 				info(message: string, options?: LogOptions) {
 					info(message, patchOptions(options));

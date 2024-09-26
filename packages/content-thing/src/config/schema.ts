@@ -16,22 +16,21 @@ const jsonFieldSchema = v.strictObject({
 	nullable: v.optional(v.boolean(), false),
 });
 
-export const CollectionData = v.strictObject({
-	fields: v.optional(
-		v.record(
-			v.string(),
-			v.variant('type', [
-				numberFieldSchema,
-				stringFieldSchema,
-				jsonFieldSchema,
-			]),
-		),
-		{},
+export const CollectionFieldsSchema = v.optional(
+	v.record(
+		v.string(),
+		v.variant('type', [numberFieldSchema, stringFieldSchema, jsonFieldSchema]),
 	),
-});
+	{},
+);
 
 export const CollectionConfigSchema = v.strictObject({
 	filepath: v.string(),
 	type: v.string(),
-	data: v.optional(CollectionData, {}),
+	data: v.optional(
+		v.strictObject({
+			fields: CollectionFieldsSchema,
+		}),
+		{},
+	),
 });

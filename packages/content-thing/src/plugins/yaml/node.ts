@@ -1,18 +1,15 @@
+import type { Plugin } from '../../core/plugin.js';
+import { stringifyData, stringifyTypes } from '../utils/stringify.js';
+import { walk, write } from '@content-thing/internal-utils/filesystem';
+import { cwd } from 'node:process';
+import { escapeRegExp } from '../../utils/regex.js';
+import { Ok } from '../../utils/result.js';
+import { parseFilepath } from '../utils/filepath.js';
+import { parseYaml } from '../../utils/parse.js';
 import fs from 'node:fs';
 import path from 'node:path';
-import YAML from 'yaml';
-import type { CollectionConfig } from '../../config/types.js';
-import type { Plugin } from '../../core/plugin.js';
-import { cwd } from 'node:process';
-import { parseFilepath } from '../../utils/filepath.js';
-import { walk, write } from '@content-thing/internal-utils/filesystem';
 
 const README_YAML_REGEXP = /(?:^|[/\\])readme\.(yaml|yml)$/i;
-
-function escapeRegExp(text: string) {
-	return text.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&');
-}
-
 const COLLECTIONS_ROOT_RE = new RegExp(
 	`^${escapeRegExp(cwd())}[\\/\\\\]src[\\/\\\\]collections`,
 );
@@ -33,30 +30,23 @@ export const yamlPlugin: Plugin = {
 		});
 
 		build.writeCollectionConfig(({ config, options }) => {
-			const { filepath, type } = config;
-			if (type !== 'yaml') return;
-			const baseFilePath = filepath
-				.replace(COLLECTIONS_ROOT_RE, '')
-				.replace(/collection\.config\.json$/, '');
-			write(
-				path.join(
-					options.files.collectionsOutputDir,
-					baseFilePath,
-					'index.d.ts',
-				),
-				generateTypes(config),
+			if (config.type !== 'yaml') return;
+
+			const { collectionsOutputDir } = options.files;
+			const baseFilePath = path.join(
+				collectionsOutputDir,
+				config.filepath
+					.replace(COLLECTIONS_ROOT_RE, '')
+					.replace(/collection\.config\.json$/, ''),
 			);
-			write(
-				path.join(options.files.collectionsOutputDir, baseFilePath, 'index.js'),
-				`export {};`,
-			);
+			write(path.join(baseFilePath, 'index.d.ts'), stringifyTypes(config));
+			write(path.join(baseFilePath, 'index.js'), `export {};`);
 		});
 
-		build.loadCollectionItems(({ config, options }) => {
-			const { filepath, type } = config;
-			if (type !== 'yaml') return;
+		build.resolveCollectionItems(({ config }) => {
+			if (config.type !== 'yaml') return;
 
-			const collectionDir = path.dirname(filepath);
+			const collectionDir = path.dirname(config.filepath);
 			const yamlFilepaths: string[] = [];
 			walk(collectionDir, (dirent) => {
 				if (README_YAML_REGEXP.test(dirent.name) && dirent.isFile()) {
@@ -64,46 +54,36 @@ export const yamlPlugin: Plugin = {
 				}
 			});
 
-			for (const filepath of yamlFilepaths) {
-				const baseFilePath = filepath
-					.replace(COLLECTIONS_ROOT_RE, '')
-					.replace(README_YAML_REGEXP, '');
-				const value = fs.readFileSync(filepath, 'utf-8');
-				// TODO: Handle malformed YAML
-				const frontmatter = YAML.parse(value);
+			return yamlFilepaths;
+		});
 
-				const { entry } = parseFilepath(filepath);
-				const yamlFrontmatter = generateFrontmatter(
-					Object.assign(frontmatter, {
-						_id: entry.id,
-					}),
-				);
-				const frontmatterFilepath = path.join(
-					options.files.collectionsMirrorDir,
-					baseFilePath,
-					'frontmatter.js',
-				);
-				write(frontmatterFilepath, yamlFrontmatter);
-			}
+		build.loadCollectionItem(({ config, filepath }) => {
+			if (config.type !== 'yaml') return;
+
+			const value = fs.readFileSync(filepath, 'utf-8');
+			const parseResult = parseYaml(value);
+			if (!parseResult.ok) return parseResult;
+
+			return Ok({
+				data: {
+					...parseResult.value,
+					_id: parseFilepath(filepath).entry.id,
+				},
+			});
+		});
+
+		build.writeCollectionItem(({ config, filepath, data, options }) => {
+			if (config.type !== 'yaml') return;
+
+			const { collectionsMirrorDir } = options.files;
+			const baseFilePath = path.join(
+				collectionsMirrorDir,
+				filepath
+					.replace(COLLECTIONS_ROOT_RE, '')
+					.replace(README_YAML_REGEXP, ''),
+			);
+
+			write(path.join(baseFilePath, 'data.js'), stringifyData(data));
 		});
 	},
 };
-
-function generateFrontmatter(record: Record<string, unknown>) {
-	const __record = Object.assign({ _content: undefined }, record);
-	let code = '// This file is auto-generated. Do not edit directly.\n';
-	code += `export const frontmatter = JSON.parse(${JSON.stringify(JSON.stringify(__record))});\n`;
-	return code;
-}
-
-function generateTypes(collectionConfig: CollectionConfig) {
-	let code = '// This file is auto-generated. Do not edit directly.\n';
-	code += `export interface Frontmatter {\n`;
-	const fields = Object.entries(collectionConfig.data.fields);
-	for (const [fieldName, field] of fields) {
-		const type = 'typeScriptType' in field ? field.typeScriptType : field.type;
-		code += `\t${fieldName}: ${type};\n`;
-	}
-	code += `};\n`;
-	return code;
-}
