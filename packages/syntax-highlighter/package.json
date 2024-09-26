@@ -1,0 +1,94 @@
+{
+	"name": "@content-thing/syntax-highlighter",
+	"scripts": {
+		"build": "wireit",
+		"pre-commit": "wireit",
+		"publint": "wireit",
+		"test": "wireit"
+	},
+	"wireit": {
+		"build": {
+			"command": "tsc --build",
+			"files": [
+				"src/**/*.{js,ts}",
+				"tsconfig.json",
+				"../../config/tsconfig.base.json"
+			],
+			"output": [
+				"types"
+			]
+		},
+		"publint": {
+			"command": "publint",
+			"dependencies": [
+				"build"
+			],
+			"files": [
+				"src/**",
+				"types/**",
+				"package.json"
+			],
+			"output": []
+		},
+		"pre-commit": {
+			"dependencies": [
+				"build",
+				"publint",
+				"test"
+			]
+		},
+		"release": {
+			"dependencies": [
+				"build",
+				"publint",
+				"test"
+			]
+		},
+		"test": {
+			"command": "vitest run",
+			"files": [
+				"src/**/*.{js,ts}",
+				"tests/**/*.{js,ts}"
+			],
+			"output": []
+		}
+	},
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"default": "./dist/index.js"
+		},
+		"./css": "./dist/code.css",
+		"./syntax/*": {
+			"types": "./dist/syntax/*.d.ts",
+			"default": "./dist/syntax/*.js"
+		}
+	},
+	"files": [
+		"dist",
+		"!**/*.test.js",
+		"!**/*.test.js.map",
+		"!**/*.test.d.ts"
+	],
+	"devDependencies": {
+		"@types/node": "^20.10.5",
+		"publint": "^0.2.6",
+		"typescript": "^5.4.5",
+		"vitest": "^1.6.0"
+	},
+	"type": "module",
+	"dependencies": {
+		"@lezer/common": "^1.2.1",
+		"@lezer/cpp": "^1.1.2",
+		"@lezer/css": "^1.1.9",
+		"@lezer/highlight": "^1.2.1",
+		"@lezer/html": "^1.3.10",
+		"@lezer/javascript": "^1.4.18",
+		"@lezer/json": "^1.0.2",
+		"@lezer/lr": "^1.4.2",
+		"@lezer/python": "^1.1.14",
+		"@lezer/rust": "^1.0.2",
+		"@replit/codemirror-lang-svelte": "^6.0.0",
+		"esm-env": "^1.0.0"
+	}
+}
