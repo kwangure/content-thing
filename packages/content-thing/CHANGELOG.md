@@ -1,5 +1,11 @@
 # content-thing
 
+## 0.0.36
+
+### Patch Changes
+
+- 8fa2009: Simplify plugins
+
 ## 0.0.35
 
 ### Patch Changes
