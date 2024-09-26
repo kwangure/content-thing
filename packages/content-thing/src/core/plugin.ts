@@ -1,5 +1,9 @@
+import * as v from 'valibot';
+import type { CollectionConfig } from '../config/types.js';
+import type { CollectionItem } from './graph.js';
 import type { ValidatedContentThingOptions } from '../config/options.js';
-import type { Asset, AssetGraph, Bundle } from './graph.js';
+import { Err, Ok, type Result } from '../utils/result.js';
+import { CollectionConfigSchema } from '../config/schema.js';
 
 type MaybePromise<T> = T | Promise<T>;
 
@@ -8,182 +12,183 @@ export interface Plugin {
 	bundle?(bundler: BundleContext): unknown;
 }
 
-type AddEntryAssetIdsCallback = () => MaybePromise<string[]>;
-type CreateBundleCallback = (
-	graph: AssetGraph,
-) => MaybePromise<{ id: string; meta?: Record<string, unknown> }[]>;
-type ConfigResolvedCallback = (config: ValidatedContentThingOptions) => void;
+type LoadCollectionConfigCallback = (
+	filepath: string,
+) => MaybePromise<Result<object, Error> | void>;
+type TransformCollectionConfigCallback = (
+	config: CollectionConfig,
+) => MaybePromise<void>;
 
-type LoadIdArg<T extends string> = {
-	readonly id: T;
-	readonly graph: AssetGraph;
-};
-interface LoadIdOptions<T extends string> {
-	filter: (arg: string) => arg is T;
-	callback: (arg: LoadIdArg<T>) => MaybePromise<{ value: unknown }>;
+interface BaseCallbackArg {
+	readonly config: CollectionConfig;
+	readonly options: ValidatedContentThingOptions;
 }
+type WriteCollectionConfigCallback = (
+	arg: BaseCallbackArg,
+) => MaybePromise<void>;
 
-type LoadDependeiciesArg<T extends Asset> = {
-	readonly asset: T;
-	readonly graph: AssetGraph;
-};
-interface LoadDependenciesOptions<T extends Asset> {
-	filter: (asset: Asset) => asset is T;
-	callback: (arg: LoadDependeiciesArg<T>) => MaybePromise<string[]>;
-}
+type ResolveCollectionItemsCallback = (
+	arg: BaseCallbackArg,
+) => MaybePromise<string[] | undefined | void>;
 
-type TransformAssetArg<T extends Asset> = {
-	readonly asset: T;
-	readonly graph: AssetGraph;
-};
-interface TransformAssetOptions<T extends Asset> {
-	filter: (asset: Asset) => asset is T;
-	callback: (arg: TransformAssetArg<T>) => MaybePromise<Asset>;
+interface FilepathCallbackArg extends BaseCallbackArg {
+	readonly filepath: string;
 }
+type LoadCollectionItemCallback = (
+	arg: FilepathCallbackArg,
+) => MaybePromise<Result<CollectionItem, string | Error> | undefined | void>;
 
-type TransformBundleArg<T extends Bundle> = {
-	readonly bundle: T;
-	readonly graph: AssetGraph;
-};
-interface TransformBundleOptions<T extends Bundle> {
-	filter: (bundle: Bundle) => bundle is T;
-	callback: (arg: TransformBundleArg<T>) => MaybePromise<Bundle>;
-}
-
-type WriteBundleArg<T extends Bundle> = {
-	readonly bundle: T;
-	readonly graph: AssetGraph;
-};
-interface WriteBundleOptions<T extends Bundle> {
-	filter: (bundle: Bundle) => bundle is T;
-	callback: (bundle: WriteBundleArg<T>) => MaybePromise<void>;
-}
+interface ItemCallbackArg extends FilepathCallbackArg, CollectionItem {}
+type WriteCollectionItemCallback = (
+	arg: ItemCallbackArg,
+) => MaybePromise<unknown[] | undefined | void>;
 
 interface BundleContext {
-	addEntryAssetIds(callback: AddEntryAssetIdsCallback): void;
-	configResolved(callback: ConfigResolvedCallback): void;
-	loadId<T extends string>(options: LoadIdOptions<T>): void;
-	loadDependencies<T extends Asset>(options: LoadDependenciesOptions<T>): void;
-	transformAsset<T extends Asset>(options: TransformAssetOptions<T>): void;
-	createBundle(callback: CreateBundleCallback): void;
-	transformBundle<T extends Bundle>(options: TransformBundleOptions<T>): void;
-	writeBundle<T extends Bundle>(options: WriteBundleOptions<T>): void;
+	loadCollectionConfig(callback: LoadCollectionConfigCallback): void;
+	transformCollectionConfig(callback: TransformCollectionConfigCallback): void;
+	writeCollectionConfig(callback: WriteCollectionConfigCallback): void;
+
+	resolveCollectionItems(callback: ResolveCollectionItemsCallback): void;
+	loadCollectionItem(callback: LoadCollectionItemCallback): void;
+	writeCollectionItem(callback: WriteCollectionItemCallback): void;
 }
 
 export class PluginDriver {
 	#callbacks = {
-		addEntryAssetIds: [] as AddEntryAssetIdsCallback[],
-		configResolved: [] as ConfigResolvedCallback[],
-		createBundle: [] as CreateBundleCallback[],
-		loadId: [] as LoadIdOptions<string>[],
-		loadDependencies: [] as LoadDependenciesOptions<Asset>[],
-		transformAsset: [] as TransformAssetOptions<Asset>[],
-		transformBundle: [] as TransformBundleOptions<Bundle>[],
-		writeBundle: [] as WriteBundleOptions<Bundle>[],
+		loadCollectionConfig: [] as LoadCollectionConfigCallback[],
+		transformCollectionConfig: [] as TransformCollectionConfigCallback[],
+		writeCollectionConfig: [] as WriteCollectionConfigCallback[],
+
+		resolveCollectionItems: [] as ResolveCollectionItemsCallback[],
+		loadCollectionItem: [] as LoadCollectionItemCallback[],
+		writeCollectionItem: [] as WriteCollectionItemCallback[],
 	};
 	#plugins;
 	constructor(plugins: Plugin[]) {
 		this.#plugins = plugins;
 	}
-	async addEntryAssetIds() {
-		const promises = [];
-		for (const callback of this.#callbacks.addEntryAssetIds) {
-			promises.push(callback());
-		}
-		const promiseResult = await Promise.all(promises);
-		return promiseResult.flat();
-	}
-	bundle() {
+	initialize() {
 		const callbacks = this.#callbacks;
 		for (const plugin of this.#plugins) {
 			plugin.bundle?.({
-				addEntryAssetIds(callback) {
-					callbacks.addEntryAssetIds.push(callback);
+				/*  ----  Collection config ---- */
+				loadCollectionConfig(callback) {
+					callbacks.loadCollectionConfig.push(callback);
 				},
-				configResolved(callback) {
-					callbacks.configResolved.push(callback);
+				transformCollectionConfig(callback) {
+					callbacks.transformCollectionConfig.push(callback);
 				},
-				createBundle(callback) {
-					callbacks.createBundle.push(callback);
+				writeCollectionConfig(callback) {
+					callbacks.writeCollectionConfig.push(callback);
 				},
-				loadId(options) {
-					callbacks.loadId.push(options as unknown as LoadIdOptions<string>);
+				/*  ----  Collection items ---- */
+				resolveCollectionItems(callback) {
+					callbacks.resolveCollectionItems.push(callback);
 				},
-				loadDependencies(options) {
-					callbacks.loadDependencies.push(
-						options as unknown as LoadDependenciesOptions<Asset>,
-					);
+				loadCollectionItem(callback) {
+					callbacks.loadCollectionItem.push(callback);
 				},
-				transformAsset(options) {
-					callbacks.transformAsset.push(
-						options as unknown as TransformAssetOptions<Asset>,
-					);
-				},
-				transformBundle(options) {
-					callbacks.transformBundle.push(
-						options as unknown as TransformBundleOptions<Bundle>,
-					);
-				},
-				writeBundle(options) {
-					callbacks.writeBundle.push(
-						options as unknown as WriteBundleOptions<Bundle>,
-					);
+				writeCollectionItem(callback) {
+					callbacks.writeCollectionItem.push(callback);
 				},
 			});
 		}
 	}
-	configResolved(config: ValidatedContentThingOptions) {
-		for (const callback of this.#callbacks.configResolved) {
-			callback(config);
-		}
-	}
-	async createBundle(graph: AssetGraph) {
-		const bundlePromises = [];
-		for (const callback of this.#callbacks.createBundle) {
-			bundlePromises.push(callback(graph));
-		}
-		return (await Promise.all(bundlePromises)).flat();
-	}
+	async loadCollectionConfig(filepath: string) {
+		for (const callback of this.#callbacks.loadCollectionConfig) {
+			const loadResult = await callback(filepath);
+			if (!loadResult) continue;
+			if (!loadResult.ok) return loadResult;
 
-	async loadId(arg: LoadIdArg<string>) {
-		let loadResult;
-		for (const options of this.#callbacks.loadId) {
-			if (!options.filter(arg.id)) continue;
-			loadResult = { ...(await options.callback(arg)), id: arg.id };
-			break;
+			const collectionConfig = Object.assign({}, loadResult.value || {}, {
+				filepath,
+			});
+
+			return validateCollectionConfig(collectionConfig, filepath);
 		}
-		return loadResult;
+
+		return Err(
+			'config-not-found',
+			new Error(
+				`Unable to load collection config at ${JSON.stringify(filepath)}.`,
+			),
+		);
 	}
-	async loadDependencies(arg: LoadDependeiciesArg<Asset>): Promise<string[]> {
-		const loadResultPromises = [];
-		for (const options of this.#callbacks.loadDependencies) {
-			const loadDependencyPromise = () => {
-				if (!options.filter(arg.asset)) return [];
-				return options.callback(arg);
-			};
-			loadResultPromises.push(loadDependencyPromise());
+	async loadCollectionItem(arg: FilepathCallbackArg) {
+		for (const callback of this.#callbacks.loadCollectionItem) {
+			const item = await callback(arg);
+			if (item) return item;
 		}
-		return (await Promise.all(loadResultPromises)).flat();
+
+		return Err(
+			'load-failure',
+			`Unable to load collection item at ${JSON.stringify(arg.filepath)}.`,
+		);
 	}
-	async transformAsset(arg: TransformAssetArg<Asset>): Promise<Asset> {
-		for (const options of this.#callbacks.transformAsset) {
-			if (!options.filter(arg.asset)) continue;
-			await options.callback(arg);
+	async resolveCollectionItems(arg: BaseCallbackArg) {
+		const entryPromises = [];
+		for (const callback of this.#callbacks.resolveCollectionItems) {
+			entryPromises.push(callback(arg));
 		}
-		return arg.asset;
+		return (await Promise.all(entryPromises))
+			.filter((e) => Array.isArray(e))
+			.flat();
 	}
-	async transformBundle(arg: TransformBundleArg<Bundle>) {
-		for (const options of this.#callbacks.transformBundle) {
-			if (!options.filter(arg.bundle)) continue;
-			await options.callback(arg);
+	async transformCollectionConfig(config: CollectionConfig) {
+		const transformPromises = [];
+		const { filepath } = config;
+		for (const callback of this.#callbacks.transformCollectionConfig) {
+			transformPromises.push(
+				(async () => {
+					await callback(config);
+					return validateCollectionConfig(config, filepath);
+				})(),
+			);
 		}
-	}
-	writeBundle(arg: WriteBundleArg<Bundle>) {
-		const bundlePromises = [];
-		for (const options of this.#callbacks.writeBundle) {
-			if (!options.filter(arg.bundle)) continue;
-			bundlePromises.push(options.callback(arg));
+		const [transformError] = (await Promise.all(transformPromises)).filter(
+			(result) => !result.ok,
+		);
+		if (transformError) {
+			transformError.meta.message = `Plugin transform produced invalid config. ${JSON.stringify(filepath)}`;
+			return transformError;
 		}
-		return Promise.all(bundlePromises);
+		return Ok();
 	}
+	async writeCollectionConfig(arg: BaseCallbackArg) {
+		const writePromises = [];
+		for (const callback of this.#callbacks.writeCollectionConfig) {
+			writePromises.push(callback(arg));
+		}
+		await Promise.allSettled(writePromises);
+	}
+	async writeCollectionItem(arg: ItemCallbackArg) {
+		const writePromises = [];
+		for (const callback of this.#callbacks.writeCollectionItem) {
+			writePromises.push(callback(arg));
+		}
+		await Promise.allSettled(writePromises);
+	}
+}
+
+function validateCollectionConfig(collectionConfig: unknown, filepath: string) {
+	const validateResult = v.safeParse(CollectionConfigSchema, collectionConfig);
+	if (!validateResult.success) {
+		let errorMessage = `Invalid collection config`;
+		if (filepath) {
+			errorMessage += ` at ${JSON.stringify(filepath)}`;
+		}
+		errorMessage += '.';
+		for (const issue of validateResult.issues) {
+			errorMessage += `\n\t- ${issue.message}`;
+			const path = issue.path
+				?.map((item) => ('key' in item ? item.key : ''))
+				.join('.');
+			if (path) {
+				errorMessage += ` at path "${path}"`;
+			}
+			errorMessage += '.';
+		}
+		return Err('invalid-type', new Error(errorMessage));
+	}
+	return Ok(validateResult.output);
 }

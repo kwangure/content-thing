@@ -12,33 +12,25 @@ const stringFieldSchema = v.strictObject({
 
 const jsonFieldSchema = v.strictObject({
 	type: v.literal('json'),
-	jsDocType: v.optional(v.string(), 'any'),
+	typeScriptType: v.optional(v.string(), 'any'),
 	nullable: v.optional(v.boolean(), false),
 });
 
-export const collectionData = v.strictObject({
-	fields: v.optional(
-		v.record(
-			v.string(),
-			v.variant('type', [
-				numberFieldSchema,
-				stringFieldSchema,
-				jsonFieldSchema,
-			]),
-		),
-		{},
+export const CollectionFieldsSchema = v.optional(
+	v.record(
+		v.string(),
+		v.variant('type', [numberFieldSchema, stringFieldSchema, jsonFieldSchema]),
 	),
-	search: v.optional(
-		v.strictObject({
-			fields: v.optional(v.array(v.string()), []),
-		}),
-		{ fields: [] as string[] },
-	),
-});
+	{},
+);
 
-export const collectionConfigSchema = v.strictObject({
-	name: v.string(),
+export const CollectionConfigSchema = v.strictObject({
 	filepath: v.string(),
 	type: v.string(),
-	data: v.optional(collectionData, {}),
+	data: v.optional(
+		v.strictObject({
+			fields: CollectionFieldsSchema,
+		}),
+		{},
+	),
 });

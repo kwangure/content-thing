@@ -1,258 +1,234 @@
+import type {
+	CollectionConfig,
+	CollectionConfigFields,
+} from '../config/types.js';
 import type { Logger } from 'vite';
 import type { ValidatedContentThingOptions } from '../config/options.js';
+import { Err, Ok } from '../utils/result.js';
 import { PluginDriver, type Plugin } from './plugin.js';
+import fs from 'node:fs';
+import path from 'node:path';
 
-function isAsset(value: unknown): value is Asset {
-	return value instanceof Asset;
+export interface CollectionItem {
+	readonly data: Record<string, unknown>;
+	readonly content?: string;
+}
+
+interface CollectionConfigMeta {
+	config: CollectionConfig;
+	resolvedFilepaths: Set<string>;
+	items: Map<string, CollectionItem>;
 }
 
 export class AssetGraph {
-	#assets = new Map<string, Asset>();
-	#bundles = new Map<string, Bundle>();
-	#dependencyMap = new Map<string, Set<string>>();
-	#dependentMap = new Map<string, Set<string>>();
-	#pendingAssetIds = new Set<string>();
-	#pendingAssets = new Map<string, Asset>();
-	#config;
+	#collectionConfigs = new Map<string, CollectionConfigMeta>();
+	#options;
 	#logger;
 	#pluginDriver;
 
 	constructor(
-		config: ValidatedContentThingOptions,
+		options: ValidatedContentThingOptions,
 		plugins: Plugin[],
 		logger: Logger,
 	) {
-		this.#config = config;
 		this.#logger = logger;
+		this.#options = options;
 		this.#pluginDriver = new PluginDriver(plugins);
 	}
 
-	async #addEntryAssetIds() {
-		const entryAssetIds = await this.#pluginDriver.addEntryAssetIds();
+	async #loadCollectionConfigs() {
+		const { collectionsDir } = this.#options.files;
+		if (!fs.existsSync(collectionsDir)) return;
 
-		for (const assetId of entryAssetIds) {
-			this.#pendingAssetIds.add(assetId);
+		const dirents = fs.readdirSync(collectionsDir, { withFileTypes: true });
+		const configFilepaths = [];
+		for (const entry of dirents) {
+			if (!entry.isDirectory()) continue;
+
+			const configPath = path.join(
+				entry.path,
+				entry.name,
+				'collection.config.json',
+			);
+			if (fs.existsSync(configPath)) {
+				configFilepaths.push(configPath);
+			}
+		}
+
+		for (const filepath of configFilepaths) {
+			const loadResult =
+				await this.#pluginDriver.loadCollectionConfig(filepath);
+			if (loadResult.ok) {
+				this.#collectionConfigs.set(filepath, {
+					config: loadResult.value,
+					resolvedFilepaths: new Set(),
+					items: new Map(),
+				});
+			} else {
+				this.#logger.error(loadResult.meta.message);
+			}
 		}
 	}
 
-	async #createBundles() {
-		const bundleConfigs = await this.#pluginDriver.createBundle(this);
-		for (const { id, meta } of bundleConfigs) {
-			this.#bundles.set(id, new Bundle(id, meta));
+	async #transformCollectionConfigs() {
+		for (const { config } of this.#collectionConfigs.values()) {
+			const transformResult =
+				await this.#pluginDriver.transformCollectionConfig(config);
+			if (!transformResult.ok) {
+				this.#logger.error(transformResult.meta.message);
+			}
 		}
 	}
 
-	async #transformBundles() {
-		const bundlePromises = [];
-		for (const bundle of this.#bundles.values()) {
-			bundlePromises.push(
-				this.#pluginDriver.transformBundle({ bundle, graph: this }),
+	async #writeCollectionConfigs() {
+		for (const { config } of this.#collectionConfigs.values()) {
+			await this.#pluginDriver.writeCollectionConfig({
+				config,
+				options: this.#options,
+			});
+		}
+	}
+
+	async #resolveCollectionItems() {
+		const resolvePromises = [];
+		for (const configMeta of this.#collectionConfigs.values()) {
+			resolvePromises.push(
+				(async () => {
+					const filepaths = await this.#pluginDriver.resolveCollectionItems({
+						config: configMeta.config,
+						options: this.#options,
+					});
+					configMeta.resolvedFilepaths = new Set(filepaths);
+				})(),
 			);
 		}
-		await Promise.all(bundlePromises);
+		await Promise.allSettled(resolvePromises);
 	}
 
-	async #generateAssetGraph() {
-		while (this.#pendingAssetIds.size > 0) {
-			const loadPromises = [];
-			for (const assetId of this.#pendingAssetIds) {
-				const loadPromise = async () => {
-					this.#pendingAssetIds.delete(assetId);
-					const loadResult = await this.#pluginDriver.loadId({
-						id: assetId,
-						graph: this,
-					});
-					if (!loadResult) {
-						this.#logger.error(`Unable to load id '${assetId}'`);
-						return;
-					}
-					this.#pendingAssets.set(
-						assetId,
-						new Asset(assetId, loadResult.value, this),
-					);
-				};
-				loadPromises.push(loadPromise());
-			}
-			await Promise.all(loadPromises);
+	async #loadCollectionItems() {
+		const loadPromises = [];
+		for (const configMeta of this.#collectionConfigs.values()) {
+			const { config, items, resolvedFilepaths } = configMeta;
+			for (const filepath of resolvedFilepaths) {
+				loadPromises.push(
+					(async () => {
+						const itemResult = await this.#pluginDriver.loadCollectionItem({
+							config,
+							filepath,
+							options: this.#options,
+						});
+						if (!itemResult.ok) {
+							this.#logger.error(
+								typeof itemResult.meta === 'string'
+									? itemResult.meta
+									: itemResult.meta.message,
+							);
+							return;
+						}
 
-			const transformPromises = [];
-			for (const asset of this.#pendingAssets.values()) {
-				transformPromises.push(
-					this.#pluginDriver.transformAsset({ asset, graph: this }),
+						const validateItemResult = validateCollectionItem(
+							config.data.fields,
+							itemResult.value,
+						);
+						if (!validateItemResult.ok) {
+							let message = `Schema validation of file at ${JSON.stringify(filepath)} failed. `;
+							if (validateItemResult.type === 'missing-value') {
+								const { name, type } = validateItemResult.meta;
+								message += `Field ${JSON.stringify(name)} is missing value. Provide a value of type "${type}" or set the field schema as nullable.`;
+							} else if (validateItemResult.type === 'type-mismatch') {
+								const { expected, found, name, value } =
+									validateItemResult.meta;
+								message += `Invalid field ${JSON.stringify(name)} of type "${found}" found. Expect ${expected} but found ${JSON.stringify(value)} instead.`;
+							} else if (validateItemResult.type === 'unknown-field') {
+								const { expected, name } = validateItemResult.meta;
+								message += `Unknown field ${JSON.stringify(name)}.`;
+								if (expected.length) {
+									message += ` Expected one of: "${expected.join('", "')}"`;
+								}
+							} else {
+								/* eslint-disable-next-line @typescript-eslint/no-unused-vars */
+								const exhaustiveCheck: never = validateItemResult;
+							}
+							this.#logger.error(message);
+							return;
+						}
+						items.set(filepath, itemResult.value);
+					})(),
 				);
 			}
-			await Promise.all(transformPromises);
-
-			const dependencyPromises = [];
-			for (const [id, asset] of this.#pendingAssets) {
-				const dependencyPromise = async () => {
-					const dependenciesResult = await this.#pluginDriver.loadDependencies({
-						asset,
-						graph: this,
-					});
-
-					let assetDependencies = this.#dependencyMap.get(id);
-					if (!assetDependencies) {
-						assetDependencies = new Set();
-						this.#dependencyMap.set(id, assetDependencies);
-					}
-
-					if (dependenciesResult) {
-						for (const dependency of dependenciesResult) {
-							if (
-								!this.#assets.has(dependency) &&
-								!this.#pendingAssets.has(dependency)
-							) {
-								this.#pendingAssetIds.add(dependency);
-							}
-							assetDependencies.add(dependency);
-
-							let assetDependents = this.#dependentMap.get(dependency);
-							if (!assetDependents) {
-								assetDependents = new Set();
-								this.#dependentMap.set(dependency, assetDependents);
-							}
-							assetDependents.add(id);
-						}
-					}
-
-					this.#assets.set(id, asset);
-					this.#pendingAssets.delete(id);
-				};
-				dependencyPromises.push(dependencyPromise());
-			}
-			await Promise.all(dependencyPromises);
 		}
+		await Promise.allSettled(loadPromises);
 	}
 
-	async #writeBundles() {
-		const writeBundlePromises = [];
-		for (const bundle of this.#bundles.values()) {
-			writeBundlePromises.push(
-				this.#pluginDriver.writeBundle({ bundle, graph: this }),
-			);
+	async #writeCollectionItems() {
+		const writePromises = [];
+		for (const { config, items } of this.#collectionConfigs.values()) {
+			for (const [filepath, item] of items) {
+				writePromises.push(
+					this.#pluginDriver.writeCollectionItem({
+						config,
+						options: this.#options,
+						filepath,
+						...item,
+					}),
+				);
+			}
 		}
-		await Promise.all(writeBundlePromises);
+		await Promise.allSettled(writePromises);
 	}
 
 	async bundle() {
-		this.#pluginDriver.bundle();
-		this.#pluginDriver.configResolved(this.#config);
-		await this.#addEntryAssetIds();
-		await this.#generateAssetGraph();
-		await this.#createBundles();
-		await this.#transformBundles();
-		await this.#writeBundles();
-	}
-
-	get assets() {
-		return Array.from(this.#assets.values());
-	}
-
-	getAsset(id: string): Asset | undefined {
-		return this.#assets.get(id);
-	}
-
-	getDependencies(id: string): Asset[] {
-		const dependencies = this.#dependencyMap.get(id);
-		if (!dependencies) return [];
-		return Array.from(dependencies)
-			.map((depId) => this.#assets.get(depId))
-			.filter(isAsset);
-	}
-
-	getDependents(id: string): Asset[] {
-		const dependents = this.#dependentMap.get(id);
-		if (!dependents) return [];
-		return Array.from(dependents)
-			.map((depId) => this.#assets.get(depId))
-			.filter(isAsset);
-	}
-
-	getEntryAssets(id: string): Asset[] {
-		const entryAssets = new Set<Asset>();
-		const visit = (currentId: string) => {
-			const dependents = this.getDependents(currentId);
-			if (dependents.length === 0) {
-				const asset = this.getAsset(currentId);
-				if (asset) entryAssets.add(asset);
-			} else {
-				for (const dependent of dependents) {
-					visit(dependent.id);
-				}
-			}
-		};
-		visit(id);
-		return Array.from(entryAssets);
+		this.#pluginDriver.initialize();
+		await this.#loadCollectionConfigs();
+		await this.#transformCollectionConfigs();
+		await this.#writeCollectionConfigs();
+		await this.#resolveCollectionItems();
+		await this.#loadCollectionItems();
+		await this.#writeCollectionItems();
 	}
 
 	reset() {
-		this.#assets.clear();
-		this.#bundles.clear();
-		this.#dependencyMap.clear();
-		this.#dependentMap.clear();
-		this.#pendingAssetIds.clear();
-		this.#pendingAssets.clear();
+		this.#collectionConfigs.clear();
 	}
 }
 
-export class Asset {
-	#id;
-	#value;
-	#graph;
+const fieldTypes = {
+	json: 'object',
+	number: 'number',
+	string: 'string',
+} as const;
 
-	constructor(id: string, value: unknown, graph: AssetGraph) {
-		this.#id = id;
-		this.#value = value;
-		this.#graph = graph;
+function validateCollectionItem(
+	fields: CollectionConfigFields,
+	item: CollectionItem,
+) {
+	const entries = new Map(Object.entries(fields));
+	const fieldNames = Object.keys(fields);
+	for (const [fieldName, fieldValue] of Object.entries(item.data)) {
+		const fieldSchema = entries.get(fieldName);
+		if (!fieldSchema) {
+			return Err('unknown-field', { expected: fieldNames, name: fieldName });
+		}
+
+		if (fieldValue === null || fieldValue === undefined) {
+			if (!fieldSchema.nullable) {
+				return Err('missing-value', {
+					name: fieldName,
+					type: fieldSchema.type,
+				});
+			}
+		} else {
+			const expected = fieldTypes[fieldSchema.type];
+			if (typeof fieldValue !== expected) {
+				return Err('type-mismatch', {
+					expected,
+					found: typeof fieldValue,
+					name: fieldName,
+					value: fieldValue,
+				});
+			}
+		}
 	}
 
-	get id() {
-		return this.#id;
-	}
-
-	get value() {
-		return this.#value;
-	}
-
-	set value(value) {
-		this.#value = value;
-	}
-
-	get dependencies(): Asset[] {
-		return this.#graph.getDependencies(this.#id);
-	}
-
-	get dependents(): Asset[] {
-		return this.#graph.getDependents(this.#id);
-	}
-
-	get entryPoints(): Asset[] {
-		return this.#graph.getEntryAssets(this.#id);
-	}
-}
-
-export class Bundle {
-	#id;
-	#assets = new Set<Asset>();
-	#meta: unknown;
-	constructor(id: string, meta: unknown) {
-		this.#id = id;
-		this.#meta = meta;
-	}
-	addAsset(asset: Asset) {
-		this.#assets.add(asset);
-	}
-	get assets() {
-		return Array.from(this.#assets);
-	}
-	deleteAsset(asset: Asset) {
-		this.#assets.delete(asset);
-	}
-	get id() {
-		return this.#id;
-	}
-	get meta() {
-		return this.#meta;
-	}
+	return Ok();
 }
