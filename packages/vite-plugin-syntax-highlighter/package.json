@@ -1,5 +1,5 @@
 {
-	"name": "@content-thing/syntax-highlighter",
+	"name": "@content-thing/vite-plugin-syntax-highlighter",
 	"version": "0.0.0",
 	"scripts": {
 		"build": "wireit",
@@ -56,10 +56,6 @@
 		".": {
 			"types": "./dist/index.d.ts",
 			"default": "./dist/index.js"
-		},
-		"./syntax/*": {
-			"types": "./dist/syntax/*.d.ts",
-			"default": "./dist/syntax/*.js"
 		}
 	},
 	"files": [
@@ -68,24 +64,15 @@
 		"!**/*.test.js.map",
 		"!**/*.test.d.ts"
 	],
-	"dependencies": {
-		"@lezer/common": "^1.2.1",
-		"@lezer/cpp": "^1.1.2",
-		"@lezer/css": "^1.1.9",
-		"@lezer/highlight": "^1.2.1",
-		"@lezer/html": "^1.3.10",
-		"@lezer/javascript": "^1.4.18",
-		"@lezer/json": "^1.0.2",
-		"@lezer/lr": "^1.4.2",
-		"@lezer/python": "^1.1.14",
-		"@lezer/rust": "^1.0.2",
-		"@replit/codemirror-lang-svelte": "^6.0.0"
-	},
 	"devDependencies": {
 		"@types/node": "^20.10.5",
 		"publint": "^0.2.6",
 		"typescript": "^5.4.5",
+		"vite": "^5.3.4",
 		"vitest": "^1.6.0"
 	},
-	"type": "module"
+	"type": "module",
+	"dependencies": {
+		"@content-thing/syntax-highlighter": "^0.0.0"
+	}
 }
