@@ -1,5 +1,9 @@
+import {
+	parseRanges,
+	selectLines,
+	type LineInterval,
+} from '@content-thing/line-range';
 import type { Code, Root } from 'mdast';
-import { parseRanges, selectLines, type LineInterval } from './util.js';
 import { visit } from 'unist-util-visit';
 
 export function processCopyAttributes(tree: Root) {

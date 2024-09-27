@@ -1,14 +1,19 @@
-import type { Code, InlineCode, Root } from 'mdast';
+import {
+	parseRanges,
+	selectLines,
+	type LineInterval,
+} from '@content-thing/line-range';
+import type { InlineCode, Root } from 'mdast';
 import fs from 'node:fs';
 import path from 'node:path';
 import { visit } from 'unist-util-visit';
-import { parseRanges, selectLines } from './util.js';
 
 export function processFileAttributes(tree: Root, importer: string) {
-	const codeBlocks: (Code | InlineCode)[] = [];
+	const codeBlocks: InlineCode[] = [];
 	visit(tree, (node) => {
-		if (node.type !== 'code' && node.type !== 'inlineCode') return;
-		codeBlocks.push(node);
+		if (node.type === 'inlineCode') {
+			codeBlocks.push(node);
+		}
 	});
 
 	const dirname = path.dirname(importer);
@@ -16,8 +21,6 @@ export function processFileAttributes(tree: Root, importer: string) {
 		if (!node.data?.attributes.file) continue;
 
 		let filepath = node.data?.attributes.file;
-		// don't leak filepath of build machine to client
-		delete node.data.attributes.file;
 		if (filepath[0] !== '/' && dirname) {
 			filepath = path.join(dirname, filepath);
 		}
@@ -25,7 +28,7 @@ export function processFileAttributes(tree: Root, importer: string) {
 		const lines = content.split(/\r\n|\r|\n/);
 		const lineCount = lines.length;
 
-		let fileRange: [number, number][] = [[1, lineCount]];
+		let fileRange: LineInterval[] = [[1, lineCount]];
 		if (node.data?.attributes.fileRange) {
 			fileRange = parseRanges(node.data.attributes.fileRange, lineCount);
 		}

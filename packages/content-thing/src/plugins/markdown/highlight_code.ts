@@ -1,14 +1,11 @@
 import {
-	getSupportedHighlighter,
-	highlightLines,
+	getHighlighter,
+	isSupportedLanguage,
 	type Highlighter,
-} from '@svelte-thing/components/code';
-import type { Code, CodeData, InlineCode, InlineCodeData, Root } from 'mdast';
+} from '@content-thing/syntax-highlighter';
+import { plaintext } from '@content-thing/syntax-highlighter/syntax/plaintext';
+import type { Code, InlineCode, InlineCodeData, Root } from 'mdast';
 import { visit } from 'unist-util-visit';
-
-interface CodeWithData extends Code {
-	data: CodeData;
-}
 
 interface InlineCodeWithData extends InlineCode {
 	data: InlineCodeData;
@@ -22,24 +19,26 @@ function ensureNodeHasData<T extends Code | InlineCode>(
 }
 
 export async function highlightCodeBlocks(tree: Root) {
-	const codeBlocks: (CodeWithData | InlineCodeWithData)[] = [];
+	const codeBlocks: InlineCodeWithData[] = [];
 	visit(tree, (node) => {
-		if (node.type === 'code' || node.type === 'inlineCode') {
+		if (node.type === 'inlineCode') {
 			codeBlocks.push(ensureNodeHasData(node));
 		}
 	});
 
 	const highlighterCache = new Map<string | undefined | null, Highlighter>();
 	const promises = codeBlocks.map(async (node) => {
-		const lang = node.type === 'code' ? node.lang : node.data?.attributes.lang;
+		const lang = node.data?.attributes.lang;
 		let highlighter = highlighterCache.get(lang);
 		if (!highlighter) {
-			highlighter = await getSupportedHighlighter(lang);
-			highlighterCache.set(lang, highlighter);
+			if (isSupportedLanguage(lang)) {
+				highlighter = await getHighlighter(lang);
+				highlighterCache.set(lang, highlighter);
+			} else {
+				highlighter = plaintext;
+			}
 		}
-		if (node.type === 'code') {
-			node.data.highlightedLines = highlightLines(node.value, highlighter);
-		} else {
+		if (node.type === 'inlineCode') {
 			node.data.highlightedTokens = highlighter(node.value);
 		}
 	});

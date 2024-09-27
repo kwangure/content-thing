@@ -32,22 +32,6 @@ describe('processFileAttributes', () => {
 	beforeAll(createTestFiles);
 	afterAll(cleanupTestFiles);
 
-	it('replaces code block content based on file attribute', () => {
-		const markdown = `\`\`\`js {file=example.js}\n\n\`\`\``;
-		const parsed = processor.parse(markdown);
-		const transformed = processor.runSync(parsed);
-		processFileAttributes(transformed, testFile);
-		expect(toMarkdown(parsed)).toContain('console.log("Hello, world!");');
-	});
-
-	it('handles relative path resolution', () => {
-		const markdown = `\`\`\`js {file=./example.js}\n\`\`\``;
-		const parsed = processor.parse(markdown);
-		const transformed = processor.runSync(parsed);
-		processFileAttributes(transformed, testFile);
-		expect(toMarkdown(parsed)).toContain('console.log("Hello, world!");');
-	});
-
 	it('leaves code block unchanged when file attribute is missing', () => {
 		const markdown = '```js\nconsole.log("Unchanged");\n```';
 		const parsed = processor.parse(markdown);
