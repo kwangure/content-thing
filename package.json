@@ -19,6 +19,7 @@
 			"dependencies": [
 				"./packages/content-thing:build",
 				"./packages/internal-utils:build",
+				"./packages/line-range:build",
 				"./packages/memdb:build",
 				"./packages/remark-attributes:build",
 				"./packages/remark-variables:build",
@@ -52,6 +53,7 @@
 			"dependencies": [
 				"./packages/content-thing:pre-commit",
 				"./packages/internal-utils:pre-commit",
+				"./packages/line-range:pre-commit",
 				"./packages/memdb:pre-commit",
 				"./packages/remark-attributes:pre-commit",
 				"./packages/remark-variables:pre-commit",
@@ -65,6 +67,7 @@
 			"dependencies": [
 				"./packages/content-thing:release",
 				"./packages/internal-utils:release",
+				"./packages/line-range:release",
 				"./packages/memdb:release",
 				"./packages/remark-attributes:release",
 				"./packages/remark-variables:release",
@@ -77,6 +80,7 @@
 			"dependencies": [
 				"./packages/content-thing:test",
 				"./packages/internal-utils:test",
+				"./packages/line-range:test",
 				"./packages/memdb:test",
 				"./packages/remark-attributes:test",
 				"./packages/remark-variables:test",
