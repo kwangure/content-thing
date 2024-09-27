@@ -1,6 +1,5 @@
 import { highlightTree, tagHighlighter, tags } from '@lezer/highlight';
 import type { LRParser } from '@lezer/lr';
-import { DEV } from 'esm-env';
 
 const colors = tagHighlighter([
 	{ tag: tags.atom, class: 'tok-atom' },
@@ -123,7 +122,6 @@ const SUPPORTED_LANGUAGES = {
 	rust: async () => (await import('./syntax/rust.js')).rust,
 	svelte: async () => (await import('./syntax/svelte.js')).svelte,
 
-	noop: plaintext,
 	plaintext,
 	txt: plaintext,
 	text: plaintext,
@@ -149,17 +147,6 @@ export function getHighlighter(language: HighlightLanguage) {
 	return SUPPORTED_LANGUAGES[language]();
 }
 
-export function getSupportedHighlighter(language?: string | null) {
-	if (isSupportedLanguage(language)) {
-		return getHighlighter(language);
-	}
-	if (DEV && language) {
-		const supportedLanguages = [
-			...new Set(Object.keys(SUPPORTED_LANGUAGES)),
-		].join(', ');
-		console.error(
-			`Unsupported language "${language}" in code block. Expected one of: ${supportedLanguages}`,
-		);
-	}
-	return plaintext();
-}
+export const supportedLanguages = Object.keys(
+	SUPPORTED_LANGUAGES,
+) as (keyof typeof SUPPORTED_LANGUAGES)[];

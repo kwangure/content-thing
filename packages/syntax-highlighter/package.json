@@ -89,7 +89,6 @@
 		"@lezer/lr": "^1.4.2",
 		"@lezer/python": "^1.1.14",
 		"@lezer/rust": "^1.0.2",
-		"@replit/codemirror-lang-svelte": "^6.0.0",
-		"esm-env": "^1.0.0"
+		"@replit/codemirror-lang-svelte": "^6.0.0"
 	}
 }
