@@ -1,0 +1,78 @@
+{
+	"name": "@content-thing/vite-plugin-syntax-highlighter",
+	"version": "0.0.0",
+	"scripts": {
+		"build": "wireit",
+		"pre-commit": "wireit",
+		"publint": "wireit",
+		"test": "wireit"
+	},
+	"wireit": {
+		"build": {
+			"command": "tsc --build",
+			"files": [
+				"src/**/*.{js,ts}",
+				"tsconfig.json",
+				"../../config/tsconfig.base.json"
+			],
+			"output": [
+				"types"
+			]
+		},
+		"publint": {
+			"command": "publint",
+			"dependencies": [
+				"build"
+			],
+			"files": [
+				"src/**",
+				"types/**",
+				"package.json"
+			],
+			"output": []
+		},
+		"pre-commit": {
+			"dependencies": [
+				"build",
+				"publint"
+			]
+		},
+		"release": {
+			"dependencies": [
+				"build",
+				"publint"
+			]
+		},
+		"test": {
+			"command": "vitest run",
+			"files": [
+				"src/**/*.{js,ts}",
+				"tests/**/*.{js,ts}"
+			],
+			"output": []
+		}
+	},
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"default": "./dist/index.js"
+		}
+	},
+	"files": [
+		"dist",
+		"!**/*.test.js",
+		"!**/*.test.js.map",
+		"!**/*.test.d.ts"
+	],
+	"devDependencies": {
+		"@types/node": "^20.10.5",
+		"publint": "^0.2.6",
+		"typescript": "^5.4.5",
+		"vite": "^5.3.4",
+		"vitest": "^1.6.0"
+	},
+	"type": "module",
+	"dependencies": {
+		"@content-thing/syntax-highlighter": "^0.0.0"
+	}
+}
