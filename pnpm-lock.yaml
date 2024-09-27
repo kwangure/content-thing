@@ -307,6 +307,9 @@ importers:
 
   packages/vite-plugin-syntax-highlighter:
     dependencies:
+      '@content-thing/line-range':
+        specifier: ^0.0.0
+        version: 0.0.0
       '@content-thing/syntax-highlighter':
         specifier: ^0.0.1
         version: 0.0.1(@codemirror/autocomplete@6.16.0(@codemirror/language@6.10.1)(@codemirror/state@6.4.1)(@codemirror/view@6.26.3)(@lezer/common@1.2.1))(@codemirror/lang-css@6.2.1(@codemirror/view@6.26.3))(@codemirror/lang-html@6.4.9)(@codemirror/lang-javascript@6.2.2)(@codemirror/language@6.10.1)(@codemirror/state@6.4.1)(@codemirror/view@6.26.3)
@@ -440,6 +443,9 @@ packages:
 
   '@content-thing/internal-utils@0.0.3':
     resolution: {integrity: sha512-zXOBxWpekzyN/bzRGDdblQfyhwz46FTsj5IlICtFMFfdZ8dhhwhHY0wrFx/4EqTWLAQDekawEFrdgY6cFB5rKw==}
+
+  '@content-thing/line-range@0.0.0':
+    resolution: {integrity: sha512-p5ka/TuQhYN+0NmIAGgmzqvAK1K06IR+t/u0pCHsaTNzJEzmwmsG/JU1zUI8MVscL6wViUv4l79iPCCK8/Ta5g==}
 
   '@content-thing/remark-attributes@0.0.3':
     resolution: {integrity: sha512-AN3xSBYpuyTkN5YLX2HDzrfeg0ncfp4S+Ld2vJWSGgIMiqnw2KPbejeAZbcyvjfpcfd/H2wnvOZoWa74NeBJQA==}
@@ -3336,6 +3342,8 @@ snapshots:
       w3c-keyname: 2.2.8
 
   '@content-thing/internal-utils@0.0.3': {}
+
+  '@content-thing/line-range@0.0.0': {}
 
   '@content-thing/remark-attributes@0.0.3':
     dependencies:

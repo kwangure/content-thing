@@ -73,6 +73,7 @@
 	},
 	"type": "module",
 	"dependencies": {
+		"@content-thing/line-range": "^0.0.0",
 		"@content-thing/syntax-highlighter": "^0.0.1"
 	}
 }
