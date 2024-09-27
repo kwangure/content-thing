@@ -1,6 +1,6 @@
 import type { Code, Root } from 'mdast';
-import { visit } from 'unist-util-visit';
 import { parseRanges, selectLines, type LineInterval } from './util.js';
+import { visit } from 'unist-util-visit';
 
 export function processCopyAttributes(tree: Root) {
 	const codeBlocks: Code[] = [];

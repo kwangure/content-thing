@@ -1,13 +1,14 @@
 import type { Parent, RootContent } from 'mdast';
+import { Imports } from './imports.js';
+
+const ELEMENT_PATH = '@svelte-thing/components/elements';
 
 export function component(
 	name: string,
 	props: Record<string, unknown>,
 	content: string | null,
 	indentLevel: number,
-	imports?: Set<string>,
 ): string {
-	if (imports) imports.add(name);
 	const indent = '\t'.repeat(indentLevel);
 	const propEntries = Object.entries(props).filter(([, value]) => {
 		if (value === null || value === undefined) return false;
@@ -37,114 +38,83 @@ export function component(
 }
 
 export function mdastToSvelteString(root: Parent) {
-	const imports = new Set<string>();
+	const imports = new Imports();
 
 	function processNode(node: RootContent, depth: number): string {
 		if (node.type === 'blockquote') {
-			return component(
-				'Blockquote',
-				{},
-				processParent(node, depth + 1),
-				depth,
-				imports,
-			);
+			const name = imports.add(ELEMENT_PATH, 'Blockquote');
+			return component(name, {}, processParent(node, depth + 1), depth);
 		}
 		if (node.type === 'code') {
+			const name = imports.add(ELEMENT_PATH, 'Code');
 			const props = {
 				attributes: node.data?.attributes,
 				copyRanges: node.data?.copy?.ranges,
 				copyText: node.data?.copy?.text,
 				lines: node.data?.highlightedLines,
 			};
-			return component('Code', props, null, depth, imports);
+			return component(name, props, null, depth);
 		}
 		if (node.type === 'emphasis') {
-			return component(
-				'Emphasis',
-				{},
-				processParent(node, depth + 1),
-				depth,
-				imports,
-			);
+			const name = imports.add(ELEMENT_PATH, 'Emphasis');
+			return component(name, {}, processParent(node, depth + 1), depth);
 		}
 		if (node.type === 'heading') {
+			const name = imports.add(ELEMENT_PATH, 'Heading');
 			const props = {
 				attributes: { id: node.data?.id },
 				rank: node.depth,
 			};
-			return component(
-				'Heading',
-				props,
-				processParent(node, 0),
-				depth,
-				imports,
-			);
+			return component(name, props, processParent(node, 0), depth);
 		}
 		if (node.type === 'html') {
 			return `${'\t'.repeat(depth)}{@html ${JSON.stringify(node.value)}}`;
 		}
 		if (node.type === 'image') {
+			const name = imports.add(ELEMENT_PATH, 'Image');
 			const props = { alt: node.alt, src: node.url };
-			return component('Image', props, null, depth, imports);
+			return component(name, props, null, depth);
 		}
 		if (node.type === 'inlineCode') {
+			const name = imports.add(ELEMENT_PATH, 'InlineCode');
 			const props = {
 				attributes: node.data?.attributes,
 				tokens: node.data?.highlightedTokens,
 			};
-			return component('InlineCode', props, null, depth, imports);
+			return component(name, props, null, depth);
 		}
 		if (node.type === 'link') {
+			const name = imports.add(ELEMENT_PATH, 'Link');
 			const props = { href: node.url, title: node.title };
-			return component(
-				'Link',
-				props,
-				processParent(node, depth + 1),
-				depth,
-				imports,
-			);
+			return component(name, props, processParent(node, depth + 1), depth);
 		}
 		if (node.type === 'list') {
+			const name = imports.add(ELEMENT_PATH, 'List');
 			return component(
-				'List',
+				name,
 				{ ordered: node.ordered },
 				processParent(node, depth + 1),
 				depth,
-				imports,
 			);
 		}
 		if (node.type === 'listItem') {
-			return component(
-				'ListItem',
-				{},
-				processParent(node, depth + 1),
-				depth,
-				imports,
-			);
+			const name = imports.add(ELEMENT_PATH, 'ListItem');
+			return component(name, {}, processParent(node, depth + 1), depth);
 		}
 		if (node.type === 'paragraph') {
-			return component(
-				'Paragraph',
-				{},
-				processParent(node, depth + 1),
-				depth,
-				imports,
-			);
+			const name = imports.add(ELEMENT_PATH, 'Paragraph');
+			return component(name, {}, processParent(node, depth + 1), depth);
 		}
 		if (node.type === 'strong') {
-			return component(
-				'Strong',
-				{},
-				processParent(node, depth + 1),
-				depth,
-				imports,
-			);
+			const name = imports.add(ELEMENT_PATH, 'Strong');
+			return component(name, {}, processParent(node, depth + 1), depth);
 		}
 		if (node.type === 'text') {
 			return `${'\t'.repeat(depth)}${node.value}`;
 		}
 		if (node.type === 'thematicBreak') {
-			return component('ThematicBreak', {}, null, depth, imports);
+			const name = imports.add(ELEMENT_PATH, 'ThematicBreak');
+			return component(name, {}, null, depth);
 		}
 
 		throw Error(`Unhandled node type: ${node.type}`);
@@ -158,15 +128,9 @@ export function mdastToSvelteString(root: Parent) {
 
 	const content = processParent(root, 0);
 	let result =
-		'<!--\n\tThis file is auto-generated. Do not edit directly.\n-->\n';
+		'\n<!--\n\tThis file is auto-generated. Do not edit directly.\n-->\n';
 	result += '<script lang="ts">\n';
-	if (imports.size > 0) {
-		result += '\timport {\n';
-		result += Array.from(imports)
-			.map((imp) => `\t\t${imp},\n`)
-			.join('');
-		result += "\t} from '@svelte-thing/components/elements';\n";
-	}
+	result += '\t' + imports.toString() + '\n';
 	result += '</script>\n\n';
 	result += content;
 
