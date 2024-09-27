@@ -73,6 +73,6 @@
 	},
 	"type": "module",
 	"dependencies": {
-		"@content-thing/syntax-highlighter": "^0.0.0"
+		"@content-thing/syntax-highlighter": "^0.0.1"
 	}
 }
