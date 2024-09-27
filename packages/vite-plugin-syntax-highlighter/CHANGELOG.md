@@ -1,5 +1,11 @@
 # @content-thing/vite-plugin-syntax-highlighter
 
+## 0.0.1
+
+### Patch Changes
+
+- 16c4b91: Support line range selection in vite-plugin-syntax-highlight
+
 ## 0.0.0
 
 ### Patch Changes

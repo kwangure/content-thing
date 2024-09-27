@@ -1,6 +1,6 @@
 {
 	"name": "content-thing",
-	"version": "0.0.36",
+	"version": "0.0.37",
 	"description": "A basic CMS for SvelteKit apps",
 	"scripts": {
 		"build": "wireit",
@@ -89,7 +89,7 @@
 	"dependencies": {
 		"@content-thing/internal-utils": "^0.0.3",
 		"@content-thing/remark-attributes": "^0.0.3",
-		"@content-thing/vite-plugin-syntax-highlighter": "^0.0.0",
+		"@content-thing/vite-plugin-syntax-highlighter": "^0.0.1",
 		"@svelte-thing/components": "^0.0.29",
 		"@types/mdast": "^4.0.1",
 		"mdast-util-to-markdown": "^2.1.0",
