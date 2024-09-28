@@ -1,5 +1,11 @@
 # @content-thing/memdb
 
+## 0.0.5
+
+### Patch Changes
+
+- Remove the schema argument in createTable
+
 ## 0.0.4
 
 ### Patch Changes

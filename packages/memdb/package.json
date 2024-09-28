@@ -1,6 +1,6 @@
 {
 	"name": "@content-thing/memdb",
-	"version": "0.0.4",
+	"version": "0.0.5",
 	"scripts": {
 		"build": "wireit",
 		"dev": "wireit",
