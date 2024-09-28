@@ -22,8 +22,6 @@
 				"./packages/line-range:build",
 				"./packages/memdb:build",
 				"./packages/remark-attributes:build",
-				"./packages/remark-variables:build",
-				"./packages/remark-yaml-parse:build",
 				"./packages/syntax-highlighter:build",
 				"./packages/vite-plugin-syntax-highlighter:build"
 			]
@@ -56,8 +54,6 @@
 				"./packages/line-range:pre-commit",
 				"./packages/memdb:pre-commit",
 				"./packages/remark-attributes:pre-commit",
-				"./packages/remark-variables:pre-commit",
-				"./packages/remark-yaml-parse:pre-commit",
 				"./packages/syntax-highlighter:pre-commit",
 				"./packages/vite-plugin-syntax-highlighter:pre-commit"
 			]
@@ -70,8 +66,6 @@
 				"./packages/line-range:release",
 				"./packages/memdb:release",
 				"./packages/remark-attributes:release",
-				"./packages/remark-variables:release",
-				"./packages/remark-yaml-parse:release",
 				"./packages/syntax-highlighter:release",
 				"./packages/vite-plugin-syntax-highlighter:release"
 			]
@@ -83,8 +77,6 @@
 				"./packages/line-range:test",
 				"./packages/memdb:test",
 				"./packages/remark-attributes:test",
-				"./packages/remark-variables:test",
-				"./packages/remark-yaml-parse:test",
 				"./packages/syntax-highlighter:test",
 				"./packages/vite-plugin-syntax-highlighter:test"
 			]
