@@ -1,9 +1,8 @@
 {
 	"name": "@content-thing/memdb",
-	"version": "0.0.5",
+	"version": "0.0.6",
 	"scripts": {
 		"build": "wireit",
-		"dev": "wireit",
 		"pre-commit": "wireit",
 		"publint": "wireit",
 		"test": "wireit"
@@ -19,11 +18,6 @@
 			"output": [
 				"types"
 			]
-		},
-		"dev": {
-			"command": "tsc --build --watch",
-			"service": true,
-			"files": []
 		},
 		"publint": {
 			"command": "publint",

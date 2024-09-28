@@ -1,5 +1,11 @@
 # @content-thing/memdb
 
+## 0.0.6
+
+### Patch Changes
+
+- Build memdb package
+
 ## 0.0.5
 
 ### Patch Changes
