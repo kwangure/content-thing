@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import type { Table } from './table.js';
 import type { Simplify } from './types.js';
 
@@ -29,7 +28,7 @@ function calculateBM25(
 	);
 }
 
-export function createSearchIndex<T extends Record<string, any>>(
+export function createSearchIndex<T extends Record<string, unknown>>(
 	table: Table<T>,
 	columns: { [K in keyof T]?: (value: T[K]) => string },
 	locale?: Intl.LocalesArgument,
@@ -71,13 +70,13 @@ export function createSearchIndex<T extends Record<string, any>>(
 	};
 }
 
-export type SearchResult<T extends Record<string, any>> = {
+export type SearchResult<T extends Record<string, unknown>> = {
 	document: T;
 	score: number;
 	matchedTokens: string[];
 };
 
-export function search<T extends Record<string, any>>(
+export function search<T extends Record<string, unknown>>(
 	table: Table<T>,
 	invertedIndex: Map<string, Map<number, number>>,
 	documentLengths: number[],
@@ -114,7 +113,7 @@ export function findMatchingDocs(
 	return matchedDocs;
 }
 
-export function rankBM25<T extends Record<string, any>>(
+export function rankBM25<T extends Record<string, unknown>>(
 	matchedDocs: Map<
 		number,
 		{ docFreq: number; termFreq: number; token: string }[]
@@ -167,7 +166,7 @@ export function rankBM25<T extends Record<string, any>>(
 	return results;
 }
 
-export type SearchHighlights<T extends Record<string, any>> = {
+export type SearchHighlights<T extends Record<string, unknown>> = {
 	[K in keyof T]: [string, boolean][];
 };
 
@@ -192,7 +191,7 @@ function highlightText(
 }
 
 export function highlightSearchResult<
-	T extends Record<string, any>,
+	T extends Record<string, unknown>,
 	C extends { [K in keyof T]?: (value: T[K]) => string },
 >(searchResult: SearchResult<T>, columns: C, locale?: Intl.LocalesArgument) {
 	const { document, matchedTokens } = searchResult;
@@ -200,7 +199,8 @@ export function highlightSearchResult<
 		SearchHighlights<{ [P in keyof C]: P extends keyof T ? T[P] : never }>
 	>;
 	for (const [column, serializeFunc] of objectEntries(columns)) {
-		const text = serializeFunc?.(document[column as keyof T]);
+		/* eslint-disable-next-line @typescript-eslint/no-explicit-any */
+		const text = serializeFunc?.(document[column as keyof T] as any);
 		const highlights =
 			typeof text === 'string'
 				? highlightText(text, matchedTokens, locale)
@@ -220,7 +220,7 @@ export interface HighlightFirstOptions {
 	locale?: Intl.LocalesArgument;
 }
 
-export function highlightFirst<T extends Record<string, any>>(
+export function highlightFirst<T extends Record<string, unknown>>(
 	searchResult: SearchResult<T>,
 	columns: { [K in keyof T]?: (value: T[K]) => string },
 	options?: HighlightFirstOptions,

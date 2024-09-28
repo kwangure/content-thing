@@ -1,25 +1,10 @@
 import { describe, expectTypeOf, it } from 'vitest';
 import { execute, query } from './database.js';
 import { createTable } from './table.js';
-import { number, string, type ColumnType } from './column.js';
 
 describe('query', () => {
-	const userTable = createTable(
-		{
-			id: number('id'),
-			name: string('name'),
-			age: number('age'),
-		},
-		[{ id: 1, name: 'Alice', age: 30 }],
-	);
-	const postTable = createTable(
-		{
-			id: number('id'),
-			title: string('title'),
-			authorId: number('authorId'),
-		},
-		[{ id: 1, title: 'Hello', authorId: 1 }],
-	);
+	const userTable = createTable([{ id: 1, name: 'Alice', age: 30 }]);
+	const postTable = createTable([{ id: 1, title: 'Hello', authorId: 1 }]);
 
 	describe('select', () => {
 		it('should only accept valid column names', () => {
@@ -46,15 +31,9 @@ describe('query', () => {
 		});
 
 		it('should correctly type the result when combining .with() and .select()', () => {
-			const userWithComputed = createTable(
-				{
-					id: number('id'),
-					firstName: string('firstName'),
-					lastName: string('lastName'),
-					age: number('age'),
-				},
-				[{ id: 1, firstName: 'Alice', lastName: 'Johnson', age: 30 }],
-			);
+			const userWithComputed = createTable([
+				{ id: 1, firstName: 'Alice', lastName: 'Johnson', age: 30 },
+			]);
 
 			const result = execute(
 				query(userWithComputed)
@@ -70,17 +49,10 @@ describe('query', () => {
 
 		it('should maintain correct types with optional properties and .select()', () => {
 			const userWithOptional = createTable<{
-				id: ColumnType<'id', number>;
-				name: ColumnType<'name', string>;
-				age?: ColumnType<'age', number>;
-			}>(
-				{
-					id: number('id'),
-					name: string('name'),
-					age: number('age'),
-				},
-				[{ id: 1, name: 'Alice' }],
-			);
+				id: number;
+				name: string;
+				age?: number;
+			}>([{ id: 1, name: 'Alice' }]);
 
 			const result = execute(query(userWithOptional).select('name', 'age'));
 			expectTypeOf(result).toEqualTypeOf<{ name: string; age?: number }[]>();
@@ -103,14 +75,9 @@ describe('query', () => {
 	});
 
 	describe('with', () => {
-		const userWithComputed = createTable(
-			{
-				firstName: string('firstName'),
-				lastName: string('lastName'),
-				age: number('age'),
-			},
-			[{ firstName: 'Alice', lastName: 'Bea', age: 30 }],
-		);
+		const userWithComputed = createTable([
+			{ firstName: 'Alice', lastName: 'Bea', age: 30 },
+		]);
 
 		it('should correctly type the result when using .with()', () => {
 			const result = execute(
@@ -178,19 +145,11 @@ describe('query', () => {
 
 		it('should maintain correct types with optional properties and computed fields', () => {
 			const userTable = createTable<{
-				id: ColumnType<'id', number>;
-				firstName: ColumnType<'firstName', string>;
-				lastName: ColumnType<'lastName', string>;
-				age?: ColumnType<'age', number>;
-			}>(
-				{
-					id: number('id'),
-					firstName: string('firstName'),
-					lastName: string('lastName'),
-					age: number('age'),
-				},
-				[{ id: 1, firstName: 'Alice', lastName: 'Johnson' }],
-			);
+				id: number;
+				firstName: string;
+				lastName: string;
+				age?: number;
+			}>([{ id: 1, firstName: 'Alice', lastName: 'Johnson' }]);
 
 			const result = execute(
 				query(userTable).with({
@@ -230,26 +189,17 @@ describe('query', () => {
 
 	describe('miscellaneous', () => {
 		it('should handle tables with no columns', () => {
-			/* eslint-disable-next-line @typescript-eslint/ban-types */
-			const empty = createTable<{}>({}, []);
+			const empty = createTable([]);
 			const empties = execute(query(empty));
-			/* eslint-disable-next-line @typescript-eslint/ban-types */
-			expectTypeOf(empties).toEqualTypeOf<{}[]>();
+			expectTypeOf(empties).toEqualTypeOf<Record<string, never>[]>();
 		});
 
 		it('should handle tables with optional properties', () => {
 			const user = createTable<{
-				id: ColumnType<'id', number>;
-				name: ColumnType<'name', string>;
-				age?: ColumnType<'age', number>;
-			}>(
-				{
-					id: number('id'),
-					name: string('name'),
-					age: number('age'),
-				},
-				[{ id: 1, name: 'Alice', age: 30 }],
-			);
+				id: number;
+				name: string;
+				age?: number;
+			}>([{ id: 1, name: 'Alice', age: 30 }]);
 			expectTypeOf(execute(query(user))).toEqualTypeOf<
 				{ id: number; name: string; age?: number }[]
 			>();

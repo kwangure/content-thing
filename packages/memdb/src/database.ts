@@ -1,27 +1,32 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import type { ComputedFields, Table } from './table.js';
 import type { Simplify } from './types.js';
+import type { Table } from './table.js';
 
-type WhereCondition<T extends Record<string, any>> = (record: T) => boolean;
+type WhereCondition<T extends Record<string, unknown>> = (record: T) => boolean;
 
-export function query<T extends Record<string, any>>(table: Table<T>) {
+export function query<T extends Record<string, unknown>>(table: Table<T>) {
 	/* eslint-disable-next-line @typescript-eslint/ban-types */
-	return new QueryBuilder<T, {}, keyof T>(table);
+	return new QueryBuilder<T, {}, keyof T & string>(table);
 }
 
+export type ComputedFields<T> = {
+	[K: string]: (record: T) => unknown;
+	/* eslint-disable-next-line @typescript-eslint/ban-types */
+} & {};
+
 class QueryBuilder<
-	TRecord extends Record<string, any>,
+	TRecord extends Record<string, unknown>,
 	TComputed extends ComputedFields<TRecord>,
 	TSelected extends keyof TRecord,
 > {
 	table: Table<TRecord>;
 	whereCondition: WhereCondition<TRecord> | null = null;
 	computedFields: TComputed | null = null;
-	selectedFields;
 	limitValue: number;
+	selectedFields;
 
 	constructor(table: Table<TRecord>) {
-		this.selectedFields = new Set(Object.keys(table.columns) as TSelected[]);
+		const record = table.records[0] ?? {};
+		this.selectedFields = new Set(Object.keys(record) as TSelected[]);
 		this.table = table;
 		this.limitValue = table.records.length;
 	}
@@ -53,22 +58,19 @@ class QueryBuilder<
 }
 
 export function execute<
-	TRecord extends Record<string, any>,
+	TRecord extends Record<string, unknown>,
 	TComputed extends ComputedFields<TRecord>,
-	TSelected extends keyof TRecord,
->(
-	queryBuilder: QueryBuilder<TRecord, TComputed, TSelected>,
-): Array<
-	Simplify<
-		Pick<TRecord, TSelected> & {
-			[K in keyof TComputed]: ReturnType<TComputed[K]>;
-		}
-	>
-> {
+	TSelected extends keyof TRecord & string,
+>(queryBuilder: QueryBuilder<TRecord, TComputed, TSelected>) {
 	const { table, whereCondition, computedFields, selectedFields, limitValue } =
 		queryBuilder;
 
-	const processedResults: any[] = [];
+	type QueryResult = Simplify<
+		Pick<TRecord, TSelected> & {
+			[K in keyof TComputed]: ReturnType<TComputed[K]>;
+		}
+	>;
+	const processedResults: QueryResult[] = [];
 	if (limitValue === 0) {
 		return processedResults;
 	}
@@ -78,7 +80,7 @@ export function execute<
 			continue;
 		}
 
-		const filteredRecord: any = {};
+		const filteredRecord: Record<string, unknown> = {};
 		for (const field of selectedFields) {
 			if (field in record) {
 				filteredRecord[field] = record[field];
@@ -91,7 +93,7 @@ export function execute<
 			}
 		}
 
-		processedResults.push(filteredRecord);
+		processedResults.push(filteredRecord as QueryResult);
 
 		if (processedResults.length >= limitValue) {
 			break;
