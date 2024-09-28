@@ -1,5 +1,11 @@
 # content-thing
 
+## 0.0.39
+
+### Patch Changes
+
+- f3c08ff: Use record-like type for data
+
 ## 0.0.38
 
 ### Patch Changes

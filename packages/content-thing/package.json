@@ -1,10 +1,9 @@
 {
 	"name": "content-thing",
-	"version": "0.0.38",
+	"version": "0.0.39",
 	"description": "A basic CMS for SvelteKit apps",
 	"scripts": {
 		"build": "wireit",
-		"dev": "wireit",
 		"pre-commit": "wireit",
 		"publint": "wireit",
 		"test": "wireit"
@@ -18,13 +17,8 @@
 				"../../config/tsconfig.base.json"
 			],
 			"output": [
-				"types"
+				"dist"
 			]
-		},
-		"dev": {
-			"command": "tsc --build --watch",
-			"service": true,
-			"files": []
 		},
 		"publint": {
 			"command": "publint",

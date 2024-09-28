@@ -16,7 +16,7 @@
 				"../../config/tsconfig.base.json"
 			],
 			"output": [
-				"types"
+				"dist"
 			]
 		},
 		"publint": {
