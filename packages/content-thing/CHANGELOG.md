@@ -1,5 +1,11 @@
 # content-thing
 
+## 0.0.38
+
+### Patch Changes
+
+- Use urls to syntax-highlight file code
+
 ## 0.0.37
 
 ### Patch Changes
