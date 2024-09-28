@@ -7,7 +7,6 @@ import {
 	tokenize,
 } from './search.js';
 import { createTable } from './table.js';
-import { number, string, type ColumnType } from './column.js';
 
 describe('tokenize', () => {
 	it('tokenizes simple English words', () => {
@@ -41,25 +40,15 @@ describe('tokenize', () => {
 
 describe('search', () => {
 	const createSampleTable = () =>
-		createTable(
-			{
-				id: number('id'),
-				title: string('title'),
-				content: string('content'),
-			},
-			[
-				{ id: 1, title: 'Another Test', content: 'Hello again' },
-				{ id: 2, title: 'Hello World', content: 'This is a test' },
-				{ id: 3, title: 'Third Entry', content: 'More content here' },
-			],
-		);
+		createTable([
+			{ id: 1, title: 'Another Test', content: 'Hello again' },
+			{ id: 2, title: 'Hello World', content: 'This is a test' },
+			{ id: 3, title: 'Third Entry', content: 'More content here' },
+		]);
 
 	describe('index building and searching', () => {
 		it('creates index with empty table', () => {
-			const emptyTable = createTable(
-				{ id: number('id'), title: string('title') },
-				[],
-			);
+			const emptyTable = createTable([] as { id: number; title: string }[]);
 			const { invertedIndex, documentLengths, averageDocumentLength } =
 				createSearchIndex(emptyTable, { title: (s) => s });
 			expect(
@@ -74,10 +63,9 @@ describe('search', () => {
 		});
 
 		it('creates index with one record', () => {
-			const singleRecordTable = createTable(
-				{ id: number('id'), title: string('title') },
-				[{ id: 1, title: 'Single Record' }],
-			);
+			const singleRecordTable = createTable([
+				{ id: 1, title: 'Single Record' },
+			]);
 			const { invertedIndex, documentLengths, averageDocumentLength } =
 				createSearchIndex(singleRecordTable, { title: (s) => s });
 			expect(
@@ -189,16 +177,11 @@ describe('search', () => {
 		});
 
 		it('finds multiple terms with varying term frequencies', () => {
-			const table = createTable(
-				{
-					text: string('title'),
-				},
-				[
-					{ text: 'number number one' },
-					{ text: 'one one one' },
-					{ text: 'number one one' },
-				],
-			);
+			const table = createTable([
+				{ text: 'number number one' },
+				{ text: 'one one one' },
+				{ text: 'number one one' },
+			]);
 			const { invertedIndex, documentLengths, averageDocumentLength } =
 				createSearchIndex(table, { text: (s) => s });
 			const result = search(
@@ -239,12 +222,7 @@ describe('search', () => {
 		});
 
 		it('finds multiple terms with varying document frequencies', () => {
-			const table = createTable(
-				{
-					text: string('title'),
-				},
-				[{ text: 'one one' }, { text: 'number one' }],
-			);
+			const table = createTable([{ text: 'one one' }, { text: 'number one' }]);
 			const { invertedIndex, documentLengths, averageDocumentLength } =
 				createSearchIndex(table, { text: (s) => s });
 			const result = search(
@@ -277,16 +255,11 @@ describe('search', () => {
 		});
 
 		it('finds multiple terms with varying document lengths', () => {
-			const table = createTable(
-				{
-					text: string('title'),
-				},
-				[
-					{ text: 'number one number number' },
-					{ text: 'number one' },
-					{ text: 'number one number' },
-				],
-			);
+			const table = createTable([
+				{ text: 'number one number number' },
+				{ text: 'number one' },
+				{ text: 'number one number' },
+			]);
 			const { invertedIndex, documentLengths, averageDocumentLength } =
 				createSearchIndex(table, { text: (s) => s });
 			const result = search(
@@ -390,11 +363,9 @@ describe('search', () => {
 	describe('edge cases', () => {
 		it('handles null values in records', () => {
 			const tableWithNull = createTable<{
-				id: ColumnType<'id', number>;
-				title: ColumnType<'title', string | null>;
-			}>({ id: number('id'), title: string('title') }, [
-				{ id: 1, title: null },
-			]);
+				id: number;
+				title: string | null;
+			}>([{ id: 1, title: null }]);
 			const { invertedIndex, documentLengths, averageDocumentLength } =
 				createSearchIndex(tableWithNull, { title: (s) => s ?? '' });
 			expect(
@@ -410,11 +381,9 @@ describe('search', () => {
 
 		it('handles undefined values in records', () => {
 			const tableWithUndefined = createTable<{
-				id: ColumnType<'id', number>;
-				title: ColumnType<'title', string | undefined>;
-			}>({ id: number('id'), title: string('title') }, [
-				{ id: 1, title: undefined },
-			]);
+				id: number;
+				title: string | undefined;
+			}>([{ id: 1, title: undefined }]);
 			const { invertedIndex, documentLengths, averageDocumentLength } =
 				createSearchIndex(tableWithUndefined, {
 					title: (s) => s ?? '',
@@ -431,10 +400,7 @@ describe('search', () => {
 		});
 
 		it('handles non-string values in specified columns', () => {
-			const tableWithNumbers = createTable(
-				{ id: number('id'), count: number('count') },
-				[{ id: 1, count: 42 }],
-			);
+			const tableWithNumbers = createTable([{ id: 1, count: 42 }]);
 			const { invertedIndex, documentLengths, averageDocumentLength } =
 				createSearchIndex(tableWithNumbers, {
 					count: (s) => String(s),
@@ -451,10 +417,7 @@ describe('search', () => {
 		});
 
 		it('handles unicode characters', () => {
-			const tableWithUnicode = createTable(
-				{ id: number('id'), title: string('title') },
-				[{ id: 1, title: '你好世界' }],
-			);
+			const tableWithUnicode = createTable([{ id: 1, title: '你好世界' }]);
 			const { invertedIndex, documentLengths, averageDocumentLength } =
 				createSearchIndex(tableWithUnicode, { title: (s) => s });
 			expect(
@@ -469,10 +432,7 @@ describe('search', () => {
 		});
 
 		it('handles emojis', () => {
-			const tableWithEmojis = createTable(
-				{ id: number('id'), title: string('title') },
-				[{ id: 1, title: 'Hello 🌍' }],
-			);
+			const tableWithEmojis = createTable([{ id: 1, title: 'Hello 🌍' }]);
 			const { invertedIndex, documentLengths, averageDocumentLength } =
 				createSearchIndex(tableWithEmojis, { title: (s) => s });
 			expect(
@@ -499,18 +459,11 @@ describe('search', () => {
 
 describe('highlightSearchResult', () => {
 	const createSampleTable = () =>
-		createTable(
-			{
-				id: number('id'),
-				title: string('title'),
-				content: string('content'),
-			},
-			[
-				{ id: 1, title: 'Another Test', content: 'Hello again' },
-				{ id: 2, title: 'Hello World', content: 'This is a test' },
-				{ id: 3, title: 'Third Entry', content: 'More content here' },
-			],
-		);
+		createTable([
+			{ id: 1, title: 'Another Test', content: 'Hello again' },
+			{ id: 2, title: 'Hello World', content: 'This is a test' },
+			{ id: 3, title: 'Third Entry', content: 'More content here' },
+		]);
 
 	const table = createSampleTable();
 	const { invertedIndex, documentLengths, averageDocumentLength } =
@@ -578,10 +531,9 @@ describe('highlightSearchResult', () => {
 	});
 
 	it('handles punctuation in the text', () => {
-		const tableWithPunctuation = createTable(
-			{ id: number('id'), title: string('title') },
-			[{ id: 1, title: 'Hello, World!' }],
-		);
+		const tableWithPunctuation = createTable([
+			{ id: 1, title: 'Hello, World!' },
+		]);
 		const { invertedIndex, documentLengths, averageDocumentLength } =
 			createSearchIndex(tableWithPunctuation, { title: (s) => s });
 		const [result] = search(
@@ -609,10 +561,7 @@ describe('highlightSearchResult', () => {
 	});
 
 	it('handles non-string values in the record', () => {
-		const tableWithNumbers = createTable(
-			{ id: number('id'), count: number('count') },
-			[{ id: 1, count: 42 }],
-		);
+		const tableWithNumbers = createTable([{ id: 1, count: 42 }]);
 		const { invertedIndex, documentLengths, averageDocumentLength } =
 			createSearchIndex(tableWithNumbers, { count: (s) => String(s) });
 		const [result] = search(
@@ -634,10 +583,7 @@ describe('highlightSearchResult', () => {
 	});
 
 	it('handles unicode characters', () => {
-		const tableWithUnicode = createTable(
-			{ id: number('id'), title: string('title') },
-			[{ id: 1, title: '你好世界' }],
-		);
+		const tableWithUnicode = createTable([{ id: 1, title: '你好世界' }]);
 		const { invertedIndex, documentLengths, averageDocumentLength } =
 			createSearchIndex(tableWithUnicode, { title: (s) => s });
 		const [result] = search(
@@ -662,10 +608,7 @@ describe('highlightSearchResult', () => {
 	});
 
 	it('handles emojis', () => {
-		const tableWithEmojis = createTable(
-			{ id: number('id'), title: string('title') },
-			[{ id: 1, title: 'Hello 🌍' }],
-		);
+		const tableWithEmojis = createTable([{ id: 1, title: 'Hello 🌍' }]);
 		const { invertedIndex, documentLengths, averageDocumentLength } =
 			createSearchIndex(tableWithEmojis, { title: (s) => s });
 		const [result] = search(
@@ -693,9 +636,7 @@ describe('highlightSearchResult', () => {
 
 describe('highlightFirst', () => {
 	it('highlights matched token in a single sentence', () => {
-		const table = createTable({ title: string('title') }, [
-			{ title: 'The blue dogs.' },
-		]);
+		const table = createTable([{ title: 'The blue dogs.' }]);
 		const { invertedIndex, documentLengths, averageDocumentLength } =
 			createSearchIndex(table, { title: (s) => s });
 		const [result] = search(
@@ -722,9 +663,7 @@ describe('highlightFirst', () => {
 	});
 
 	it('handles multiple matched tokens in a single sentence', () => {
-		const table = createTable({ title: string('title') }, [
-			{ title: 'The blue dogs.' },
-		]);
+		const table = createTable([{ title: 'The blue dogs.' }]);
 		const { invertedIndex, documentLengths, averageDocumentLength } =
 			createSearchIndex(table, { title: (s) => s });
 		const [result] = search(
@@ -751,9 +690,7 @@ describe('highlightFirst', () => {
 	});
 
 	it('highlights matched token in multiple sentences', () => {
-		const table = createTable({ title: string('title') }, [
-			{ title: 'The blue dogs. The green dogs.' },
-		]);
+		const table = createTable([{ title: 'The blue dogs. The green dogs.' }]);
 		const { invertedIndex, documentLengths, averageDocumentLength } =
 			createSearchIndex(table, { title: (s) => s });
 		const [result] = search(
@@ -791,9 +728,7 @@ describe('highlightFirst', () => {
 	});
 
 	it('handles multiple matched tokens in a single sentence', () => {
-		const table = createTable({ title: string('title') }, [
-			{ title: 'The blue dogs. The green dogs.' },
-		]);
+		const table = createTable([{ title: 'The blue dogs. The green dogs.' }]);
 		const { invertedIndex, documentLengths, averageDocumentLength } =
 			createSearchIndex(table, { title: (s) => s });
 		const [result] = search(
@@ -831,15 +766,12 @@ describe('highlightFirst', () => {
 	});
 
 	it('handles multiple matched tokens in a multiple fields', () => {
-		const table = createTable(
-			{ title: string('title'), content: string('title') },
-			[
-				{
-					title: 'The blue dogs.',
-					content: 'The green dogs.',
-				},
-			],
-		);
+		const table = createTable([
+			{
+				title: 'The blue dogs.',
+				content: 'The green dogs.',
+			},
+		]);
 		const { invertedIndex, documentLengths, averageDocumentLength } =
 			createSearchIndex(table, { title: (s) => s });
 		const [result] = search(
@@ -879,9 +811,7 @@ describe('highlightFirst', () => {
 	});
 
 	it('highlights matched tokens case-insensitively', () => {
-		const table = createTable({ title: string('title') }, [
-			{ title: 'The BLUE DOGS bark.' },
-		]);
+		const table = createTable([{ title: 'The BLUE DOGS bark.' }]);
 		const { invertedIndex, documentLengths, averageDocumentLength } =
 			createSearchIndex(table, { title: (s) => s });
 		const [result] = search(
@@ -940,7 +870,7 @@ describe('highlightFirst', () => {
 	});
 
 	it('handles non-string options', () => {
-		const table = createTable({ value: number('value') }, [{ value: 42 }]);
+		const table = createTable([{ value: 42 }]);
 		const { invertedIndex, documentLengths, averageDocumentLength } =
 			createSearchIndex(table, { value: (s) => String(s) });
 		const [result] = search(
@@ -962,7 +892,7 @@ describe('highlightFirst', () => {
 	});
 
 	it('respects the padStart starting in the current sentence', () => {
-		const table = createTable({ title: string('title') }, [
+		const table = createTable([
 			{ title: 'One two three four five six seven eight.' },
 		]);
 		const { invertedIndex, documentLengths, averageDocumentLength } =
@@ -1001,7 +931,7 @@ describe('highlightFirst', () => {
 	});
 
 	it('respects the padStart starting in the previous sentence', () => {
-		const table = createTable({ title: string('title') }, [
+		const table = createTable([
 			{ title: 'Five six seven eight. One two three four five.' },
 		]);
 		const { invertedIndex, documentLengths, averageDocumentLength } =
@@ -1047,7 +977,7 @@ describe('highlightFirst', () => {
 	});
 
 	it('respects the matchLength ending in the current sentence', () => {
-		const table = createTable({ title: string('title') }, [
+		const table = createTable([
 			{ title: 'One two three four five six seven eight.' },
 		]);
 		const { invertedIndex, documentLengths, averageDocumentLength } =
@@ -1083,7 +1013,7 @@ describe('highlightFirst', () => {
 	});
 
 	it('respects the matchLength ending in the next sentence', () => {
-		const table = createTable({ title: string('title') }, [
+		const table = createTable([
 			{ title: 'One two three four. Five six seven eight.' },
 		]);
 		const { invertedIndex, documentLengths, averageDocumentLength } =

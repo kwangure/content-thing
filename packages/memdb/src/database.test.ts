@@ -1,7 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { execute, query } from './database.js';
 import { createTable } from './table.js';
-import { number, string } from './column.js';
 
 describe('query', () => {
 	const userRecords = [
@@ -9,14 +8,7 @@ describe('query', () => {
 		{ id: 2, name: 'Bob', age: 25 },
 		{ id: 3, name: 'Charlie', age: 35 },
 	];
-	const userTable = createTable(
-		{
-			id: number('id'),
-			name: string('name'),
-			age: number('age'),
-		},
-		userRecords,
-	);
+	const userTable = createTable(userRecords);
 
 	describe('basic', () => {
 		it('should return all records when no conditions are applied', () => {
@@ -26,19 +18,13 @@ describe('query', () => {
 	});
 
 	describe('where', () => {
-		const valueTable = createTable(
-			{
-				id: number('id'),
-				value: number('value'),
-			},
-			[
-				{ id: 1, value: 10 },
-				{ id: 2, value: 20 },
-				{ id: 3, value: 30 },
-				{ id: 4, value: 40 },
-				{ id: 5, value: 50 },
-			],
-		);
+		const valueTable = createTable([
+			{ id: 1, value: 10 },
+			{ id: 2, value: 20 },
+			{ id: 3, value: 30 },
+			{ id: 4, value: 40 },
+			{ id: 5, value: 50 },
+		]);
 
 		it('should correctly filter records using where clause', () => {
 			const result = execute(
@@ -57,18 +43,11 @@ describe('query', () => {
 	});
 
 	describe('with', () => {
-		const userWithComputedFields = createTable(
-			{
-				firstName: string('firstName'),
-				lastName: string('lastName'),
-				age: number('age'),
-			},
-			[
-				{ firstName: 'Alice', lastName: 'Bea', age: 30 },
-				{ firstName: 'Bob', lastName: 'Smith', age: 17 },
-				{ firstName: 'Kim', lastName: 'Cho', age: 25 },
-			],
-		);
+		const userWithComputedFields = createTable([
+			{ firstName: 'Alice', lastName: 'Bea', age: 30 },
+			{ firstName: 'Bob', lastName: 'Smith', age: 17 },
+			{ firstName: 'Kim', lastName: 'Cho', age: 25 },
+		]);
 
 		it('should include specified computed fields when using with()', () => {
 			const result = execute(
@@ -116,19 +95,13 @@ describe('query', () => {
 	});
 
 	describe('limit', () => {
-		const numberTable = createTable(
-			{
-				id: number('id'),
-				value: number('value'),
-			},
-			[
-				{ id: 1, value: 10 },
-				{ id: 2, value: 20 },
-				{ id: 3, value: 30 },
-				{ id: 4, value: 40 },
-				{ id: 5, value: 50 },
-			],
-		);
+		const numberTable = createTable([
+			{ id: 1, value: 10 },
+			{ id: 2, value: 20 },
+			{ id: 3, value: 30 },
+			{ id: 4, value: 40 },
+			{ id: 5, value: 50 },
+		]);
 
 		it('should limit the number of records returned', () => {
 			const result = execute(query(numberTable).limit(3));
@@ -191,20 +164,6 @@ describe('query', () => {
 				{ id: 3, value: 30, doubled: 60 },
 				{ id: 4, value: 40, doubled: 80 },
 			]);
-		});
-	});
-
-	describe('miscellaneous', () => {
-		it('should handle special characters in table names', () => {
-			const schema = { id: number('id') };
-			const tables = {
-				'table-with-dashes': createTable(schema, [{ id: 1 }]),
-				'table.with.dots': createTable(schema, [{ id: 2 }]),
-				'table with spaces': createTable(schema, [{ id: 3 }]),
-			};
-			expect(execute(query(tables['table-with-dashes']))).toEqual([{ id: 1 }]);
-			expect(execute(query(tables['table.with.dots']))).toEqual([{ id: 2 }]);
-			expect(execute(query(tables['table with spaces']))).toEqual([{ id: 3 }]);
 		});
 	});
 });
