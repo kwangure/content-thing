@@ -1,6 +1,3 @@
-import { highlightCodeBlocks } from './highlight_code.js';
-import { processFileAttributes } from './file_attributes.js';
-import { processCopyAttributes } from './copy_attributes.js';
 import { remarkAttributes } from '@content-thing/remark-attributes';
 import { unified } from 'unified';
 import remarkParse from 'remark-parse';
@@ -8,10 +5,7 @@ import YAML from 'yaml';
 
 const processor = unified().use(remarkParse).use(remarkAttributes);
 
-export async function parseMarkdownSections(
-	markdown: string,
-	filepath: string,
-) {
+export function parseMarkdownSections(markdown: string) {
 	const regex = /^---\s*[\r\n]+([\s\S]*?)\s*[\r\n]+---\s*([\s\S]*)$/;
 	const match = markdown.match(regex);
 
@@ -20,9 +14,6 @@ export async function parseMarkdownSections(
 
 	const tree = processor.parse(content);
 	const transformedTree = processor.runSync(tree);
-	processFileAttributes(transformedTree, filepath);
-	processCopyAttributes(transformedTree);
-	await highlightCodeBlocks(transformedTree);
 
 	return {
 		frontmatter,

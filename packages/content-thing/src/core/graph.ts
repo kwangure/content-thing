@@ -127,7 +127,7 @@ export class AssetGraph {
 						}
 
 						const validateItemResult = validateCollectionItem(
-							config.data.fields,
+							config.fields,
 							itemResult.value,
 						);
 						if (!validateItemResult.ok) {

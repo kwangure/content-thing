@@ -25,12 +25,7 @@ export const CollectionFieldsSchema = v.optional(
 );
 
 export const CollectionConfigSchema = v.strictObject({
+	fields: CollectionFieldsSchema,
 	filepath: v.string(),
 	type: v.string(),
-	data: v.optional(
-		v.strictObject({
-			fields: CollectionFieldsSchema,
-		}),
-		{},
-	),
 });

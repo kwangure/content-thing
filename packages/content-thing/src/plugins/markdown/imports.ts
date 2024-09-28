@@ -47,7 +47,7 @@ export class Imports {
 		this.usedNames.clear();
 	}
 
-	toString(): string {
+	toString(options?: { indent?: string }): string {
 		const importStrings: string[] = [];
 
 		for (const [path, importObj] of this.imports) {
@@ -74,6 +74,7 @@ export class Imports {
 			}
 		}
 
-		return importStrings.join('\n');
+		const indent = options?.indent ?? '';
+		return indent + importStrings.join(`\n${indent}`);
 	}
 }

@@ -19,8 +19,8 @@ export const yamlPlugin: Plugin = {
 	bundle(build) {
 		build.transformCollectionConfig((config) => {
 			if (config.type === 'yaml') {
-				config.data.fields = {
-					...config.data.fields,
+				config.fields = {
+					...config.fields,
 					_id: {
 						nullable: false,
 						type: 'string',
