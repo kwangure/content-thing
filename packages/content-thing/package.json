@@ -82,7 +82,6 @@
 		"!**/*.spec.*"
 	],
 	"devDependencies": {
-		"@sveltejs/kit": "^2.0.0",
 		"@types/node": "^20.14.9",
 		"publint": "^0.2.6",
 		"typescript": "^5.4.5",
