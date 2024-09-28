@@ -53,15 +53,18 @@ importers:
       '@content-thing/internal-utils':
         specifier: ^0.0.3
         version: 0.0.3
+      '@content-thing/line-range':
+        specifier: ^0.0.0
+        version: 0.0.0
       '@content-thing/remark-attributes':
         specifier: ^0.0.3
         version: 0.0.3
+      '@content-thing/syntax-highlighter':
+        specifier: ^0.0.1
+        version: 0.0.1(@codemirror/autocomplete@6.16.0(@codemirror/language@6.10.1)(@codemirror/state@6.4.1)(@codemirror/view@6.26.3)(@lezer/common@1.2.1))(@codemirror/lang-css@6.2.1(@codemirror/view@6.26.3))(@codemirror/lang-html@6.4.9)(@codemirror/lang-javascript@6.2.2)(@codemirror/language@6.10.1)(@codemirror/state@6.4.1)(@codemirror/view@6.26.3)
       '@content-thing/vite-plugin-syntax-highlighter':
-        specifier: ^0.0.0
-        version: 0.0.0(@codemirror/autocomplete@6.16.0(@codemirror/language@6.10.1)(@codemirror/state@6.4.1)(@codemirror/view@6.26.3)(@lezer/common@1.2.1))(@codemirror/lang-css@6.2.1(@codemirror/view@6.26.3))(@codemirror/lang-html@6.4.9)(@codemirror/lang-javascript@6.2.2)(@codemirror/language@6.10.1)(@codemirror/state@6.4.1)(@codemirror/view@6.26.3)
-      '@svelte-thing/components':
-        specifier: ^0.0.29
-        version: 0.0.29(@fig/lezer-bash@1.2.5)(@lezer/common@1.2.1)(@lezer/cpp@1.1.2)(@lezer/css@1.1.9)(@lezer/highlight@1.2.1)(@lezer/html@1.3.10)(@lezer/javascript@1.4.18)(@lezer/json@1.0.2)(@lezer/lr@1.4.2)(@lezer/python@1.1.14)(@lezer/rust@1.0.2)(@replit/codemirror-lang-svelte@6.0.0(@codemirror/autocomplete@6.16.0(@codemirror/language@6.10.1)(@codemirror/state@6.4.1)(@codemirror/view@6.26.3)(@lezer/common@1.2.1))(@codemirror/lang-css@6.2.1(@codemirror/view@6.26.3))(@codemirror/lang-html@6.4.9)(@codemirror/lang-javascript@6.2.2)(@codemirror/language@6.10.1)(@codemirror/state@6.4.1)(@codemirror/view@6.26.3)(@lezer/common@1.2.1)(@lezer/highlight@1.2.1)(@lezer/javascript@1.4.18)(@lezer/lr@1.4.2))(@sveltejs/kit@2.0.0(@sveltejs/vite-plugin-svelte@3.0.1(svelte@5.0.0-next.251)(vite@5.3.4(@types/node@20.14.9)))(svelte@5.0.0-next.251)(vite@5.3.4(@types/node@20.14.9)))(svelte@5.0.0-next.251)
+        specifier: ^0.0.1
+        version: 0.0.1(@codemirror/autocomplete@6.16.0(@codemirror/language@6.10.1)(@codemirror/state@6.4.1)(@codemirror/view@6.26.3)(@lezer/common@1.2.1))(@codemirror/lang-css@6.2.1(@codemirror/view@6.26.3))(@codemirror/lang-html@6.4.9)(@codemirror/lang-javascript@6.2.2)(@codemirror/language@6.10.1)(@codemirror/state@6.4.1)(@codemirror/view@6.26.3)
       '@types/mdast':
         specifier: ^4.0.1
         version: 4.0.1
@@ -453,8 +456,8 @@ packages:
   '@content-thing/syntax-highlighter@0.0.1':
     resolution: {integrity: sha512-Gy0oIVpZkCy8R+1Cch6mtLEkq5/cPuFNSBRsCHjHL0Xq4Rgi+vulSlHOC/k1R88Ll4Kd5rn+UsD5CeM8eF2LXw==}
 
-  '@content-thing/vite-plugin-syntax-highlighter@0.0.0':
-    resolution: {integrity: sha512-oHS4bcArphMHrbB0I5zTRfRnUQa2nTHAtYhK2XYzsiq0jhy+TJjdMah5t7y1ouQLxIckFmgZ5dJs5F/g0xE1pQ==}
+  '@content-thing/vite-plugin-syntax-highlighter@0.0.1':
+    resolution: {integrity: sha512-aHxWtN9u+ASBTLI0SVjxgZxk3UBgwygoatS1GJXQGw2kOUATIBFh9NNcwp3ucl+2jKwXKjawPu1E2TKzDev6Ug==}
 
   '@esbuild/aix-ppc64@0.19.11':
     resolution: {integrity: sha512-FnzU0LyE3ySQk7UntJO4+qIiQgI7KoODnZg5xzXIrFJlKd2P2gwHsHY4927xj9y5PJmJSzULiUCWmv7iWnNa7g==}
@@ -750,18 +753,6 @@ packages:
     resolution: {integrity: sha512-Ys+3g2TaW7gADOJzPt83SJtCDhMjndcDMFVQ/Tj9iA1BfJzFKD9mAUXT3OenpuPHbI6P/myECxRJrofUsDx/5g==}
     engines: {node: ^12.22.0 || ^14.17.0 || >=16.0.0}
 
-  '@fig/lezer-bash@1.2.5':
-    resolution: {integrity: sha512-Qvyz/wFybXJzx9VQ1H0MW0HM1o93i5fLbeiQRehMnd+YThdfh7z0m1C2EqWb0GF4cpOJEsFZd2x+NAdQf6uqog==}
-
-  '@floating-ui/core@1.6.2':
-    resolution: {integrity: sha512-+2XpQV9LLZeanU4ZevzRnGFg2neDeKHgFLjP6YLW+tly0IvrhqT4u8enLGjLH3qeh85g19xY5rsAusfwTdn5lg==}
-
-  '@floating-ui/dom@1.6.5':
-    resolution: {integrity: sha512-Nsdud2X65Dz+1RHjAIP0t8z5e2ff/IRbei6BqFrl1urT8sDVzM1HMQ+R0XcU5ceRfyO3I6ayeqIfh+6Wb8LGTw==}
-
-  '@floating-ui/utils@0.2.2':
-    resolution: {integrity: sha512-J4yDIIthosAsRZ5CPYP/jQvUAQtlZTTD/4suA08/FEnlxqW3sKS9iAhgsa9VYLZ6vDHn/ixJgIqRQPotoBjxIw==}
-
   '@humanwhocodes/config-array@0.11.14':
     resolution: {integrity: sha512-3T8LkOmg45BV5FICb15QQMsyUSWrQ8AygVfC7ZG32zOalnqrilm018ZVCw0eapXux8FtA33q8PSRSstjee3jSg==}
     engines: {node: '>=10.10.0'}
@@ -774,9 +765,6 @@ packages:
   '@humanwhocodes/object-schema@2.0.3':
     resolution: {integrity: sha512-93zYdMES/c1D69yZiKDBj0V24vqNzB/koF26KPaagAfd3P/4gUlh3Dys5ogAK+Exi9QyzlD8x/08Zt7wIKcDcA==}
     deprecated: Use @eslint/object-schema instead
-
-  '@internationalized/date@3.5.4':
-    resolution: {integrity: sha512-qoVJVro+O0rBaw+8HPjUB1iH8Ihf8oziEnqMnvhJUSuVIrHOuZ6eNLHNvzXJKUvAtaDiqMnRlg8Z2mgh09BlUw==}
 
   '@jest/schemas@29.6.3':
     resolution: {integrity: sha512-mo5j5X+jIZmJQveBKeS/clAueipV7KgiX1vMgCxam1RNYiqE1w62n0/tJJnHtjW8ZHcQco5gY85jA3mi0L+nSA==}
@@ -844,23 +832,11 @@ packages:
   '@lezer/rust@1.0.2':
     resolution: {integrity: sha512-Lz5sIPBdF2FUXcWeCu1//ojFAZqzTQNRga0aYv6dYXqJqPfMdCAI0NzajWUd4Xijj1IKJLtjoXRPMvTKWBcqKg==}
 
-  '@lukeed/csprng@1.1.0':
-    resolution: {integrity: sha512-Z7C/xXCiGWsg0KuKsHTKJxbWhpI3Vs5GwLfOean7MGyVFGqdRgBbAjOCh6u4bbjPc/8MJ2pZmK/0DLdCbivLDA==}
-    engines: {node: '>=8'}
-
   '@manypkg/find-root@1.1.0':
     resolution: {integrity: sha512-mki5uBvhHzO8kYYix/WRy2WX8S3B5wdVSc9D6KcU5lQNglP2yt58/VfLuAK49glRXChosY8ap2oJ1qgma3GUVA==}
 
   '@manypkg/get-packages@1.1.3':
     resolution: {integrity: sha512-fo+QhuU3qE/2TQMQmbVMqaQ6EWbMhi4ABWP+O4AM1NqPBuy0OrApV5LO6BrrgnhtAHS2NH6RrVk9OL181tTi8A==}
-
-  '@mdi/js@7.4.47':
-    resolution: {integrity: sha512-KPnNOtm5i2pMabqZxpUz7iQf+mfrYZyKCZ8QNz85czgEt7cuHcGorWfdzUMWYA0SD+a6Hn4FmJ+YhzzzjkTZrQ==}
-
-  '@melt-ui/svelte@0.76.3':
-    resolution: {integrity: sha512-fEtwHnOVLH0eNwtr+7pX5JQVtOL2XWVFA0/xrNU0yL6NkEpv++4NUwaaulGZC4nVmVG/gIA1JK2fx5M0u01TlA==}
-    peerDependencies:
-      svelte: '>=3 <5'
 
   '@nodelib/fs.scandir@2.1.5':
     resolution: {integrity: sha512-vq24Bq3ym5HEQm2NKCr3yXDwjc7vTsEThRDnkp2DK9p1uqLR+DHurm/NOTo0KG7HYHU7eppKZj3MyqYuMBf62g==}
@@ -975,24 +951,6 @@ packages:
   '@sinclair/typebox@0.27.8':
     resolution: {integrity: sha512-+Fj43pSMwJs4KRrH/938Uf+uAELIgVBmQzg/q1YG10djyfA3TnrU8N8XzqCh/okZdszqBQTZf96idMfE5lnwTA==}
 
-  '@svelte-thing/components@0.0.29':
-    resolution: {integrity: sha512-mhw5EZyt2LS6cEW5Vw+wKFQp9aSOkxLndBcZ3w1gtFRTk5fHxigln78MZpbx4L/c7AUhttDyPoHe92lwJtG0aA==}
-    peerDependencies:
-      '@fig/lezer-bash': ^1.2.5
-      '@lezer/common': ^1.1.0
-      '@lezer/cpp': ^1.1.1
-      '@lezer/css': ^1.1.3
-      '@lezer/highlight': ^1.1.6
-      '@lezer/html': ^1.3.6
-      '@lezer/javascript': ^1.4.7
-      '@lezer/json': ^1.0.1
-      '@lezer/lr': ^1.3.12
-      '@lezer/python': ^1.1.8
-      '@lezer/rust': ^1.0.1
-      '@replit/codemirror-lang-svelte': ^6.0.0
-      '@sveltejs/kit': ^2.0.0
-      svelte: ^4.0.0
-
   '@sveltejs/kit@2.0.0':
     resolution: {integrity: sha512-/GFxvit+q7PztRbgGTFXhVB6jvb0fZSeWuz5f4siQ2r/5BVhxYh7++Bw3/ZUjiOuyoZFiNBmOPcRNQbkzEce0g==}
     engines: {node: '>=18.13'}
@@ -1016,9 +974,6 @@ packages:
     peerDependencies:
       svelte: ^4.0.0 || ^5.0.0-next.0
       vite: ^5.0.0
-
-  '@swc/helpers@0.5.11':
-    resolution: {integrity: sha512-YNlnKRWF2sVojTpIyzwou9XoTNbzbzONwRhOoniEioF1AtaitTvVZblaQRrAzChWQ1bLYyYSWzM18y4WwgzJ+A==}
 
   '@types/cookie@0.6.0':
     resolution: {integrity: sha512-4Kh9a6B2bQciAhf7FSuMRRkUWecJgJu9nPnx3yzpsfXX/c50REIqpHY4C82bXP90qrLtXtkDxTZosYO3UpOwlA==}
@@ -1630,9 +1585,6 @@ packages:
   flatted@3.2.7:
     resolution: {integrity: sha512-5nqDSxl8nn5BSNxyR3n4I6eDmbolI6WT+QqR547RwxQapgjQBmtktdP+HTBb/a/zLsbzERTONyUB5pefh5TtjQ==}
 
-  focus-trap@7.5.4:
-    resolution: {integrity: sha512-N7kHdlgsO/v+iD/dMoJKtsSqs5Dz/dXZVebRgJw23LDk+jMi/974zyiOYDziY2JPp8xivq9BmUGwIJMiuSBi7w==}
-
   for-each@0.3.3:
     resolution: {integrity: sha512-jqYfLp7mo9vIyQf8ykW2v7A+2N4QjeCeI5+Dz9XraiO1ign81wjiH7Fb9vSOWvQfNtmSa4H2RoQTrrXivdUZmw==}
 
@@ -2189,11 +2141,6 @@ packages:
   nanoid@3.3.7:
     resolution: {integrity: sha512-eSRppjcPIatRIMC1U6UngP8XFcz8MQWGQdt1MTBQ7NaAmvXDfvNxbvWV3x2y6CdEUciCSsDHDQZbhYaB8QEo2g==}
     engines: {node: ^10 || ^12 || ^13.7 || ^14 || >=15.0.1}
-    hasBin: true
-
-  nanoid@5.0.7:
-    resolution: {integrity: sha512-oLxFY2gd2IqnjcYyOXD8XGCftpGtZP2AbHbOkthDkvRywH5ayNtPVy9YlOPcHckXzbLTCHpkb7FB+yuxKV13pQ==}
-    engines: {node: ^18 || >=20}
     hasBin: true
 
   natural-compare@1.4.0:
@@ -2755,9 +2702,6 @@ packages:
     resolution: {integrity: sha512-LHYqc20juzfpLl61Yah/CpZEG4NWU1w7TgItvJkPqYGbmtLCHZHHhVqYskwDQnw73dGum81vyODxPlJAcOwxHA==}
     engines: {node: '>=18'}
 
-  tabbable@6.2.0:
-    resolution: {integrity: sha512-Cat63mxsVJlzYvN51JmVXIgNoUokrIaT2zLclCXjRd8boZ0004U4KCs/sToJ75C6sdlByWxpYnb5Boif1VSFew==}
-
   term-size@2.2.1:
     resolution: {integrity: sha512-wK0Ri4fOGjv/XPy8SBHZChl8CM7uMc5VML7SqiQ0zG7+J5Vr+RMQDoHa2CNT6KHUnTGIXH34UDMkPzAUyapBZg==}
     engines: {node: '>=8'}
@@ -2803,9 +2747,6 @@ packages:
     engines: {node: '>=16'}
     peerDependencies:
       typescript: '>=4.2.0'
-
-  tslib@2.6.2:
-    resolution: {integrity: sha512-AEYxH93jGFPn/a2iVAwW87VuUIkR1FVUKB77NwMF7nBTDkDrrT/Hpt/IrCJ0QXhW27jTBDcf5ZY7w6RiqTMw2Q==}
 
   tsx@4.7.0:
     resolution: {integrity: sha512-I+t79RYPlEYlHn9a+KzwrvEwhJg35h/1zHsLC2JXvhC2mdynMv6Zxzvhv5EMV6VF5qJlLlkSnMVvdZV3PSIGcg==}
@@ -2883,10 +2824,6 @@ packages:
 
   ufo@1.5.3:
     resolution: {integrity: sha512-Y7HYmWaFwPUmkoQCUIAYpKqkOf+SbVj/2fJJZ4RJMCfZp0rTGwRbzQD+HghfnhKOjL9E01okqz+ncJskGYfBNw==}
-
-  uid@2.0.2:
-    resolution: {integrity: sha512-u3xV3X7uzvi5b1MncmZo3i2Aw222Zk1keqLA1YkHldREkAhAqi65wuPfe7lHx8H/Wzy+8CE7S7uS3jekIM5s8g==}
-    engines: {node: '>=8'}
 
   unbox-primitive@1.0.2:
     resolution: {integrity: sha512-61pPlCD9h51VoreyJ0BReideM3MDKMKnh6+V9L08331ipq6Q8OFXZYiqP6n/tbHx4s5I9uRhcye6BrbkizkBDw==}
@@ -3372,8 +3309,9 @@ snapshots:
       - '@codemirror/state'
       - '@codemirror/view'
 
-  '@content-thing/vite-plugin-syntax-highlighter@0.0.0(@codemirror/autocomplete@6.16.0(@codemirror/language@6.10.1)(@codemirror/state@6.4.1)(@codemirror/view@6.26.3)(@lezer/common@1.2.1))(@codemirror/lang-css@6.2.1(@codemirror/view@6.26.3))(@codemirror/lang-html@6.4.9)(@codemirror/lang-javascript@6.2.2)(@codemirror/language@6.10.1)(@codemirror/state@6.4.1)(@codemirror/view@6.26.3)':
+  '@content-thing/vite-plugin-syntax-highlighter@0.0.1(@codemirror/autocomplete@6.16.0(@codemirror/language@6.10.1)(@codemirror/state@6.4.1)(@codemirror/view@6.26.3)(@lezer/common@1.2.1))(@codemirror/lang-css@6.2.1(@codemirror/view@6.26.3))(@codemirror/lang-html@6.4.9)(@codemirror/lang-javascript@6.2.2)(@codemirror/language@6.10.1)(@codemirror/state@6.4.1)(@codemirror/view@6.26.3)':
     dependencies:
+      '@content-thing/line-range': 0.0.0
       '@content-thing/syntax-highlighter': 0.0.1(@codemirror/autocomplete@6.16.0(@codemirror/language@6.10.1)(@codemirror/state@6.4.1)(@codemirror/view@6.26.3)(@lezer/common@1.2.1))(@codemirror/lang-css@6.2.1(@codemirror/view@6.26.3))(@codemirror/lang-html@6.4.9)(@codemirror/lang-javascript@6.2.2)(@codemirror/language@6.10.1)(@codemirror/state@6.4.1)(@codemirror/view@6.26.3)
     transitivePeerDependencies:
       - '@codemirror/autocomplete'
@@ -3545,22 +3483,6 @@ snapshots:
 
   '@eslint/js@8.57.0': {}
 
-  '@fig/lezer-bash@1.2.5':
-    dependencies:
-      '@lezer/highlight': 1.2.1
-      '@lezer/lr': 1.4.2
-
-  '@floating-ui/core@1.6.2':
-    dependencies:
-      '@floating-ui/utils': 0.2.2
-
-  '@floating-ui/dom@1.6.5':
-    dependencies:
-      '@floating-ui/core': 1.6.2
-      '@floating-ui/utils': 0.2.2
-
-  '@floating-ui/utils@0.2.2': {}
-
   '@humanwhocodes/config-array@0.11.14':
     dependencies:
       '@humanwhocodes/object-schema': 2.0.3
@@ -3572,10 +3494,6 @@ snapshots:
   '@humanwhocodes/module-importer@1.0.1': {}
 
   '@humanwhocodes/object-schema@2.0.3': {}
-
-  '@internationalized/date@3.5.4':
-    dependencies:
-      '@swc/helpers': 0.5.11
 
   '@jest/schemas@29.6.3':
     dependencies:
@@ -3665,8 +3583,6 @@ snapshots:
       '@lezer/highlight': 1.2.1
       '@lezer/lr': 1.4.2
 
-  '@lukeed/csprng@1.1.0': {}
-
   '@manypkg/find-root@1.1.0':
     dependencies:
       '@babel/runtime': 7.22.15
@@ -3682,18 +3598,6 @@ snapshots:
       fs-extra: 8.1.0
       globby: 11.1.0
       read-yaml-file: 1.1.0
-
-  '@mdi/js@7.4.47': {}
-
-  '@melt-ui/svelte@0.76.3(svelte@5.0.0-next.251)':
-    dependencies:
-      '@floating-ui/core': 1.6.2
-      '@floating-ui/dom': 1.6.5
-      '@internationalized/date': 3.5.4
-      dequal: 2.0.3
-      focus-trap: 7.5.4
-      nanoid: 5.0.7
-      svelte: 5.0.0-next.251
 
   '@nodelib/fs.scandir@2.1.5':
     dependencies:
@@ -3773,27 +3677,6 @@ snapshots:
 
   '@sinclair/typebox@0.27.8': {}
 
-  '@svelte-thing/components@0.0.29(@fig/lezer-bash@1.2.5)(@lezer/common@1.2.1)(@lezer/cpp@1.1.2)(@lezer/css@1.1.9)(@lezer/highlight@1.2.1)(@lezer/html@1.3.10)(@lezer/javascript@1.4.18)(@lezer/json@1.0.2)(@lezer/lr@1.4.2)(@lezer/python@1.1.14)(@lezer/rust@1.0.2)(@replit/codemirror-lang-svelte@6.0.0(@codemirror/autocomplete@6.16.0(@codemirror/language@6.10.1)(@codemirror/state@6.4.1)(@codemirror/view@6.26.3)(@lezer/common@1.2.1))(@codemirror/lang-css@6.2.1(@codemirror/view@6.26.3))(@codemirror/lang-html@6.4.9)(@codemirror/lang-javascript@6.2.2)(@codemirror/language@6.10.1)(@codemirror/state@6.4.1)(@codemirror/view@6.26.3)(@lezer/common@1.2.1)(@lezer/highlight@1.2.1)(@lezer/javascript@1.4.18)(@lezer/lr@1.4.2))(@sveltejs/kit@2.0.0(@sveltejs/vite-plugin-svelte@3.0.1(svelte@5.0.0-next.251)(vite@5.3.4(@types/node@20.14.9)))(svelte@5.0.0-next.251)(vite@5.3.4(@types/node@20.14.9)))(svelte@5.0.0-next.251)':
-    dependencies:
-      '@fig/lezer-bash': 1.2.5
-      '@lezer/common': 1.2.1
-      '@lezer/cpp': 1.1.2
-      '@lezer/css': 1.1.9
-      '@lezer/highlight': 1.2.1
-      '@lezer/html': 1.3.10
-      '@lezer/javascript': 1.4.18
-      '@lezer/json': 1.0.2
-      '@lezer/lr': 1.4.2
-      '@lezer/python': 1.1.14
-      '@lezer/rust': 1.0.2
-      '@mdi/js': 7.4.47
-      '@melt-ui/svelte': 0.76.3(svelte@5.0.0-next.251)
-      '@replit/codemirror-lang-svelte': 6.0.0(@codemirror/autocomplete@6.16.0(@codemirror/language@6.10.1)(@codemirror/state@6.4.1)(@codemirror/view@6.26.3)(@lezer/common@1.2.1))(@codemirror/lang-css@6.2.1(@codemirror/view@6.26.3))(@codemirror/lang-html@6.4.9)(@codemirror/lang-javascript@6.2.2)(@codemirror/language@6.10.1)(@codemirror/state@6.4.1)(@codemirror/view@6.26.3)(@lezer/common@1.2.1)(@lezer/highlight@1.2.1)(@lezer/javascript@1.4.18)(@lezer/lr@1.4.2)
-      '@sveltejs/kit': 2.0.0(@sveltejs/vite-plugin-svelte@3.0.1(svelte@5.0.0-next.251)(vite@5.3.4(@types/node@20.14.9)))(svelte@5.0.0-next.251)(vite@5.3.4(@types/node@20.14.9))
-      esm-env: 1.0.0
-      svelte: 5.0.0-next.251
-      uid: 2.0.2
-
   '@sveltejs/kit@2.0.0(@sveltejs/vite-plugin-svelte@3.0.1(svelte@5.0.0-next.251)(vite@5.3.4(@types/node@20.14.9)))(svelte@5.0.0-next.251)(vite@5.3.4(@types/node@20.14.9))':
     dependencies:
       '@sveltejs/vite-plugin-svelte': 3.0.1(svelte@5.0.0-next.251)(vite@5.3.4(@types/node@20.14.9))
@@ -3833,10 +3716,6 @@ snapshots:
       vitefu: 0.2.5(vite@5.3.4(@types/node@20.14.9))
     transitivePeerDependencies:
       - supports-color
-
-  '@swc/helpers@0.5.11':
-    dependencies:
-      tslib: 2.6.2
 
   '@types/cookie@0.6.0': {}
 
@@ -4606,10 +4485,6 @@ snapshots:
 
   flatted@3.2.7: {}
 
-  focus-trap@7.5.4:
-    dependencies:
-      tabbable: 6.2.0
-
   for-each@0.3.3:
     dependencies:
       is-callable: 1.2.7
@@ -5239,8 +5114,6 @@ snapshots:
 
   nanoid@3.3.7: {}
 
-  nanoid@5.0.7: {}
-
   natural-compare@1.4.0: {}
 
   normalize-package-data@2.5.0:
@@ -5786,8 +5659,6 @@ snapshots:
       magic-string: 0.30.11
       zimmerframe: 1.1.2
 
-  tabbable@6.2.0: {}
-
   term-size@2.2.1: {}
 
   text-table@0.2.0: {}
@@ -5820,8 +5691,6 @@ snapshots:
   ts-api-utils@1.3.0(typescript@5.5.4):
     dependencies:
       typescript: 5.5.4
-
-  tslib@2.6.2: {}
 
   tsx@4.7.0:
     dependencies:
@@ -5899,10 +5768,6 @@ snapshots:
   typescript@5.5.4: {}
 
   ufo@1.5.3: {}
-
-  uid@2.0.2:
-    dependencies:
-      '@lukeed/csprng': 1.1.0
 
   unbox-primitive@1.0.2:
     dependencies:

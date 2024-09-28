@@ -24,8 +24,8 @@ export const markdownPlugin: Plugin = {
 
 		build.transformCollectionConfig((config) => {
 			if (config.type === 'markdown') {
-				config.data.fields = {
-					...config.data.fields,
+				config.fields = {
+					...config.fields,
 					_id: {
 						nullable: false,
 						type: 'string',
@@ -73,14 +73,11 @@ export const markdownPlugin: Plugin = {
 			return markdownFilepaths;
 		});
 
-		build.loadCollectionItem(async ({ config, filepath }) => {
+		build.loadCollectionItem(async ({ config, filepath, options }) => {
 			if (config.type !== 'markdown') return;
 
 			const value = fs.readFileSync(filepath, 'utf-8');
-			const { frontmatter, content } = await parseMarkdownSections(
-				value,
-				filepath,
-			);
+			const { frontmatter, content } = await parseMarkdownSections(value);
 
 			return Ok({
 				data: {
@@ -88,7 +85,25 @@ export const markdownPlugin: Plugin = {
 					_id: parseFilepath(filepath).entry.id,
 					_headingTree: getHeadingTree(content),
 				},
-				content: mdastToSvelteString(content),
+				content: mdastToSvelteString(content, {
+					resolveId(id) {
+						if (!id.startsWith('./') && !id.startsWith('../')) {
+							return id;
+						}
+						const { collectionsMirrorDir } = options.files;
+						const destDir = path.join(
+							collectionsMirrorDir,
+							filepath
+								.replace(COLLECTIONS_ROOT_RE, '')
+								.replace(README_MD_RE, ''),
+						);
+						const sourceDir = path.dirname(filepath);
+						const absoluteImportPath = path.resolve(sourceDir, id);
+						const newRelativePath = path.relative(destDir, absoluteImportPath);
+
+						return newRelativePath.replace(/\\/g, '/'); // posixify;
+					},
+				}),
 			});
 		});
 

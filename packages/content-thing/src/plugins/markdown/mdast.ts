@@ -1,5 +1,5 @@
-import type { HighlightResult } from '@svelte-thing/components/code';
-import type { LineInterval } from './util.js';
+import type { HighlightResult } from '@content-thing/syntax-highlighter';
+import type { LineInterval } from '@content-thing/line-range';
 
 declare module 'mdast' {
 	interface CodeData {
@@ -13,7 +13,6 @@ declare module 'mdast' {
 			ranges: LineInterval[];
 			text: string;
 		};
-		highlightedLines?: HighlightResult[][];
 	}
 	interface HeadingData {
 		value: string;
