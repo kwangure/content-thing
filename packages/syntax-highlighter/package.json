@@ -69,6 +69,7 @@
 		"!**/*.test.d.ts"
 	],
 	"dependencies": {
+		"@fig/lezer-bash": "^1.2.5",
 		"@lezer/common": "^1.2.1",
 		"@lezer/cpp": "^1.1.2",
 		"@lezer/css": "^1.1.9",
