@@ -1,3 +1,4 @@
+export * from './bash.js';
 export * from './cpp.js';
 export * from './css.js';
 export * from './html.js';
