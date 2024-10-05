@@ -181,6 +181,9 @@ importers:
 
   packages/syntax-highlighter:
     dependencies:
+      '@fig/lezer-bash':
+        specifier: ^1.2.5
+        version: 1.2.5
       '@lezer/common':
         specifier: ^1.2.1
         version: 1.2.1
@@ -668,6 +671,9 @@ packages:
   '@eslint/js@8.57.0':
     resolution: {integrity: sha512-Ys+3g2TaW7gADOJzPt83SJtCDhMjndcDMFVQ/Tj9iA1BfJzFKD9mAUXT3OenpuPHbI6P/myECxRJrofUsDx/5g==}
     engines: {node: ^12.22.0 || ^14.17.0 || >=16.0.0}
+
+  '@fig/lezer-bash@1.2.5':
+    resolution: {integrity: sha512-Qvyz/wFybXJzx9VQ1H0MW0HM1o93i5fLbeiQRehMnd+YThdfh7z0m1C2EqWb0GF4cpOJEsFZd2x+NAdQf6uqog==}
 
   '@humanwhocodes/config-array@0.11.14':
     resolution: {integrity: sha512-3T8LkOmg45BV5FICb15QQMsyUSWrQ8AygVfC7ZG32zOalnqrilm018ZVCw0eapXux8FtA33q8PSRSstjee3jSg==}
@@ -3248,6 +3254,11 @@ snapshots:
       - supports-color
 
   '@eslint/js@8.57.0': {}
+
+  '@fig/lezer-bash@1.2.5':
+    dependencies:
+      '@lezer/highlight': 1.2.1
+      '@lezer/lr': 1.4.2
 
   '@humanwhocodes/config-array@0.11.14':
     dependencies:

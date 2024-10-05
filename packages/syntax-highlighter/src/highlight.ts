@@ -114,6 +114,7 @@ const typescript = async () =>
 	(await import('./syntax/typescript.js')).typescript;
 
 const SUPPORTED_LANGUAGES = {
+	bash: async () => (await import('./syntax/bash.js')).bash,
 	cpp: async () => (await import('./syntax/cpp.js')).cpp,
 	css: async () => (await import('./syntax/css.js')).css,
 	html: async () => (await import('./syntax/html.js')).html,
