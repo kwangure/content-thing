@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { execute, query } from './database.js';
+import { execute, filter } from './filter.js';
 import { createTable } from './table.js';
 
 describe('query', () => {
@@ -12,7 +12,7 @@ describe('query', () => {
 
 	describe('basic', () => {
 		it('should return all records when no conditions are applied', () => {
-			const result = execute(query(userTable));
+			const result = execute(filter(userTable));
 			expect(result).toEqual(userRecords);
 		});
 	});
@@ -28,7 +28,7 @@ describe('query', () => {
 
 		it('should correctly filter records using where clause', () => {
 			const result = execute(
-				query(valueTable).where((record) => record.value < 30),
+				filter(valueTable).where((record) => record.value < 30),
 			);
 			expect(result).toEqual([
 				{ id: 1, value: 10 },
@@ -37,7 +37,7 @@ describe('query', () => {
 		});
 
 		it('should return an empty array when no records match the condition', () => {
-			const result = execute(query(userTable).where((user) => user.age > 100));
+			const result = execute(filter(userTable).where((user) => user.age > 100));
 			expect(result).toEqual([]);
 		});
 	});
@@ -51,7 +51,7 @@ describe('query', () => {
 
 		it('should include specified computed fields when using with()', () => {
 			const result = execute(
-				query(userWithComputedFields).with({
+				filter(userWithComputedFields).with({
 					fullName: (user) => `${user.firstName} ${user.lastName}`,
 				}),
 			);
@@ -60,7 +60,7 @@ describe('query', () => {
 
 		it('should include multiple computed fields when specified', () => {
 			const result = execute(
-				query(userWithComputedFields).with({
+				filter(userWithComputedFields).with({
 					fullName: (user) => `${user.firstName} ${user.lastName}`,
 					isAdult: (user) => user.age >= 18,
 				}),
@@ -71,7 +71,7 @@ describe('query', () => {
 
 		it('should work correctly with where() and with() combined', () => {
 			const result = execute(
-				query(userWithComputedFields)
+				filter(userWithComputedFields)
 					.where((user) => user.age >= 25)
 					.with({
 						fullName: (user) => `${user.firstName} ${user.lastName}`,
@@ -104,7 +104,7 @@ describe('query', () => {
 		]);
 
 		it('should limit the number of records returned', () => {
-			const result = execute(query(numberTable).limit(3));
+			const result = execute(filter(numberTable).limit(3));
 			expect(result).toEqual([
 				{ id: 1, value: 10 },
 				{ id: 2, value: 20 },
@@ -113,7 +113,7 @@ describe('query', () => {
 		});
 
 		it('should return all records when limit is greater than the number of records', () => {
-			const result = execute(query(numberTable).limit(10));
+			const result = execute(filter(numberTable).limit(10));
 			expect(result).toEqual([
 				{ id: 1, value: 10 },
 				{ id: 2, value: 20 },
@@ -124,12 +124,12 @@ describe('query', () => {
 		});
 
 		it('should return an empty array when limit is 0', () => {
-			const result = execute(query(numberTable).limit(0));
+			const result = execute(filter(numberTable).limit(0));
 			expect(result).toEqual([]);
 		});
 
 		it('should ignore negative limit values', () => {
-			const result = execute(query(numberTable).limit(-3));
+			const result = execute(filter(numberTable).limit(-3));
 			expect(result).toEqual([
 				{ id: 1, value: 10 },
 				{ id: 2, value: 20 },
@@ -141,7 +141,7 @@ describe('query', () => {
 
 		it('should work correctly with where() and limit() combined', () => {
 			const result = execute(
-				query(numberTable)
+				filter(numberTable)
 					.where((record) => record.value > 20)
 					.limit(2),
 			);
@@ -153,7 +153,7 @@ describe('query', () => {
 
 		it('should work correctly with with(), where(), and limit() combined', () => {
 			const result = execute(
-				query(numberTable)
+				filter(numberTable)
 					.where((record) => record.value > 20)
 					.with({
 						doubled: (record) => record.value * 2,

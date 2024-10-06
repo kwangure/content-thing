@@ -1,5 +1,5 @@
 import { describe, expectTypeOf, it } from 'vitest';
-import { execute, query } from './database.js';
+import { execute, filter } from './filter.js';
 import { createTable } from './table.js';
 
 describe('query', () => {
@@ -8,22 +8,22 @@ describe('query', () => {
 
 	describe('select', () => {
 		it('should only accept valid column names', () => {
-			query(userTable).select('id', 'name', 'age');
+			filter(userTable).select('id', 'name', 'age');
 			// @ts-expect-error non-existent column
-			query(userTable).select('id', 'nonExistentColumn');
+			filter(userTable).select('id', 'nonExistentColumn');
 		});
 
 		it('should correctly type the result when using .select()', () => {
-			const result = execute(query(userTable).select('name', 'age'));
+			const result = execute(filter(userTable).select('name', 'age'));
 			expectTypeOf(result).toEqualTypeOf<{ name: string; age: number }[]>();
 
-			const resultSingleColumn = execute(query(userTable).select('name'));
+			const resultSingleColumn = execute(filter(userTable).select('name'));
 			expectTypeOf(resultSingleColumn).toEqualTypeOf<{ name: string }[]>();
 		});
 
 		it('should correctly type the result when combining .where() and .select()', () => {
 			const result = execute(
-				query(userTable)
+				filter(userTable)
 					.where((user) => user.age > 18)
 					.select('name', 'age'),
 			);
@@ -36,7 +36,7 @@ describe('query', () => {
 			]);
 
 			const result = execute(
-				query(userWithComputed)
+				filter(userWithComputed)
 					.select('firstName', 'lastName')
 					.with({
 						fullName: (user) => `${user.firstName} ${user.lastName}`,
@@ -54,12 +54,12 @@ describe('query', () => {
 				age?: number;
 			}>([{ id: 1, name: 'Alice' }]);
 
-			const result = execute(query(userWithOptional).select('name', 'age'));
+			const result = execute(filter(userWithOptional).select('name', 'age'));
 			expectTypeOf(result).toEqualTypeOf<{ name: string; age?: number }[]>();
 		});
 
 		it('should correctly type the result when .select() is not used', () => {
-			const result = execute(query(userTable));
+			const result = execute(filter(userTable));
 			expectTypeOf(result).toEqualTypeOf<
 				{ id: number; name: string; age: number }[]
 			>();
@@ -68,9 +68,9 @@ describe('query', () => {
 
 	describe('where', () => {
 		it('should only accept valid filters', () => {
-			query(userTable).where(() => true);
+			filter(userTable).where(() => true);
 			// @ts-expect-error non-existent column type
-			query(userTable).where(() => undefined);
+			filter(userTable).where(() => undefined);
 		});
 	});
 
@@ -81,7 +81,7 @@ describe('query', () => {
 
 		it('should correctly type the result when using .with()', () => {
 			const result = execute(
-				query(userWithComputed).with({
+				filter(userWithComputed).with({
 					fullName: (user) => `${user.firstName} ${user.lastName}`,
 				}),
 			);
@@ -95,7 +95,7 @@ describe('query', () => {
 			>();
 
 			const resultWithMultiple = execute(
-				query(userWithComputed).with({
+				filter(userWithComputed).with({
 					fullName: (user) => `${user.firstName} ${user.lastName}`,
 					isAdult: (user) => user.age >= 18,
 				}),
@@ -113,7 +113,7 @@ describe('query', () => {
 
 		it('should correctly type computed field input', () => {
 			execute(
-				query(userWithComputed).with({
+				filter(userWithComputed).with({
 					fullName(user) {
 						expectTypeOf(user).toEqualTypeOf<{
 							firstName: string;
@@ -127,7 +127,7 @@ describe('query', () => {
 
 		it('should correctly type the result when combining .where() and .with()', () => {
 			const result = execute(
-				query(userWithComputed)
+				filter(userWithComputed)
 					.where((user) => user.age > 18)
 					.with({
 						fullName: (user) => `${user.firstName} ${user.lastName}`,
@@ -152,7 +152,7 @@ describe('query', () => {
 			}>([{ id: 1, firstName: 'Alice', lastName: 'Johnson' }]);
 
 			const result = execute(
-				query(userTable).with({
+				filter(userTable).with({
 					fullName: (user) => `${user.firstName} ${user.lastName}`,
 					isAdult: (user) => (user.age ?? 0) >= 18,
 				}),
@@ -172,12 +172,12 @@ describe('query', () => {
 
 	describe('execute', () => {
 		it('should return an array of the correct type', () => {
-			const users = execute(query(userTable));
+			const users = execute(filter(userTable));
 			expectTypeOf(users).toEqualTypeOf<
 				{ id: number; name: string; age: number }[]
 			>();
 
-			const posts = execute(query(postTable));
+			const posts = execute(filter(postTable));
 			expectTypeOf(posts).toEqualTypeOf<
 				{ id: number; title: string; authorId: number }[]
 			>();
@@ -190,7 +190,7 @@ describe('query', () => {
 	describe('miscellaneous', () => {
 		it('should handle tables with no columns', () => {
 			const empty = createTable([]);
-			const empties = execute(query(empty));
+			const empties = execute(filter(empty));
 			expectTypeOf(empties).toEqualTypeOf<Record<string, never>[]>();
 		});
 
@@ -200,7 +200,7 @@ describe('query', () => {
 				name: string;
 				age?: number;
 			}>([{ id: 1, name: 'Alice', age: 30 }]);
-			expectTypeOf(execute(query(user))).toEqualTypeOf<
+			expectTypeOf(execute(filter(user))).toEqualTypeOf<
 				{ id: number; name: string; age?: number }[]
 			>();
 		});
