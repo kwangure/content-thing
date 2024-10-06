@@ -1,5 +1,6 @@
 import type { Table } from '../table.js';
 import type { Simplify } from '../types.js';
+import { levenshteinDistance } from './levenshtein.js';
 
 export function tokenize(text: string, locale?: Intl.LocalesArgument) {
 	const words = [];
@@ -89,23 +90,36 @@ export function search<T extends Record<string, unknown>>(
 	return rankBM25(matchedDocs, table, documentLengths, averageDocumentLength);
 }
 
+export interface DocumentMatch {
+	docFreq: number;
+	fuzzyDistance: number;
+	termFreq: number;
+	token: string;
+}
+
 export function findMatchingDocs(
 	invertedIndex: Map<string, Map<number, number>>,
 	queryTokens: string[],
+	similarityThreshold = 2,
 ) {
-	const matchedDocs = new Map<
-		number,
-		{ docFreq: number; termFreq: number; token: string }[]
-	>();
+	const matchedDocs = new Map<number, DocumentMatch[]>();
 
 	for (const token of new Set(queryTokens)) {
-		const docs = invertedIndex.get(token);
-		if (docs) {
-			for (const [docId, termFreq] of docs) {
-				if (!matchedDocs.has(docId)) {
-					matchedDocs.set(docId, []);
+		for (const [indexToken, docs] of invertedIndex.entries()) {
+			const distance = levenshteinDistance(token, indexToken);
+
+			if (distance === 0 || distance <= similarityThreshold) {
+				for (const [docId, termFreq] of docs) {
+					if (!matchedDocs.has(docId)) {
+						matchedDocs.set(docId, []);
+					}
+					matchedDocs.get(docId)!.push({
+						docFreq: docs.size,
+						fuzzyDistance: distance,
+						termFreq,
+						token: indexToken, // Use the actual matched token
+					});
 				}
-				matchedDocs.get(docId)!.push({ docFreq: docs.size, termFreq, token });
 			}
 		}
 	}
@@ -114,10 +128,7 @@ export function findMatchingDocs(
 }
 
 export function rankBM25<T extends Record<string, unknown>>(
-	matchedDocs: Map<
-		number,
-		{ docFreq: number; termFreq: number; token: string }[]
-	>,
+	matchedDocs: Map<number, DocumentMatch[]>,
 	table: Table<T>,
 	documentLengths: number[],
 	averageDocumentLength: number,
@@ -127,16 +138,19 @@ export function rankBM25<T extends Record<string, unknown>>(
 	const matchedTokensMap = new Map<number, Set<string>>();
 
 	for (const [docId, terms] of matchedDocs) {
-		for (const { docFreq, termFreq, token } of terms) {
+		for (const { docFreq, fuzzyDistance, termFreq, token } of terms) {
 			const docLength = documentLengths[docId];
 			if (typeof docLength === 'number') {
-				const score = calculateBM25(
-					termFreq,
-					docFreq,
-					docLength,
-					averageDocumentLength,
-					totalDocs,
-				);
+				// Apply a penalty for fuzzy matches based on Levenshtein distance
+				const penaltyFactor = 1 / (fuzzyDistance + 1);
+				const score =
+					calculateBM25(
+						termFreq,
+						docFreq,
+						docLength,
+						averageDocumentLength,
+						totalDocs,
+					) * penaltyFactor;
 				scores[docId] = (scores[docId] || 0) + score;
 
 				if (!matchedTokensMap.has(docId)) {

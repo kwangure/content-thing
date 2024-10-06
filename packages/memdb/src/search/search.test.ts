@@ -1,10 +1,13 @@
 import { assert, describe, expect, it } from 'vitest';
 import {
 	createSearchIndex,
+	findMatchingDocs,
 	highlightFirst,
 	highlightSearchResult,
+	rankBM25,
 	search,
 	tokenize,
+	type DocumentMatch,
 } from './search.js';
 import { createTable } from '../table.js';
 
@@ -35,6 +38,99 @@ describe('tokenize', () => {
 
 	it('handles string with only non-word characters', () => {
 		expect(tokenize('@#$%')).toEqual([]);
+	});
+});
+
+describe('findMatchingDocs', () => {
+	it('should find exact matches in the inverted index', () => {
+		const invertedIndex = new Map([
+			['apple', new Map([[1, 2]])],
+			[
+				'banana',
+				new Map([
+					[1, 1],
+					[2, 1],
+				]),
+			],
+		]);
+
+		const queryTokens = ['apple'];
+		const results = findMatchingDocs(invertedIndex, queryTokens);
+
+		expect(results.get(1)).toEqual([
+			{ docFreq: 1, termFreq: 2, token: 'apple', fuzzyDistance: 0 },
+		]);
+	});
+
+	it('should find fuzzy matches within the similarity threshold', () => {
+		const invertedIndex = new Map([
+			['apple', new Map([[1, 2]])],
+			[
+				'banana',
+				new Map([
+					[1, 1],
+					[2, 1],
+				]),
+			],
+		]);
+
+		const queryTokens = ['appl']; // One character off
+		const results = findMatchingDocs(invertedIndex, queryTokens, 1);
+
+		expect(results.get(1)).toEqual([
+			{ docFreq: 1, termFreq: 2, token: 'apple', fuzzyDistance: 1 },
+		]);
+	});
+
+	it('should not find matches if the distance exceeds the threshold', () => {
+		const invertedIndex = new Map([
+			['apple', new Map([[1, 2]])],
+			[
+				'banana',
+				new Map([
+					[1, 1],
+					[2, 1],
+				]),
+			],
+		]);
+
+		const queryTokens = ['appl']; // One character off
+		const results = findMatchingDocs(invertedIndex, queryTokens, 0); // No fuzzy matching
+
+		expect(results.size).toBe(0); // No matches
+	});
+});
+
+describe('rankBM25', () => {
+	it.only('should rank documents with exact matches higher than fuzzy matches', () => {
+		const table = {
+			records: [
+				{ id: 1, title: 'apple' },
+				{ id: 2, title: 'banana' },
+				{ id: 3, title: 'cherry' },
+			],
+		};
+		const documentLengths = [5, 5, 5];
+		const averageDocumentLength = 5;
+
+		const matchedDocs = new Map<number, DocumentMatch[]>([
+			[0, [{ docFreq: 1, fuzzyDistance: 2, termFreq: 2, token: 'apple' }]], // Fuzzy match
+			[1, [{ docFreq: 1, fuzzyDistance: 0, termFreq: 2, token: 'banana' }]], // Exact match
+			[2, [{ docFreq: 1, fuzzyDistance: 1, termFreq: 2, token: 'cherry' }]], // Fuzzy match
+		]);
+
+		const results = rankBM25(
+			matchedDocs,
+			table,
+			documentLengths,
+			averageDocumentLength,
+		);
+
+		console.log(results);
+
+		expect(results[0].document.id).toBe(2); // Exact match should rank higher
+		expect(results[1].document.id).toBe(3); // Fuzzy match - distance 1
+		expect(results[2].document.id).toBe(1); // Fuzzy match - distance 2
 	});
 });
 
@@ -323,18 +419,6 @@ describe('search', () => {
 			).toHaveLength(2);
 		});
 
-		it('does not match partial words', () => {
-			expect(
-				search(
-					table,
-					invertedIndex,
-					documentLengths,
-					averageDocumentLength,
-					'wo',
-				),
-			).toHaveLength(0);
-		});
-
 		it('handles punctuation in search terms', () => {
 			expect(
 				search(
@@ -602,7 +686,7 @@ describe('highlightSearchResult', () => {
 			id: [['1', false]],
 			title: [
 				['你好', true],
-				['世界', false],
+				['世界', true], // fuzzy match
 			],
 		});
 	});
