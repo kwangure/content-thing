@@ -16,10 +16,6 @@ describe('tokenize', () => {
 		expect(tokenize('hello world')).toEqual(['hello', 'world']);
 	});
 
-	it('handles contractions', () => {
-		expect(tokenize("don't I'm")).toEqual(["don't", "i'm"]);
-	});
-
 	it('handles punctuation', () => {
 		expect(tokenize('Hello, world!')).toEqual(['hello', 'world']);
 	});
@@ -38,6 +34,30 @@ describe('tokenize', () => {
 
 	it('handles string with only non-word characters', () => {
 		expect(tokenize('@#$%')).toEqual([]);
+	});
+
+	it('removes stopwords', () => {
+		expect(tokenize('the quick brown fox')).toEqual(['quick', 'brown', 'fox']);
+	});
+
+	it('handles mixed stopwords and regular words', () => {
+		expect(tokenize('she sells seashells by the seashore')).toEqual([
+			'sells',
+			'seashells',
+			'seashore',
+		]);
+	});
+
+	it('handles text with only stopwords', () => {
+		expect(tokenize('and the but')).toEqual([]);
+	});
+
+	it('handles stopwords with punctuation', () => {
+		expect(tokenize('And, the! but.')).toEqual([]);
+	});
+
+	it('is case insensitive for stopwords', () => {
+		expect(tokenize('THE QUICK Brown fox')).toEqual(['quick', 'brown', 'fox']);
 	});
 });
 
@@ -102,7 +122,7 @@ describe('findMatchingDocs', () => {
 });
 
 describe('rankBM25', () => {
-	it.only('should rank documents with exact matches higher than fuzzy matches', () => {
+	it('should rank documents with exact matches higher than fuzzy matches', () => {
 		const table = {
 			records: [
 				{ id: 1, title: 'apple' },
@@ -125,8 +145,6 @@ describe('rankBM25', () => {
 			documentLengths,
 			averageDocumentLength,
 		);
-
-		console.log(results);
 
 		expect(results[0].document.id).toBe(2); // Exact match should rank higher
 		expect(results[1].document.id).toBe(3); // Fuzzy match - distance 1

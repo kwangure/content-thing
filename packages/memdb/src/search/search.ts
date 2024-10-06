@@ -1,13 +1,17 @@
 import type { Table } from '../table.js';
 import type { Simplify } from '../types.js';
 import { levenshteinDistance } from './levenshtein.js';
+import { stopwords } from './stopwords.js';
 
 export function tokenize(text: string, locale?: Intl.LocalesArgument) {
 	const words = [];
 	const segmenter = new Intl.Segmenter(locale, { granularity: 'word' });
 	for (const { segment, isWordLike } of segmenter.segment(text)) {
 		if (isWordLike) {
-			words.push(segment.toLowerCase());
+			const word = segment.toLowerCase();
+			if (!stopwords.includes(word)) {
+				words.push(word);
+			}
 		}
 	}
 	return words;
