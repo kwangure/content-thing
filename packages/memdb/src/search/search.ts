@@ -1,5 +1,5 @@
-import type { Table } from './table.js';
-import type { Simplify } from './types.js';
+import type { Table } from '../table.js';
+import type { Simplify } from '../types.js';
 
 export function tokenize(text: string, locale?: Intl.LocalesArgument) {
 	const words = [];

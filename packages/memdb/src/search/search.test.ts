@@ -6,7 +6,7 @@ import {
 	search,
 	tokenize,
 } from './search.js';
-import { createTable } from './table.js';
+import { createTable } from '../table.js';
 
 describe('tokenize', () => {
 	it('tokenizes simple English words', () => {

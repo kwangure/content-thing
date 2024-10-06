@@ -1,5 +1,5 @@
 import { assert, describe, expectTypeOf, it } from 'vitest';
-import { createTable } from './table.js';
+import { createTable } from '../table.js';
 import { createSearchIndex, highlightSearchResult, search } from './search.js';
 
 describe('highlightSearchResult', () => {
