@@ -3,9 +3,9 @@ import type { Table } from './table.js';
 
 type WhereCondition<T extends Record<string, unknown>> = (record: T) => boolean;
 
-export function query<T extends Record<string, unknown>>(table: Table<T>) {
+export function filter<T extends Record<string, unknown>>(table: Table<T>) {
 	/* eslint-disable-next-line @typescript-eslint/ban-types */
-	return new QueryBuilder<T, {}, keyof T & string>(table);
+	return new FilterBuilder<T, {}, keyof T & string>(table);
 }
 
 export type ComputedFields<T> = {
@@ -13,7 +13,7 @@ export type ComputedFields<T> = {
 	/* eslint-disable-next-line @typescript-eslint/ban-types */
 } & {};
 
-class QueryBuilder<
+class FilterBuilder<
 	TRecord extends Record<string, unknown>,
 	TComputed extends ComputedFields<TRecord>,
 	TSelected extends keyof TRecord,
@@ -36,7 +36,7 @@ class QueryBuilder<
 		for (const field of fields) {
 			this.selectedFields.add(field as unknown as TSelected);
 		}
-		return this as unknown as QueryBuilder<TRecord, TComputed, T>;
+		return this as unknown as FilterBuilder<TRecord, TComputed, T>;
 	}
 
 	where(condition: WhereCondition<TRecord>): this {
@@ -46,7 +46,7 @@ class QueryBuilder<
 
 	with<T extends ComputedFields<TRecord>>(fields: T) {
 		this.computedFields = fields as unknown as TComputed;
-		return this as unknown as QueryBuilder<TRecord, T, TSelected>;
+		return this as unknown as FilterBuilder<TRecord, T, TSelected>;
 	}
 
 	limit(n: number): this {
@@ -61,7 +61,7 @@ export function execute<
 	TRecord extends Record<string, unknown>,
 	TComputed extends ComputedFields<TRecord>,
 	TSelected extends keyof TRecord & string,
->(queryBuilder: QueryBuilder<TRecord, TComputed, TSelected>) {
+>(queryBuilder: FilterBuilder<TRecord, TComputed, TSelected>) {
 	const { table, whereCondition, computedFields, selectedFields, limitValue } =
 		queryBuilder;
 
