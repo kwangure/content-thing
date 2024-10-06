@@ -1,6 +1,6 @@
 {
 	"name": "content-thing",
-	"version": "0.0.39",
+	"version": "0.0.40",
 	"description": "A basic CMS for SvelteKit apps",
 	"scripts": {
 		"build": "wireit",
@@ -87,8 +87,8 @@
 		"@content-thing/internal-utils": "^0.0.3",
 		"@content-thing/line-range": "^0.0.0",
 		"@content-thing/remark-attributes": "^0.0.3",
-		"@content-thing/syntax-highlighter": "^0.0.1",
-		"@content-thing/vite-plugin-syntax-highlighter": "^0.0.1",
+		"@content-thing/syntax-highlighter": "^0.0.2",
+		"@content-thing/vite-plugin-syntax-highlighter": "^0.0.2",
 		"@types/mdast": "^4.0.1",
 		"mdast-util-to-markdown": "^2.1.0",
 		"remark-parse": "^11.0.0",

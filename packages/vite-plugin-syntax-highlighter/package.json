@@ -1,6 +1,6 @@
 {
 	"name": "@content-thing/vite-plugin-syntax-highlighter",
-	"version": "0.0.1",
+	"version": "0.0.2",
 	"scripts": {
 		"build": "wireit",
 		"pre-commit": "wireit",
@@ -74,6 +74,6 @@
 	"type": "module",
 	"dependencies": {
 		"@content-thing/line-range": "^0.0.0",
-		"@content-thing/syntax-highlighter": "^0.0.1"
+		"@content-thing/syntax-highlighter": "^0.0.2"
 	}
 }

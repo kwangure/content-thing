@@ -1,5 +1,13 @@
 # content-thing
 
+## 0.0.40
+
+### Patch Changes
+
+- Updated dependencies [0ae358d]
+  - @content-thing/syntax-highlighter@0.0.2
+  - @content-thing/vite-plugin-syntax-highlighter@0.0.2
+
 ## 0.0.39
 
 ### Patch Changes

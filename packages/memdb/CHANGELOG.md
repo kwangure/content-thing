@@ -1,5 +1,12 @@
 # @content-thing/memdb
 
+## 0.0.7
+
+### Patch Changes
+
+- 2334ba4: Rename `query` to `filter`
+- 2334ba4: Add fuzzy ranking
+
 ## 0.0.6
 
 ### Patch Changes

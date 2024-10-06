@@ -1,5 +1,11 @@
 # @content-thing/syntax-highlighter
 
+## 0.0.2
+
+### Patch Changes
+
+- 0ae358d: Add bash
+
 ## 0.0.1
 
 ### Patch Changes
