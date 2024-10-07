@@ -1,5 +1,12 @@
 # @content-thing/memdb
 
+## 0.0.8
+
+### Patch Changes
+
+- 888e9df: Ignore stop words
+- 888e9df: Rename highlightFirst to highlightFlattenColumns
+
 ## 0.0.7
 
 ### Patch Changes
