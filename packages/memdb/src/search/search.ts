@@ -268,98 +268,74 @@ export function highlightFirst<
 	columns: C[],
 	options?: HighlightFirstOptions,
 ) {
-	const { locale } = options ?? {};
-	let { matchLength = 10, padStart = 4 } = options ?? {};
-	matchLength = matchLength >= 0 ? matchLength : 10;
-	padStart = padStart >= 0 ? padStart : 4;
-
-	const sentenceSegmenter = new Intl.Segmenter(locale, {
-		granularity: 'sentence',
-	});
-	const wordSegmenter = new Intl.Segmenter(locale, { granularity: 'word' });
+	const { locale, matchLength = 10, padStart = 4 } = options ?? {};
 	const { document, matchedTokens } = searchResult;
-	const highlights: {
-		words: [string, boolean][];
-	}[] = [];
+	const segmenter = new Intl.Segmenter(locale, { granularity: 'word' });
+	const paddingSegments = new RingBuffer<[string, boolean][]>(padStart + 1);
+	const highlights: [string, boolean][][] = [];
 
+	let firstMatchFound = false;
 	for (const column of columns) {
-		let firstMatchedSentence = null;
-		const previousSentences: [string, boolean][][] = [];
-		const text = document[column];
-		for (const { segment: sentence } of sentenceSegmenter.segment(
-			text as string,
+		for (const { isWordLike, segment } of segmenter.segment(
+			document[column] as string,
 		)) {
-			const wordsInSentence: [string, boolean][] = [];
-			for (const { segment: word, isWordLike } of wordSegmenter.segment(
-				sentence,
-			)) {
-				if (
-					isWordLike &&
-					!firstMatchedSentence &&
-					matchedTokens.includes(word.toLowerCase())
-				) {
-					firstMatchedSentence = {
-						sentenceIndex: previousSentences.length,
-						wordIndex: wordsInSentence.length,
-					};
+			if (isWordLike) {
+				const isMatch = matchedTokens.includes(
+					segment.toLocaleLowerCase(locale),
+				);
+				if (firstMatchFound) {
+					// Second accumulate elements until `matchLength` after `firstMatchFound`
+					highlights.push([[segment, isMatch]]);
+					if (highlights.length >= matchLength) break;
+				} else {
+					// First accumulate `padStart` elements before `firstMatchFound`
+					paddingSegments.add([[segment, isMatch]]);
+					if (isMatch) {
+						firstMatchFound = true;
+						highlights.push(...paddingSegments.toArray());
+					}
 				}
-				wordsInSentence.push([word, Boolean(isWordLike)]);
+			} else {
+				// Do not count non-words towards `padStart` and `matchLength` constraints
+				const target = firstMatchFound
+					? highlights.at(-1)
+					: paddingSegments.getLast();
+				if (target) target.push([segment, false]);
 			}
-			previousSentences.push(wordsInSentence);
-		}
-
-		// If no match is found, skip this column
-		if (!firstMatchedSentence) continue;
-
-		// Find the starting sentence and word index based on padStart
-		let startSentenceIndex = firstMatchedSentence.sentenceIndex;
-		let startWordIndex = firstMatchedSentence.wordIndex;
-		let wordsCounted = 0;
-		for (
-			let i = firstMatchedSentence.sentenceIndex;
-			i >= 0 && wordsCounted <= padStart;
-			i--
-		) {
-			const words = previousSentences[i]!;
-			const jStart =
-				i === firstMatchedSentence.sentenceIndex
-					? firstMatchedSentence.wordIndex
-					: words.length - 1;
-			for (let j = jStart; j >= 0 && wordsCounted <= padStart; j--) {
-				const isWordLike = words[j]![1];
-				startSentenceIndex = i;
-				startWordIndex = j;
-				if (isWordLike) {
-					wordsCounted++;
-				}
-			}
-		}
-		wordsCounted = 0;
-		for (
-			let i = startSentenceIndex;
-			i < previousSentences.length && wordsCounted < matchLength;
-			i++
-		) {
-			// Construct the final array of words up to matchLength
-			const finalWords: [string, boolean][] = [];
-			const words = previousSentences[i]!;
-			for (
-				let j = i === startSentenceIndex ? startWordIndex : 0;
-				j < words.length && wordsCounted < matchLength;
-				j++
-			) {
-				const [word, isWordLike] = words[j]!;
-				const isHighlighted = matchedTokens.includes(word!.toLowerCase());
-				finalWords.push([word!, isHighlighted]);
-				if (isWordLike) {
-					wordsCounted++;
-				}
-			}
-			highlights.push({
-				words: finalWords,
-			});
 		}
 	}
 
-	return highlights;
+	return highlights.flat(1);
+}
+
+/*
+    RingBuffer is 2x faster than `array.shift()` followed by `array.push()`
+	https://esbench.com/bench/67043446545f8900a4de2b8f
+*/
+class RingBuffer<T> {
+	buffer: Array<T>;
+	bufferLength: number;
+	index: number;
+	constructor(bufferLength: number) {
+		this.buffer = new Array<T>(bufferLength);
+		this.bufferLength = bufferLength;
+		this.index = 0;
+	}
+	add(element: T) {
+		this.buffer[this.index] = element;
+		this.index = (this.index + 1) % this.bufferLength;
+	}
+	getLast() {
+		const lastIndex = (this.index - 1 + this.bufferLength) % this.bufferLength;
+		return this.buffer[lastIndex];
+	}
+	toArray() {
+		const isFull = this.bufferLength - 1 in this.buffer;
+		if (isFull) {
+			return this.buffer
+				.slice(this.index)
+				.concat(this.buffer.slice(0, this.index));
+		}
+		return this.buffer.slice(0, this.index);
+	}
 }

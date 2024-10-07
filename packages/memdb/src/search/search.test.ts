@@ -569,16 +569,12 @@ describe('highlightFirst', () => {
 		assert(result);
 		const highlightedResult = highlightFirst(result, ['title']);
 		expect(highlightedResult).toEqual([
-			{
-				words: [
-					['The', false],
-					[' ', false],
-					['blue', false],
-					[' ', false],
-					['dogs', true],
-					['.', false],
-				],
-			},
+			['The', false],
+			[' ', false],
+			['blue', false],
+			[' ', false],
+			['dogs', true],
+			['.', false],
 		]);
 	});
 
@@ -589,16 +585,12 @@ describe('highlightFirst', () => {
 		assert(result);
 		const highlightedResult = highlightFirst(result, ['title']);
 		expect(highlightedResult).toEqual([
-			{
-				words: [
-					['The', false],
-					[' ', false],
-					['blue', true],
-					[' ', false],
-					['dogs', true],
-					['.', false],
-				],
-			},
+			['The', false],
+			[' ', false],
+			['blue', true],
+			[' ', false],
+			['dogs', true],
+			['.', false],
 		]);
 	});
 
@@ -609,27 +601,19 @@ describe('highlightFirst', () => {
 		assert(result);
 		const highlightedResult = highlightFirst(result, ['title']);
 		expect(highlightedResult).toEqual([
-			{
-				words: [
-					['The', false],
-					[' ', false],
-					['blue', false],
-					[' ', false],
-					['dogs', true],
-					['.', false],
-					[' ', false],
-				],
-			},
-			{
-				words: [
-					['The', false],
-					[' ', false],
-					['green', false],
-					[' ', false],
-					['dogs', true],
-					['.', false],
-				],
-			},
+			['The', false],
+			[' ', false],
+			['blue', false],
+			[' ', false],
+			['dogs', true],
+			['.', false],
+			[' ', false],
+			['The', false],
+			[' ', false],
+			['green', false],
+			[' ', false],
+			['dogs', true],
+			['.', false],
 		]);
 	});
 
@@ -640,27 +624,19 @@ describe('highlightFirst', () => {
 		assert(result);
 		const highlightedResult = highlightFirst(result, ['title']);
 		expect(highlightedResult).toEqual([
-			{
-				words: [
-					['The', false],
-					[' ', false],
-					['blue', true],
-					[' ', false],
-					['dogs', true],
-					['.', false],
-					[' ', false],
-				],
-			},
-			{
-				words: [
-					['The', false],
-					[' ', false],
-					['green', false],
-					[' ', false],
-					['dogs', true],
-					['.', false],
-				],
-			},
+			['The', false],
+			[' ', false],
+			['blue', true],
+			[' ', false],
+			['dogs', true],
+			['.', false],
+			[' ', false],
+			['The', false],
+			[' ', false],
+			['green', false],
+			[' ', false],
+			['dogs', true],
+			['.', false],
 		]);
 	});
 
@@ -676,26 +652,18 @@ describe('highlightFirst', () => {
 		assert(result);
 		const highlightedResult = highlightFirst(result, ['title', 'content']);
 		expect(highlightedResult).toEqual([
-			{
-				words: [
-					['The', false],
-					[' ', false],
-					['blue', true],
-					[' ', false],
-					['dogs', true],
-					['.', false],
-				],
-			},
-			{
-				words: [
-					['The', false],
-					[' ', false],
-					['green', false],
-					[' ', false],
-					['dogs', true],
-					['.', false],
-				],
-			},
+			['The', false],
+			[' ', false],
+			['blue', true],
+			[' ', false],
+			['dogs', true],
+			['.', false],
+			['The', false],
+			[' ', false],
+			['green', false],
+			[' ', false],
+			['dogs', true],
+			['.', false],
 		]);
 	});
 
@@ -706,18 +674,14 @@ describe('highlightFirst', () => {
 		assert(result);
 		const highlightedResult = highlightFirst(result, ['title']);
 		expect(highlightedResult).toEqual([
-			{
-				words: [
-					['The', false],
-					[' ', false],
-					['BLUE', true],
-					[' ', false],
-					['DOGS', true],
-					[' ', false],
-					['bark', false],
-					['.', false],
-				],
-			},
+			['The', false],
+			[' ', false],
+			['BLUE', true],
+			[' ', false],
+			['DOGS', true],
+			[' ', false],
+			['bark', false],
+			['.', false],
 		]);
 	});
 
@@ -762,22 +726,18 @@ describe('highlightFirst', () => {
 			padStart: 3,
 		});
 		expect(highlightedResult).toEqual([
-			{
-				words: [
-					['three', false],
-					[' ', false],
-					['four', false],
-					[' ', false],
-					['five', false],
-					[' ', false],
-					['six', true],
-					[' ', false],
-					['seven', false],
-					[' ', false],
-					['eight', false],
-					['.', false],
-				],
-			},
+			['three', false],
+			[' ', false],
+			['four', false],
+			[' ', false],
+			['five', false],
+			[' ', false],
+			['six', true],
+			[' ', false],
+			['seven', false],
+			[' ', false],
+			['eight', false],
+			['.', false],
 		]);
 	});
 
@@ -792,29 +752,21 @@ describe('highlightFirst', () => {
 			padStart: 3,
 		});
 		expect(highlightedResult).toEqual([
-			{
-				words: [
-					['seven', false],
-					[' ', false],
-					['eight', false],
-					['.', false],
-					[' ', false],
-				],
-			},
-			{
-				words: [
-					['One', false],
-					[' ', false],
-					['two', true],
-					[' ', false],
-					['three', false],
-					[' ', false],
-					['four', false],
-					[' ', false],
-					['five', false],
-					['.', false],
-				],
-			},
+			['seven', false],
+			[' ', false],
+			['eight', false],
+			['.', false],
+			[' ', false],
+			['One', false],
+			[' ', false],
+			['two', true],
+			[' ', false],
+			['three', false],
+			[' ', false],
+			['four', false],
+			[' ', false],
+			['five', false],
+			['.', false],
 		]);
 	});
 
@@ -829,19 +781,15 @@ describe('highlightFirst', () => {
 			matchLength: 5,
 		});
 		expect(highlightedResult).toEqual([
-			{
-				words: [
-					['One', false],
-					[' ', false],
-					['two', true],
-					[' ', false],
-					['three', false],
-					[' ', false],
-					['four', false],
-					[' ', false],
-					['five', false],
-				],
-			},
+			['One', false],
+			[' ', false],
+			['two', true],
+			[' ', false],
+			['three', false],
+			[' ', false],
+			['four', false],
+			[' ', false],
+			['five', false],
 		]);
 	});
 
@@ -856,28 +804,20 @@ describe('highlightFirst', () => {
 			matchLength: 7,
 		});
 		expect(highlightedResult).toEqual([
-			{
-				words: [
-					['One', false],
-					[' ', false],
-					['two', true],
-					[' ', false],
-					['three', false],
-					[' ', false],
-					['four', false],
-					['.', false],
-					[' ', false],
-				],
-			},
-			{
-				words: [
-					['Five', false],
-					[' ', false],
-					['six', true],
-					[' ', false],
-					['seven', false],
-				],
-			},
+			['One', false],
+			[' ', false],
+			['two', true],
+			[' ', false],
+			['three', false],
+			[' ', false],
+			['four', false],
+			['.', false],
+			[' ', false],
+			['Five', false],
+			[' ', false],
+			['six', true],
+			[' ', false],
+			['seven', false],
 		]);
 	});
 });
