@@ -3,18 +3,38 @@ import type { Simplify } from '../types.js';
 import { levenshteinDistance } from './levenshtein.js';
 import { stopwords } from './stopwords.js';
 
-export function tokenize(text: string, locale?: Intl.LocalesArgument) {
-	const words = [];
+const TOKEN_IS_WORD_LIKE = 1 << 0;
+const TOKEN_IS_STOPWORD = 1 << 1;
+
+interface SearchTokens {
+	tokens: [string, number][];
+	wordCount: number;
+}
+
+export function tokenize(
+	text: string,
+	locale?: Intl.LocalesArgument,
+): SearchTokens {
+	const tokens: SearchTokens['tokens'] = [];
 	const segmenter = new Intl.Segmenter(locale, { granularity: 'word' });
+	let wordCount = 0;
+
 	for (const { segment, isWordLike } of segmenter.segment(text)) {
+		const word = segment.toLowerCase();
+
+		let bitset = 0;
 		if (isWordLike) {
-			const word = segment.toLowerCase();
-			if (!stopwords.includes(word)) {
-				words.push(word);
+			bitset |= TOKEN_IS_WORD_LIKE;
+			wordCount++;
+			if (stopwords.includes(word.toLowerCase())) {
+				bitset |= TOKEN_IS_STOPWORD;
 			}
 		}
+
+		tokens.push([word, bitset]);
 	}
-	return words;
+
+	return { tokens, wordCount };
 }
 
 function calculateBM25(
@@ -49,15 +69,17 @@ export function createSearchIndex<T extends Record<string, unknown>>(
 			const value = record[column];
 			if (value !== null && value !== undefined && serializeFunc) {
 				const serializedValue = serializeFunc(value);
-				const tokens = tokenize(serializedValue, locale);
-				docLength += tokens.length;
+				const { tokens, wordCount } = tokenize(serializedValue, locale);
+				docLength += wordCount;
 
-				for (const token of tokens) {
-					if (!invertedIndex.has(token)) {
-						invertedIndex.set(token, new Map());
+				for (const [token, flags] of tokens) {
+					if (flags & TOKEN_IS_WORD_LIKE && !(flags & TOKEN_IS_STOPWORD)) {
+						if (!invertedIndex.has(token)) {
+							invertedIndex.set(token, new Map());
+						}
+						const termFreq = invertedIndex.get(token)!;
+						termFreq.set(docId, (termFreq.get(docId) || 0) + 1);
 					}
-					const termFreq = invertedIndex.get(token)!;
-					termFreq.set(docId, (termFreq.get(docId) || 0) + 1);
 				}
 			}
 		}
@@ -103,12 +125,17 @@ export interface DocumentMatch {
 
 export function findMatchingDocs(
 	invertedIndex: Map<string, Map<number, number>>,
-	queryTokens: string[],
+	queryTokens: SearchTokens,
 	similarityThreshold = 2,
 ) {
 	const matchedDocs = new Map<number, DocumentMatch[]>();
 
-	for (const token of new Set(queryTokens)) {
+	const uniqueTokens = new Set<string>();
+	for (const [token] of queryTokens.tokens) {
+		uniqueTokens.add(token);
+	}
+
+	for (const token of uniqueTokens) {
 		for (const [indexToken, docs] of invertedIndex.entries()) {
 			const distance = levenshteinDistance(token, indexToken);
 
@@ -190,19 +217,17 @@ export type SearchHighlights<T extends Record<string, unknown>> = {
 
 function highlightText(
 	text: string,
-	tokens: string[],
+	matchedTokens: string[],
 	locale?: Intl.LocalesArgument,
 ) {
-	const lowerTokens = tokens.map((t) => t.toLowerCase());
 	const segmenter = new Intl.Segmenter(locale, { granularity: 'word' });
 	const highlightedSegments: [string, boolean][] = [];
 
-	for (const { segment, isWordLike } of segmenter.segment(text)) {
-		if (isWordLike && lowerTokens.includes(segment.toLowerCase())) {
-			highlightedSegments.push([segment, true]);
-		} else {
-			highlightedSegments.push([segment, false]);
-		}
+	for (const { segment } of segmenter.segment(text)) {
+		highlightedSegments.push([
+			segment,
+			matchedTokens.includes(segment.toLowerCase()),
+		]);
 	}
 
 	return highlightedSegments;

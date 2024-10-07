@@ -13,51 +13,144 @@ import { createTable } from '../table.js';
 
 describe('tokenize', () => {
 	it('tokenizes simple English words', () => {
-		expect(tokenize('hello world')).toEqual(['hello', 'world']);
+		expect(tokenize('hello world')).toEqual({
+			tokens: [
+				['hello', 1],
+				[' ', 0],
+				['world', 1],
+			],
+			wordCount: 2,
+		});
 	});
 
 	it('handles punctuation', () => {
-		expect(tokenize('Hello, world!')).toEqual(['hello', 'world']);
+		expect(tokenize('Hello, world!')).toEqual({
+			tokens: [
+				['hello', 1],
+				[',', 0],
+				[' ', 0],
+				['world', 1],
+				['!', 0],
+			],
+			wordCount: 2,
+		});
 	});
 
 	it('handles numbers and special characters', () => {
-		expect(tokenize('abc123 @#$')).toEqual(['abc123']);
+		expect(tokenize('abc123 @#$')).toEqual({
+			tokens: [
+				['abc123', 1],
+				[' ', 0],
+				['@', 0],
+				['#', 0],
+				['$', 0],
+			],
+			wordCount: 1,
+		});
 	});
 
 	it('handles empty string', () => {
-		expect(tokenize('')).toEqual([]);
+		expect(tokenize('')).toEqual({
+			tokens: [],
+			wordCount: 0,
+		});
 	});
 
 	it('handles string with only spaces', () => {
-		expect(tokenize('   ')).toEqual([]);
+		expect(tokenize('   ')).toEqual({
+			tokens: [['   ', 0]],
+			wordCount: 0,
+		});
 	});
 
 	it('handles string with only non-word characters', () => {
-		expect(tokenize('@#$%')).toEqual([]);
+		expect(tokenize('@#$%')).toEqual({
+			tokens: [
+				['@', 0],
+				['#', 0],
+				['$', 0],
+				['%', 0],
+			],
+			wordCount: 0,
+		});
 	});
 
 	it('removes stopwords', () => {
-		expect(tokenize('the quick brown fox')).toEqual(['quick', 'brown', 'fox']);
+		expect(tokenize('the quick brown fox')).toEqual({
+			tokens: [
+				['the', 3],
+				[' ', 0],
+				['quick', 1],
+				[' ', 0],
+				['brown', 1],
+				[' ', 0],
+				['fox', 1],
+			],
+			wordCount: 4,
+		});
 	});
 
 	it('handles mixed stopwords and regular words', () => {
-		expect(tokenize('she sells seashells by the seashore')).toEqual([
-			'sells',
-			'seashells',
-			'seashore',
-		]);
+		expect(tokenize('she sells seashells by the seashore')).toEqual({
+			tokens: [
+				['she', 3],
+				[' ', 0],
+				['sells', 1],
+				[' ', 0],
+				['seashells', 1],
+				[' ', 0],
+				['by', 3],
+				[' ', 0],
+				['the', 3],
+				[' ', 0],
+				['seashore', 1],
+			],
+			wordCount: 6,
+		});
 	});
 
 	it('handles text with only stopwords', () => {
-		expect(tokenize('and the but')).toEqual([]);
+		expect(tokenize('and the but')).toEqual({
+			tokens: [
+				['and', 3],
+				[' ', 0],
+				['the', 3],
+				[' ', 0],
+				['but', 3],
+			],
+			wordCount: 3,
+		});
 	});
 
 	it('handles stopwords with punctuation', () => {
-		expect(tokenize('And, the! but.')).toEqual([]);
+		expect(tokenize('And, the! but.')).toEqual({
+			tokens: [
+				['and', 3],
+				[',', 0],
+				[' ', 0],
+				['the', 3],
+				['!', 0],
+				[' ', 0],
+				['but', 3],
+				['.', 0],
+			],
+			wordCount: 3,
+		});
 	});
 
 	it('is case insensitive for stopwords', () => {
-		expect(tokenize('THE QUICK Brown fox')).toEqual(['quick', 'brown', 'fox']);
+		expect(tokenize('THE QUICK Brown fox')).toEqual({
+			tokens: [
+				['the', 3],
+				[' ', 0],
+				['quick', 1],
+				[' ', 0],
+				['brown', 1],
+				[' ', 0],
+				['fox', 1],
+			],
+			wordCount: 4,
+		});
 	});
 });
 
@@ -74,7 +167,10 @@ describe('findMatchingDocs', () => {
 			],
 		]);
 
-		const queryTokens = ['apple'];
+		const queryTokens = {
+			tokens: [['apple', 1]] as [string, number][],
+			wordCount: 1,
+		};
 		const results = findMatchingDocs(invertedIndex, queryTokens);
 
 		expect(results.get(1)).toEqual([
@@ -94,7 +190,10 @@ describe('findMatchingDocs', () => {
 			],
 		]);
 
-		const queryTokens = ['appl']; // One character off
+		const queryTokens = {
+			tokens: [['appl', 1]] as [string, number][], // One character off
+			wordCount: 1,
+		};
 		const results = findMatchingDocs(invertedIndex, queryTokens, 1);
 
 		expect(results.get(1)).toEqual([
@@ -114,7 +213,10 @@ describe('findMatchingDocs', () => {
 			],
 		]);
 
-		const queryTokens = ['appl']; // One character off
+		const queryTokens = {
+			tokens: [['appl', 1]] as [string, number][], // One character off
+			wordCount: 1,
+		};
 		const results = findMatchingDocs(invertedIndex, queryTokens, 0); // No fuzzy matching
 
 		expect(results.size).toBe(0); // No matches
