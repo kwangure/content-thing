@@ -11,10 +11,7 @@ describe('highlightSearchResult', () => {
 		]);
 
 	const table = createSampleTable();
-	const searchIndex = createSearchIndex(table, {
-		title: (s) => s,
-		content: (s) => s,
-	});
+	const searchIndex = createSearchIndex(table, ['content', 'title']);
 
 	it('only highlights filtered columns', () => {
 		const [result] = search(table, searchIndex, 'hello');

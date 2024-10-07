@@ -51,17 +51,25 @@ function calculateBM25(
 	);
 }
 
-export interface SearchIndex {
-	invertedIndex: Map<string, Map<number, number>>;
-	documentLengths: number[];
+export interface BM25Options {
 	averageDocumentLength: number;
+	documentCount: number;
+	documentLengths: number[];
 }
 
-export function createSearchIndex<T extends SearchDocument>(
-	table: Table<T>,
-	columns: { [K in keyof T]?: (value: T[K]) => string },
-	locale?: Intl.LocalesArgument,
-) {
+export interface SearchIndex extends BM25Options {
+	invertedIndex: Map<string, Map<number, number>>;
+}
+
+export type StringValueColumns<T extends SearchDocument> = Extract<
+	keyof T,
+	{ [K in keyof T]: T[K] extends string ? K : never }[keyof T]
+>;
+
+export function createSearchIndex<
+	T extends SearchDocument,
+	C extends StringValueColumns<T>,
+>(table: Table<T>, columns: C[], locale?: Intl.LocalesArgument) {
 	const records = table.records;
 	const invertedIndex = new Map<string, Map<number, number>>();
 	const documentLengths = new Array<number>(records.length);
@@ -69,22 +77,19 @@ export function createSearchIndex<T extends SearchDocument>(
 	let totalDocumentLength = 0;
 	for (const [docId, record] of records.entries()) {
 		let docLength = 0;
-		for (const [column, serializeFunc] of objectEntries(columns)) {
+		for (const column of columns) {
 			const value = record[column];
-			if (value !== null && value !== undefined && serializeFunc) {
-				const serializedValue = serializeFunc(value);
-				const { tokens, wordCount } = tokenize(serializedValue, locale);
-				docLength += wordCount;
+			const { tokens, wordCount } = tokenize(value as string, locale);
+			docLength += wordCount;
 
-				for (const [token, flags] of tokens) {
-					if (flags & TOKEN_IS_WORD_LIKE && !(flags & TOKEN_IS_STOPWORD)) {
-						const t = token.toLocaleLowerCase(locale);
-						if (!invertedIndex.has(t)) {
-							invertedIndex.set(t, new Map());
-						}
-						const termFreq = invertedIndex.get(t)!;
-						termFreq.set(docId, (termFreq.get(docId) || 0) + 1);
+			for (const [token, flags] of tokens) {
+				if (flags & TOKEN_IS_WORD_LIKE && !(flags & TOKEN_IS_STOPWORD)) {
+					const t = token.toLocaleLowerCase(locale);
+					if (!invertedIndex.has(t)) {
+						invertedIndex.set(t, new Map());
 					}
+					const termFreq = invertedIndex.get(t)!;
+					termFreq.set(docId, (termFreq.get(docId) || 0) + 1);
 				}
 			}
 		}
@@ -93,12 +98,14 @@ export function createSearchIndex<T extends SearchDocument>(
 		totalDocumentLength += docLength;
 	}
 
-	const averageDocumentLength = totalDocumentLength / records.length;
+	const documentCount = records.length;
+	const averageDocumentLength = totalDocumentLength / documentCount;
 
 	return {
-		invertedIndex,
-		documentLengths,
 		averageDocumentLength,
+		documentCount,
+		documentLengths,
+		invertedIndex,
 	};
 }
 
@@ -118,10 +125,10 @@ export function search<T extends SearchDocument>(
 	query: string,
 	locale?: Intl.LocalesArgument,
 ) {
-	const { invertedIndex, documentLengths, averageDocumentLength } = searchIndex;
+	const { invertedIndex, ...bm25Options } = searchIndex;
 	const queryTokens = tokenize(query, locale);
 	const matchedDocs = findMatchingDocs(invertedIndex, queryTokens, { locale });
-	return rankBM25(matchedDocs, table, documentLengths, averageDocumentLength);
+	return rankBM25(matchedDocs, table, bm25Options);
 }
 
 export interface DocumentMatch {
@@ -175,11 +182,10 @@ export function findMatchingDocs(
 export function rankBM25<T extends SearchDocument>(
 	matchedDocs: Map<number, DocumentMatch[]>,
 	table: Table<T>,
-	documentLengths: number[],
-	averageDocumentLength: number,
+	options: BM25Options,
 ): Simplify<SearchResult<T>>[] {
-	const totalDocs = table.records.length;
-	const scores = new Array<number>(totalDocs);
+	const { averageDocumentLength, documentCount, documentLengths } = options;
+	const scores = new Array<number>(documentCount);
 	const matchedTokensMap = new Map<number, Set<string>>();
 
 	for (const [docId, terms] of matchedDocs) {
@@ -194,7 +200,7 @@ export function rankBM25<T extends SearchDocument>(
 						docFreq,
 						docLength,
 						averageDocumentLength,
-						totalDocs,
+						documentCount,
 					) * penaltyFactor;
 				scores[docId] = (scores[docId] || 0) + score;
 
@@ -229,39 +235,23 @@ export type SearchHighlights<T extends SearchDocument> = {
 	[K in keyof T]: [string, boolean][];
 };
 
-function highlightText(
-	text: string,
-	matchedTokens: string[],
-	locale?: Intl.LocalesArgument,
-) {
-	return tokenize(text).tokens.map(
-		([token]) =>
-			[
-				token,
-				matchedTokens.includes(token.toLocaleLowerCase(locale)),
-			] satisfies [string, boolean],
-	);
-}
-
 export function highlightSearchResult<
 	T extends SearchDocument,
-	C extends Extract<
-		keyof T,
-		{ [K in keyof T]: T[K] extends string ? K : never }[keyof T]
-	>,
+	C extends StringValueColumns<T>,
 >(searchResult: SearchResult<T>, columns: C[], locale?: Intl.LocalesArgument) {
 	const { document, matchedTokens } = searchResult;
 	const highlightResult = {} as Simplify<SearchHighlights<Pick<T, C>>>;
 	for (const column of columns) {
-		const text = document[column];
-		const highlights = highlightText(text as string, matchedTokens, locale);
-		highlightResult[column] = highlights;
+		const { tokens } = tokenize(document[column] as string, locale);
+		highlightResult[column] = tokens.map(
+			([token]) =>
+				[
+					token,
+					matchedTokens.includes(token.toLocaleLowerCase(locale)),
+				] satisfies [string, boolean],
+		);
 	}
 	return highlightResult;
-}
-
-function objectEntries<T extends object>(obj: T) {
-	return Object.entries(obj) as Array<[keyof T, T[keyof T]]>;
 }
 
 export interface HighlightFirstOptions {
@@ -270,9 +260,12 @@ export interface HighlightFirstOptions {
 	locale?: Intl.LocalesArgument;
 }
 
-export function highlightFirst<T extends SearchDocument>(
+export function highlightFirst<
+	T extends SearchDocument,
+	C extends StringValueColumns<T>,
+>(
 	searchResult: SearchResult<T>,
-	columns: { [K in keyof T]?: (value: T[K]) => string },
+	columns: C[],
 	options?: HighlightFirstOptions,
 ) {
 	const { locale } = options ?? {};
@@ -289,13 +282,13 @@ export function highlightFirst<T extends SearchDocument>(
 		words: [string, boolean][];
 	}[] = [];
 
-	for (const [column, serializeFunc] of objectEntries(columns)) {
+	for (const column of columns) {
 		let firstMatchedSentence = null;
 		const previousSentences: [string, boolean][][] = [];
-		const text = serializeFunc?.(document[column]);
-		if (!text) continue;
-
-		for (const { segment: sentence } of sentenceSegmenter.segment(text)) {
+		const text = document[column];
+		for (const { segment: sentence } of sentenceSegmenter.segment(
+			text as string,
+		)) {
 			const wordsInSentence: [string, boolean][] = [];
 			for (const { segment: word, isWordLike } of wordSegmenter.segment(
 				sentence,

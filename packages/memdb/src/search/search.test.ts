@@ -236,8 +236,6 @@ describe('rankBM25', () => {
 				{ id: 3, title: 'cherry' },
 			],
 		};
-		const documentLengths = [5, 5, 5];
-		const averageDocumentLength = 5;
 
 		const matchedDocs = new Map<number, DocumentMatch[]>([
 			[0, [{ docFreq: 1, fuzzyDistance: 2, termFreq: 2, token: 'apple' }]], // Fuzzy match
@@ -245,12 +243,11 @@ describe('rankBM25', () => {
 			[2, [{ docFreq: 1, fuzzyDistance: 1, termFreq: 2, token: 'cherry' }]], // Fuzzy match
 		]);
 
-		const results = rankBM25(
-			matchedDocs,
-			table,
-			documentLengths,
-			averageDocumentLength,
-		);
+		const results = rankBM25(matchedDocs, table, {
+			documentLengths: [5, 5, 5],
+			averageDocumentLength: 5,
+			documentCount: 3,
+		});
 
 		expect(results[0].document.id).toBe(2); // Exact match should rank higher
 		expect(results[1].document.id).toBe(3); // Fuzzy match - distance 1
@@ -269,7 +266,7 @@ describe('search', () => {
 	describe('index building and searching', () => {
 		it('creates index with empty table', () => {
 			const emptyTable = createTable([] as { id: number; title: string }[]);
-			const searchIndex = createSearchIndex(emptyTable, { title: (s) => s });
+			const searchIndex = createSearchIndex(emptyTable, ['title']);
 			expect(search(emptyTable, searchIndex, 'any')).toEqual([]);
 		});
 
@@ -277,44 +274,36 @@ describe('search', () => {
 			const singleRecordTable = createTable([
 				{ id: 1, title: 'Single Record' },
 			]);
-			const searchIndex = createSearchIndex(singleRecordTable, {
-				title: (s) => s,
-			});
+			const searchIndex = createSearchIndex(singleRecordTable, ['title']);
 			expect(search(singleRecordTable, searchIndex, 'single')).toHaveLength(1);
 		});
 
 		it('creates index with multiple records', () => {
 			const table = createSampleTable();
-			const searchIndex = createSearchIndex(table, {
-				title: (s) => s,
-				content: (s) => s,
-			});
+			const searchIndex = createSearchIndex(table, ['title', 'content']);
 			expect(search(table, searchIndex, 'hello')).toHaveLength(2);
 		});
 
 		it('handles subset of columns', () => {
 			const table = createSampleTable();
-			const searchIndex = createSearchIndex(table, { title: (s) => s });
+			const searchIndex = createSearchIndex(table, ['title']);
 			expect(search(table, searchIndex, 'test')).toHaveLength(1);
 		});
 
 		it('ignores non-existent columns', () => {
 			const table = createSampleTable();
-			const searchIndex = createSearchIndex(table, {
-				title: (s) => s,
+			const searchIndex = createSearchIndex(table, [
+				'title',
 				// @ts-expect-error - Testing runtime behavior with invalid column
-				nonexistent: (s) => s,
-			});
+				'nonexistent',
+			]);
 			expect(search(table, searchIndex, 'hello')).toHaveLength(1);
 		});
 	});
 
 	describe('search function', () => {
 		const table = createSampleTable();
-		const searchIndex = createSearchIndex(table, {
-			title: (s) => s,
-			content: (s) => s,
-		});
+		const searchIndex = createSearchIndex(table, ['title', 'content']);
 
 		it('returns empty array for empty search terms', () => {
 			expect(search(table, searchIndex, '')).toEqual([]);
@@ -334,7 +323,7 @@ describe('search', () => {
 				{ text: 'one one one' },
 				{ text: 'number one one' },
 			]);
-			const searchIndex = createSearchIndex(table, { text: (s) => s });
+			const searchIndex = createSearchIndex(table, ['text']);
 			const result = search(table, searchIndex, 'one');
 
 			expect(result).toEqual([
@@ -368,7 +357,7 @@ describe('search', () => {
 
 		it('finds multiple terms with varying document frequencies', () => {
 			const table = createTable([{ text: 'one one' }, { text: 'number one' }]);
-			const searchIndex = createSearchIndex(table, { text: (s) => s });
+			const searchIndex = createSearchIndex(table, ['text']);
 			const result = search(table, searchIndex, 'number one');
 
 			expect(result).toEqual([
@@ -398,7 +387,7 @@ describe('search', () => {
 				{ text: 'number one' },
 				{ text: 'number one number' },
 			]);
-			const searchIndex = createSearchIndex(table, { text: (s) => s });
+			const searchIndex = createSearchIndex(table, ['text']);
 			const result = search(table, searchIndex, 'one');
 
 			expect(result).toEqual([
@@ -448,51 +437,15 @@ describe('search', () => {
 	});
 
 	describe('edge cases', () => {
-		it('handles null values in records', () => {
-			const tableWithNull = createTable<{
-				id: number;
-				title: string | null;
-			}>([{ id: 1, title: null }]);
-			const searchIndex = createSearchIndex(tableWithNull, {
-				title: (s) => s ?? '',
-			});
-			expect(search(tableWithNull, searchIndex, 'null')).toHaveLength(0);
-		});
-
-		it('handles undefined values in records', () => {
-			const tableWithUndefined = createTable<{
-				id: number;
-				title: string | undefined;
-			}>([{ id: 1, title: undefined }]);
-			const searchIndex = createSearchIndex(tableWithUndefined, {
-				title: (s) => s ?? '',
-			});
-			expect(search(tableWithUndefined, searchIndex, 'undefined')).toHaveLength(
-				0,
-			);
-		});
-
-		it('handles non-string values in specified columns', () => {
-			const tableWithNumbers = createTable([{ id: 1, count: 42 }]);
-			const searchIndex = createSearchIndex(tableWithNumbers, {
-				count: (s) => String(s),
-			});
-			expect(search(tableWithNumbers, searchIndex, '42')).toHaveLength(1);
-		});
-
 		it('handles unicode characters', () => {
 			const tableWithUnicode = createTable([{ id: 1, title: '你好世界' }]);
-			const searchIndex = createSearchIndex(tableWithUnicode, {
-				title: (s) => s,
-			});
+			const searchIndex = createSearchIndex(tableWithUnicode, ['title']);
 			expect(search(tableWithUnicode, searchIndex, '你好')).toHaveLength(1);
 		});
 
 		it('handles emojis', () => {
 			const tableWithEmojis = createTable([{ id: 1, title: 'Hello 🌍' }]);
-			const searchIndex = createSearchIndex(tableWithEmojis, {
-				title: (s) => s,
-			});
+			const searchIndex = createSearchIndex(tableWithEmojis, ['title']);
 			expect(search(tableWithEmojis, searchIndex, 'hello')).toHaveLength(1);
 			expect(search(tableWithEmojis, searchIndex, '🌍')).toHaveLength(0);
 		});
@@ -508,10 +461,7 @@ describe('highlightSearchResult', () => {
 		]);
 
 	const table = createSampleTable();
-	const searchIndex = createSearchIndex(table, {
-		title: (s) => s,
-		content: (s) => s,
-	});
+	const searchIndex = createSearchIndex(table, ['title', 'content']);
 
 	it('highlights matched tokens in a search result', () => {
 		const [result] = search(table, searchIndex, 'hello');
@@ -563,9 +513,7 @@ describe('highlightSearchResult', () => {
 		const tableWithPunctuation = createTable([
 			{ id: '1', title: 'Hello, World!' },
 		]);
-		const searchIndex = createSearchIndex(tableWithPunctuation, {
-			title: (s) => s,
-		});
+		const searchIndex = createSearchIndex(tableWithPunctuation, ['title']);
 		const [result] = search(tableWithPunctuation, searchIndex, 'hello');
 		assert(result);
 		const highlightedResult = highlightSearchResult(result, ['id', 'title']);
@@ -583,9 +531,7 @@ describe('highlightSearchResult', () => {
 
 	it('handles unicode characters', () => {
 		const tableWithUnicode = createTable([{ id: '1', title: '你好世界' }]);
-		const searchIndex = createSearchIndex(tableWithUnicode, {
-			title: (s) => s,
-		});
+		const searchIndex = createSearchIndex(tableWithUnicode, ['title']);
 		const [result] = search(tableWithUnicode, searchIndex, '你好');
 		assert(result);
 		const highlightedResult = highlightSearchResult(result, ['id', 'title']);
@@ -600,7 +546,7 @@ describe('highlightSearchResult', () => {
 
 	it('handles emojis', () => {
 		const tableWithEmojis = createTable([{ id: '1', title: 'Hello 🌍' }]);
-		const searchIndex = createSearchIndex(tableWithEmojis, { title: (s) => s });
+		const searchIndex = createSearchIndex(tableWithEmojis, ['title']);
 		const [result] = search(tableWithEmojis, searchIndex, 'hello');
 		assert(result);
 		const highlightedResult = highlightSearchResult(result, ['id', 'title']);
@@ -618,10 +564,10 @@ describe('highlightSearchResult', () => {
 describe('highlightFirst', () => {
 	it('highlights matched token in a single sentence', () => {
 		const table = createTable([{ title: 'The blue dogs.' }]);
-		const searchIndex = createSearchIndex(table, { title: (s) => s });
+		const searchIndex = createSearchIndex(table, ['title']);
 		const [result] = search(table, searchIndex, 'dogs');
 		assert(result);
-		const highlightedResult = highlightFirst(result, { title: (s) => s });
+		const highlightedResult = highlightFirst(result, ['title']);
 		expect(highlightedResult).toEqual([
 			{
 				words: [
@@ -638,10 +584,10 @@ describe('highlightFirst', () => {
 
 	it('handles multiple matched tokens in a single sentence', () => {
 		const table = createTable([{ title: 'The blue dogs.' }]);
-		const searchIndex = createSearchIndex(table, { title: (s) => s });
+		const searchIndex = createSearchIndex(table, ['title']);
 		const [result] = search(table, searchIndex, 'blue dogs');
 		assert(result);
-		const highlightedResult = highlightFirst(result, { title: (s) => s });
+		const highlightedResult = highlightFirst(result, ['title']);
 		expect(highlightedResult).toEqual([
 			{
 				words: [
@@ -658,10 +604,10 @@ describe('highlightFirst', () => {
 
 	it('highlights matched token in multiple sentences', () => {
 		const table = createTable([{ title: 'The blue dogs. The green dogs.' }]);
-		const searchIndex = createSearchIndex(table, { title: (s) => s });
+		const searchIndex = createSearchIndex(table, ['title']);
 		const [result] = search(table, searchIndex, 'dogs');
 		assert(result);
-		const highlightedResult = highlightFirst(result, { title: (s) => s });
+		const highlightedResult = highlightFirst(result, ['title']);
 		expect(highlightedResult).toEqual([
 			{
 				words: [
@@ -689,10 +635,10 @@ describe('highlightFirst', () => {
 
 	it('handles multiple matched tokens in a single sentence', () => {
 		const table = createTable([{ title: 'The blue dogs. The green dogs.' }]);
-		const searchIndex = createSearchIndex(table, { title: (s) => s });
+		const searchIndex = createSearchIndex(table, ['title']);
 		const [result] = search(table, searchIndex, 'blue dogs');
 		assert(result);
-		const highlightedResult = highlightFirst(result, { title: (s) => s });
+		const highlightedResult = highlightFirst(result, ['title']);
 		expect(highlightedResult).toEqual([
 			{
 				words: [
@@ -725,13 +671,10 @@ describe('highlightFirst', () => {
 				content: 'The green dogs.',
 			},
 		]);
-		const searchIndex = createSearchIndex(table, { title: (s) => s });
+		const searchIndex = createSearchIndex(table, ['title']);
 		const [result] = search(table, searchIndex, 'blue dogs');
 		assert(result);
-		const highlightedResult = highlightFirst(result, {
-			title: (s) => s,
-			content: (s) => s,
-		});
+		const highlightedResult = highlightFirst(result, ['title', 'content']);
 		expect(highlightedResult).toEqual([
 			{
 				words: [
@@ -758,10 +701,10 @@ describe('highlightFirst', () => {
 
 	it('highlights matched tokens case-insensitively', () => {
 		const table = createTable([{ title: 'The BLUE DOGS bark.' }]);
-		const searchIndex = createSearchIndex(table, { title: (s) => s });
+		const searchIndex = createSearchIndex(table, ['title']);
 		const [result] = search(table, searchIndex, 'blue dogs');
 		assert(result);
-		const highlightedResult = highlightFirst(result, { title: (s) => s });
+		const highlightedResult = highlightFirst(result, ['title']);
 		expect(highlightedResult).toEqual([
 			{
 				words: [
@@ -788,7 +731,7 @@ describe('highlightFirst', () => {
 				matchedTokens: [],
 				score: 0,
 			},
-			{ title: (s) => s, content: (s) => s },
+			['content', 'title'],
 		);
 		expect(highlightedResult).toEqual([]);
 	});
@@ -803,38 +746,21 @@ describe('highlightFirst', () => {
 				matchedTokens: ['qux'],
 				score: 0,
 			},
-			{ title: (s) => s, content: (s) => s },
+			['content', 'title'],
 		);
 		expect(highlightedResult).toEqual([]);
-	});
-
-	it('handles non-string options', () => {
-		const table = createTable([{ value: 42 }]);
-		const searchIndex = createSearchIndex(table, { value: (s) => String(s) });
-		const [result] = search(table, searchIndex, '42');
-		assert(result);
-		const highlightedResult = highlightFirst(result, {
-			value: (n) => String(n),
-		});
-		expect(highlightedResult).toEqual([
-			{
-				words: [['42', true]],
-			},
-		]);
 	});
 
 	it('respects the padStart starting in the current sentence', () => {
 		const table = createTable([
 			{ title: 'One two three four five six seven eight.' },
 		]);
-		const searchIndex = createSearchIndex(table, { title: (s) => s });
+		const searchIndex = createSearchIndex(table, ['title']);
 		const [result] = search(table, searchIndex, 'six');
 		assert(result);
-		const highlightedResult = highlightFirst(
-			result,
-			{ title: (s) => s },
-			{ padStart: 3 },
-		);
+		const highlightedResult = highlightFirst(result, ['title'], {
+			padStart: 3,
+		});
 		expect(highlightedResult).toEqual([
 			{
 				words: [
@@ -859,14 +785,12 @@ describe('highlightFirst', () => {
 		const table = createTable([
 			{ title: 'Five six seven eight. One two three four five.' },
 		]);
-		const searchIndex = createSearchIndex(table, { title: (s) => s });
+		const searchIndex = createSearchIndex(table, ['title']);
 		const [result] = search(table, searchIndex, 'two');
 		assert(result);
-		const highlightedResult = highlightFirst(
-			result,
-			{ title: (s) => s },
-			{ padStart: 3 },
-		);
+		const highlightedResult = highlightFirst(result, ['title'], {
+			padStart: 3,
+		});
 		expect(highlightedResult).toEqual([
 			{
 				words: [
@@ -898,14 +822,12 @@ describe('highlightFirst', () => {
 		const table = createTable([
 			{ title: 'One two three four five six seven eight.' },
 		]);
-		const searchIndex = createSearchIndex(table, { title: (s) => s });
+		const searchIndex = createSearchIndex(table, ['title']);
 		const [result] = search(table, searchIndex, 'two');
 		assert(result);
-		const highlightedResult = highlightFirst(
-			result,
-			{ title: (s) => s },
-			{ matchLength: 5 },
-		);
+		const highlightedResult = highlightFirst(result, ['title'], {
+			matchLength: 5,
+		});
 		expect(highlightedResult).toEqual([
 			{
 				words: [
@@ -927,14 +849,12 @@ describe('highlightFirst', () => {
 		const table = createTable([
 			{ title: 'One two three four. Five six seven eight.' },
 		]);
-		const searchIndex = createSearchIndex(table, { title: (s) => s });
+		const searchIndex = createSearchIndex(table, ['title']);
 		const [result] = search(table, searchIndex, 'two six');
 		assert(result);
-		const highlightedResult = highlightFirst(
-			result,
-			{ title: (s) => s },
-			{ matchLength: 7 },
-		);
+		const highlightedResult = highlightFirst(result, ['title'], {
+			matchLength: 7,
+		});
 		expect(highlightedResult).toEqual([
 			{
 				words: [
