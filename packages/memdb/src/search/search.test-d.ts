@@ -1,6 +1,6 @@
 import { assert, describe, expectTypeOf, it } from 'vitest';
-import { createTable } from '../table.js';
 import { createSearchIndex, highlightSearchResult, search } from './search.js';
+import { createTable } from '../table.js';
 
 describe('highlightSearchResult', () => {
 	const createSampleTable = () =>
@@ -19,11 +19,9 @@ describe('highlightSearchResult', () => {
 	it('only highlights filtered columns', () => {
 		const [result] = search(table, searchIndex, 'hello');
 		assert(result);
-		const highlightedResult = highlightSearchResult(result, {
-			id: (s) => String(s),
-		});
+		const highlightedResult = highlightSearchResult(result, ['content']);
 		expectTypeOf(highlightedResult).toMatchTypeOf<{
-			id: [string, boolean][];
+			content: [string, boolean][];
 		}>();
 	});
 });

@@ -502,9 +502,9 @@ describe('search', () => {
 describe('highlightSearchResult', () => {
 	const createSampleTable = () =>
 		createTable([
-			{ id: 1, title: 'Another Test', content: 'Hello again' },
-			{ id: 2, title: 'Hello World', content: 'This is a test' },
-			{ id: 3, title: 'Third Entry', content: 'More content here' },
+			{ id: '1', title: 'Another Test', content: 'Hello again' },
+			{ id: '2', title: 'Hello World', content: 'This is a test' },
+			{ id: '3', title: 'Third Entry', content: 'More content here' },
 		]);
 
 	const table = createSampleTable();
@@ -516,11 +516,11 @@ describe('highlightSearchResult', () => {
 	it('highlights matched tokens in a search result', () => {
 		const [result] = search(table, searchIndex, 'hello');
 		assert(result);
-		const highlightedResult = highlightSearchResult(result, {
-			id: (s) => String(s),
-			title: (s) => s,
-			content: (s) => s,
-		});
+		const highlightedResult = highlightSearchResult(result, [
+			'id',
+			'content',
+			'title',
+		]);
 		expect(highlightedResult).toEqual({
 			id: [['1', false]],
 			title: [
@@ -539,11 +539,11 @@ describe('highlightSearchResult', () => {
 	it('handles case-insensitive matching', () => {
 		const [result] = search(table, searchIndex, 'HELLO');
 		assert(result);
-		const highlightedResult = highlightSearchResult(result, {
-			id: (s) => String(s),
-			title: (s) => s,
-			content: (s) => s,
-		});
+		const highlightedResult = highlightSearchResult(result, [
+			'id',
+			'content',
+			'title',
+		]);
 		expect(highlightedResult).toEqual({
 			id: [['1', false]],
 			title: [
@@ -561,17 +561,14 @@ describe('highlightSearchResult', () => {
 
 	it('handles punctuation in the text', () => {
 		const tableWithPunctuation = createTable([
-			{ id: 1, title: 'Hello, World!' },
+			{ id: '1', title: 'Hello, World!' },
 		]);
 		const searchIndex = createSearchIndex(tableWithPunctuation, {
 			title: (s) => s,
 		});
 		const [result] = search(tableWithPunctuation, searchIndex, 'hello');
 		assert(result);
-		const highlightedResult = highlightSearchResult(result, {
-			id: (s) => String(s),
-			title: (s) => s,
-		});
+		const highlightedResult = highlightSearchResult(result, ['id', 'title']);
 		expect(highlightedResult).toEqual({
 			id: [['1', false]],
 			title: [
@@ -584,34 +581,14 @@ describe('highlightSearchResult', () => {
 		});
 	});
 
-	it('handles non-string values in the record', () => {
-		const tableWithNumbers = createTable([{ id: 1, count: 42 }]);
-		const searchIndex = createSearchIndex(tableWithNumbers, {
-			count: (s) => String(s),
-		});
-		const [result] = search(tableWithNumbers, searchIndex, '42');
-		assert(result);
-		const highlightedResult = highlightSearchResult(result, {
-			id: (s) => String(s),
-			count: (s) => String(s),
-		});
-		expect(highlightedResult).toEqual({
-			id: [['1', false]],
-			count: [['42', true]],
-		});
-	});
-
 	it('handles unicode characters', () => {
-		const tableWithUnicode = createTable([{ id: 1, title: '你好世界' }]);
+		const tableWithUnicode = createTable([{ id: '1', title: '你好世界' }]);
 		const searchIndex = createSearchIndex(tableWithUnicode, {
 			title: (s) => s,
 		});
 		const [result] = search(tableWithUnicode, searchIndex, '你好');
 		assert(result);
-		const highlightedResult = highlightSearchResult(result, {
-			id: (s) => String(s),
-			title: (s) => s,
-		});
+		const highlightedResult = highlightSearchResult(result, ['id', 'title']);
 		expect(highlightedResult).toEqual({
 			id: [['1', false]],
 			title: [
@@ -622,14 +599,11 @@ describe('highlightSearchResult', () => {
 	});
 
 	it('handles emojis', () => {
-		const tableWithEmojis = createTable([{ id: 1, title: 'Hello 🌍' }]);
+		const tableWithEmojis = createTable([{ id: '1', title: 'Hello 🌍' }]);
 		const searchIndex = createSearchIndex(tableWithEmojis, { title: (s) => s });
 		const [result] = search(tableWithEmojis, searchIndex, 'hello');
 		assert(result);
-		const highlightedResult = highlightSearchResult(result, {
-			id: (s) => String(s),
-			title: (s) => s,
-		});
+		const highlightedResult = highlightSearchResult(result, ['id', 'title']);
 		expect(highlightedResult).toEqual({
 			id: [['1', false]],
 			title: [

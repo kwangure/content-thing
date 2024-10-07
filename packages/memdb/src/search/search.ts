@@ -57,7 +57,7 @@ export interface SearchIndex {
 	averageDocumentLength: number;
 }
 
-export function createSearchIndex<T extends Record<string, unknown>>(
+export function createSearchIndex<T extends SearchDocument>(
 	table: Table<T>,
 	columns: { [K in keyof T]?: (value: T[K]) => string },
 	locale?: Intl.LocalesArgument,
@@ -102,13 +102,17 @@ export function createSearchIndex<T extends Record<string, unknown>>(
 	};
 }
 
-export type SearchResult<T extends Record<string, unknown>> = {
+export interface SearchDocument {
+	[x: string]: unknown;
+}
+
+export type SearchResult<T extends SearchDocument> = {
 	document: T;
 	score: number;
 	matchedTokens: string[];
 };
 
-export function search<T extends Record<string, unknown>>(
+export function search<T extends SearchDocument>(
 	table: Table<T>,
 	searchIndex: SearchIndex,
 	query: string,
@@ -168,12 +172,12 @@ export function findMatchingDocs(
 	return matchedDocs;
 }
 
-export function rankBM25<T extends Record<string, unknown>>(
+export function rankBM25<T extends SearchDocument>(
 	matchedDocs: Map<number, DocumentMatch[]>,
 	table: Table<T>,
 	documentLengths: number[],
 	averageDocumentLength: number,
-): Array<SearchResult<T>> {
+): Simplify<SearchResult<T>>[] {
 	const totalDocs = table.records.length;
 	const scores = new Array<number>(totalDocs);
 	const matchedTokensMap = new Map<number, Set<string>>();
@@ -221,7 +225,7 @@ export function rankBM25<T extends Record<string, unknown>>(
 	return results;
 }
 
-export type SearchHighlights<T extends Record<string, unknown>> = {
+export type SearchHighlights<T extends SearchDocument> = {
 	[K in keyof T]: [string, boolean][];
 };
 
@@ -230,34 +234,27 @@ function highlightText(
 	matchedTokens: string[],
 	locale?: Intl.LocalesArgument,
 ) {
-	const segmenter = new Intl.Segmenter(locale, { granularity: 'word' });
-	const highlightedSegments: [string, boolean][] = [];
-
-	for (const { segment } of segmenter.segment(text)) {
-		highlightedSegments.push([
-			segment,
-			matchedTokens.includes(segment.toLowerCase()),
-		]);
-	}
-
-	return highlightedSegments;
+	return tokenize(text).tokens.map(
+		([token]) =>
+			[
+				token,
+				matchedTokens.includes(token.toLocaleLowerCase(locale)),
+			] satisfies [string, boolean],
+	);
 }
 
 export function highlightSearchResult<
-	T extends Record<string, unknown>,
-	C extends { [K in keyof T]?: (value: T[K]) => string },
->(searchResult: SearchResult<T>, columns: C, locale?: Intl.LocalesArgument) {
+	T extends SearchDocument,
+	C extends Extract<
+		keyof T,
+		{ [K in keyof T]: T[K] extends string ? K : never }[keyof T]
+	>,
+>(searchResult: SearchResult<T>, columns: C[], locale?: Intl.LocalesArgument) {
 	const { document, matchedTokens } = searchResult;
-	const highlightResult = {} as Simplify<
-		SearchHighlights<{ [P in keyof C]: P extends keyof T ? T[P] : never }>
-	>;
-	for (const [column, serializeFunc] of objectEntries(columns)) {
-		/* eslint-disable-next-line @typescript-eslint/no-explicit-any */
-		const text = serializeFunc?.(document[column as keyof T] as any);
-		const highlights =
-			typeof text === 'string'
-				? highlightText(text, matchedTokens, locale)
-				: [];
+	const highlightResult = {} as Simplify<SearchHighlights<Pick<T, C>>>;
+	for (const column of columns) {
+		const text = document[column];
+		const highlights = highlightText(text as string, matchedTokens, locale);
 		highlightResult[column] = highlights;
 	}
 	return highlightResult;
@@ -273,7 +270,7 @@ export interface HighlightFirstOptions {
 	locale?: Intl.LocalesArgument;
 }
 
-export function highlightFirst<T extends Record<string, unknown>>(
+export function highlightFirst<T extends SearchDocument>(
 	searchResult: SearchResult<T>,
 	columns: { [K in keyof T]?: (value: T[K]) => string },
 	options?: HighlightFirstOptions,
