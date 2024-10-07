@@ -51,6 +51,12 @@ function calculateBM25(
 	);
 }
 
+export interface SearchIndex {
+	invertedIndex: Map<string, Map<number, number>>;
+	documentLengths: number[];
+	averageDocumentLength: number;
+}
+
 export function createSearchIndex<T extends Record<string, unknown>>(
 	table: Table<T>,
 	columns: { [K in keyof T]?: (value: T[K]) => string },
@@ -104,12 +110,11 @@ export type SearchResult<T extends Record<string, unknown>> = {
 
 export function search<T extends Record<string, unknown>>(
 	table: Table<T>,
-	invertedIndex: Map<string, Map<number, number>>,
-	documentLengths: number[],
-	averageDocumentLength: number,
+	searchIndex: SearchIndex,
 	query: string,
 	locale?: Intl.LocalesArgument,
 ) {
+	const { invertedIndex, documentLengths, averageDocumentLength } = searchIndex;
 	const queryTokens = tokenize(query, locale);
 	const matchedDocs = findMatchingDocs(invertedIndex, queryTokens, { locale });
 	return rankBM25(matchedDocs, table, documentLengths, averageDocumentLength);

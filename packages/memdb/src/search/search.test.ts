@@ -269,131 +269,63 @@ describe('search', () => {
 	describe('index building and searching', () => {
 		it('creates index with empty table', () => {
 			const emptyTable = createTable([] as { id: number; title: string }[]);
-			const { invertedIndex, documentLengths, averageDocumentLength } =
-				createSearchIndex(emptyTable, { title: (s) => s });
-			expect(
-				search(
-					emptyTable,
-					invertedIndex,
-					documentLengths,
-					averageDocumentLength,
-					'any',
-				),
-			).toEqual([]);
+			const searchIndex = createSearchIndex(emptyTable, { title: (s) => s });
+			expect(search(emptyTable, searchIndex, 'any')).toEqual([]);
 		});
 
 		it('creates index with one record', () => {
 			const singleRecordTable = createTable([
 				{ id: 1, title: 'Single Record' },
 			]);
-			const { invertedIndex, documentLengths, averageDocumentLength } =
-				createSearchIndex(singleRecordTable, { title: (s) => s });
-			expect(
-				search(
-					singleRecordTable,
-					invertedIndex,
-					documentLengths,
-					averageDocumentLength,
-					'single',
-				),
-			).toHaveLength(1);
+			const searchIndex = createSearchIndex(singleRecordTable, {
+				title: (s) => s,
+			});
+			expect(search(singleRecordTable, searchIndex, 'single')).toHaveLength(1);
 		});
 
 		it('creates index with multiple records', () => {
 			const table = createSampleTable();
-			const { invertedIndex, documentLengths, averageDocumentLength } =
-				createSearchIndex(table, {
-					title: (s) => s,
-					content: (s) => s,
-				});
-			expect(
-				search(
-					table,
-					invertedIndex,
-					documentLengths,
-					averageDocumentLength,
-					'hello',
-				),
-			).toHaveLength(2);
+			const searchIndex = createSearchIndex(table, {
+				title: (s) => s,
+				content: (s) => s,
+			});
+			expect(search(table, searchIndex, 'hello')).toHaveLength(2);
 		});
 
 		it('handles subset of columns', () => {
 			const table = createSampleTable();
-			const { invertedIndex, documentLengths, averageDocumentLength } =
-				createSearchIndex(table, { title: (s) => s });
-			expect(
-				search(
-					table,
-					invertedIndex,
-					documentLengths,
-					averageDocumentLength,
-					'test',
-				),
-			).toHaveLength(1);
+			const searchIndex = createSearchIndex(table, { title: (s) => s });
+			expect(search(table, searchIndex, 'test')).toHaveLength(1);
 		});
 
 		it('ignores non-existent columns', () => {
 			const table = createSampleTable();
-			const { invertedIndex, documentLengths, averageDocumentLength } =
-				createSearchIndex(table, {
-					title: (s) => s,
-					// @ts-expect-error - Testing runtime behavior with invalid column
-					nonexistent: (s) => s,
-				});
-			expect(
-				search(
-					table,
-					invertedIndex,
-					documentLengths,
-					averageDocumentLength,
-					'hello',
-				),
-			).toHaveLength(1);
+			const searchIndex = createSearchIndex(table, {
+				title: (s) => s,
+				// @ts-expect-error - Testing runtime behavior with invalid column
+				nonexistent: (s) => s,
+			});
+			expect(search(table, searchIndex, 'hello')).toHaveLength(1);
 		});
 	});
 
 	describe('search function', () => {
 		const table = createSampleTable();
-		const { invertedIndex, documentLengths, averageDocumentLength } =
-			createSearchIndex(table, {
-				title: (s) => s,
-				content: (s) => s,
-			});
+		const searchIndex = createSearchIndex(table, {
+			title: (s) => s,
+			content: (s) => s,
+		});
 
 		it('returns empty array for empty search terms', () => {
-			expect(
-				search(
-					table,
-					invertedIndex,
-					documentLengths,
-					averageDocumentLength,
-					'',
-				),
-			).toEqual([]);
+			expect(search(table, searchIndex, '')).toEqual([]);
 		});
 
 		it('finds single term in index', () => {
-			expect(
-				search(
-					table,
-					invertedIndex,
-					documentLengths,
-					averageDocumentLength,
-					'hello',
-				),
-			).toHaveLength(2);
+			expect(search(table, searchIndex, 'hello')).toHaveLength(2);
 		});
 
 		it('returns empty array for non-existent term', () => {
-			expect(
-				search(
-					table,
-					invertedIndex,
-					documentLengths,
-					averageDocumentLength,
-					'nonexistent',
-				),
-			).toEqual([]);
+			expect(search(table, searchIndex, 'nonexistent')).toEqual([]);
 		});
 
 		it('finds multiple terms with varying term frequencies', () => {
@@ -402,15 +334,8 @@ describe('search', () => {
 				{ text: 'one one one' },
 				{ text: 'number one one' },
 			]);
-			const { invertedIndex, documentLengths, averageDocumentLength } =
-				createSearchIndex(table, { text: (s) => s });
-			const result = search(
-				table,
-				invertedIndex,
-				documentLengths,
-				averageDocumentLength,
-				'one',
-			);
+			const searchIndex = createSearchIndex(table, { text: (s) => s });
+			const result = search(table, searchIndex, 'one');
 
 			expect(result).toEqual([
 				// Ordered by BM25 score
@@ -443,15 +368,8 @@ describe('search', () => {
 
 		it('finds multiple terms with varying document frequencies', () => {
 			const table = createTable([{ text: 'one one' }, { text: 'number one' }]);
-			const { invertedIndex, documentLengths, averageDocumentLength } =
-				createSearchIndex(table, { text: (s) => s });
-			const result = search(
-				table,
-				invertedIndex,
-				documentLengths,
-				averageDocumentLength,
-				'number one',
-			);
+			const searchIndex = createSearchIndex(table, { text: (s) => s });
+			const result = search(table, searchIndex, 'number one');
 
 			expect(result).toEqual([
 				// Ordered by BM25 score
@@ -480,15 +398,8 @@ describe('search', () => {
 				{ text: 'number one' },
 				{ text: 'number one number' },
 			]);
-			const { invertedIndex, documentLengths, averageDocumentLength } =
-				createSearchIndex(table, { text: (s) => s });
-			const result = search(
-				table,
-				invertedIndex,
-				documentLengths,
-				averageDocumentLength,
-				'one',
-			);
+			const searchIndex = createSearchIndex(table, { text: (s) => s });
+			const result = search(table, searchIndex, 'one');
 
 			expect(result).toEqual([
 				// Ordered by BM25 score
@@ -520,51 +431,19 @@ describe('search', () => {
 		});
 
 		it('handles terms not in index', () => {
-			expect(
-				search(
-					table,
-					invertedIndex,
-					documentLengths,
-					averageDocumentLength,
-					'hello nonexistent',
-				),
-			).toHaveLength(2);
+			expect(search(table, searchIndex, 'hello nonexistent')).toHaveLength(2);
 		});
 
 		it('is case insensitive', () => {
-			expect(
-				search(
-					table,
-					invertedIndex,
-					documentLengths,
-					averageDocumentLength,
-					'HELLO',
-				),
-			).toHaveLength(2);
+			expect(search(table, searchIndex, 'HELLO')).toHaveLength(2);
 		});
 
 		it('handles punctuation in search terms', () => {
-			expect(
-				search(
-					table,
-					invertedIndex,
-					documentLengths,
-					averageDocumentLength,
-					'hello,',
-				),
-			).toHaveLength(2);
+			expect(search(table, searchIndex, 'hello,')).toHaveLength(2);
 		});
 
 		it('handles search term tokenization', () => {
-			expect(
-				search(
-					table,
-					invertedIndex,
-					documentLengths,
-					averageDocumentLength,
-					"doesn't",
-				),
-			).toHaveLength(0);
+			expect(search(table, searchIndex, "doesn't")).toHaveLength(0);
 		});
 	});
 
@@ -574,17 +453,10 @@ describe('search', () => {
 				id: number;
 				title: string | null;
 			}>([{ id: 1, title: null }]);
-			const { invertedIndex, documentLengths, averageDocumentLength } =
-				createSearchIndex(tableWithNull, { title: (s) => s ?? '' });
-			expect(
-				search(
-					tableWithNull,
-					invertedIndex,
-					documentLengths,
-					averageDocumentLength,
-					'null',
-				),
-			).toHaveLength(0);
+			const searchIndex = createSearchIndex(tableWithNull, {
+				title: (s) => s ?? '',
+			});
+			expect(search(tableWithNull, searchIndex, 'null')).toHaveLength(0);
 		});
 
 		it('handles undefined values in records', () => {
@@ -592,75 +464,37 @@ describe('search', () => {
 				id: number;
 				title: string | undefined;
 			}>([{ id: 1, title: undefined }]);
-			const { invertedIndex, documentLengths, averageDocumentLength } =
-				createSearchIndex(tableWithUndefined, {
-					title: (s) => s ?? '',
-				});
-			expect(
-				search(
-					tableWithUndefined,
-					invertedIndex,
-					documentLengths,
-					averageDocumentLength,
-					'undefined',
-				),
-			).toHaveLength(0);
+			const searchIndex = createSearchIndex(tableWithUndefined, {
+				title: (s) => s ?? '',
+			});
+			expect(search(tableWithUndefined, searchIndex, 'undefined')).toHaveLength(
+				0,
+			);
 		});
 
 		it('handles non-string values in specified columns', () => {
 			const tableWithNumbers = createTable([{ id: 1, count: 42 }]);
-			const { invertedIndex, documentLengths, averageDocumentLength } =
-				createSearchIndex(tableWithNumbers, {
-					count: (s) => String(s),
-				});
-			expect(
-				search(
-					tableWithNumbers,
-					invertedIndex,
-					documentLengths,
-					averageDocumentLength,
-					'42',
-				),
-			).toHaveLength(1);
+			const searchIndex = createSearchIndex(tableWithNumbers, {
+				count: (s) => String(s),
+			});
+			expect(search(tableWithNumbers, searchIndex, '42')).toHaveLength(1);
 		});
 
 		it('handles unicode characters', () => {
 			const tableWithUnicode = createTable([{ id: 1, title: '你好世界' }]);
-			const { invertedIndex, documentLengths, averageDocumentLength } =
-				createSearchIndex(tableWithUnicode, { title: (s) => s });
-			expect(
-				search(
-					tableWithUnicode,
-					invertedIndex,
-					documentLengths,
-					averageDocumentLength,
-					'你好',
-				),
-			).toHaveLength(1);
+			const searchIndex = createSearchIndex(tableWithUnicode, {
+				title: (s) => s,
+			});
+			expect(search(tableWithUnicode, searchIndex, '你好')).toHaveLength(1);
 		});
 
 		it('handles emojis', () => {
 			const tableWithEmojis = createTable([{ id: 1, title: 'Hello 🌍' }]);
-			const { invertedIndex, documentLengths, averageDocumentLength } =
-				createSearchIndex(tableWithEmojis, { title: (s) => s });
-			expect(
-				search(
-					tableWithEmojis,
-					invertedIndex,
-					documentLengths,
-					averageDocumentLength,
-					'hello',
-				),
-			).toHaveLength(1);
-			expect(
-				search(
-					tableWithEmojis,
-					invertedIndex,
-					documentLengths,
-					averageDocumentLength,
-					'🌍',
-				),
-			).toHaveLength(0);
+			const searchIndex = createSearchIndex(tableWithEmojis, {
+				title: (s) => s,
+			});
+			expect(search(tableWithEmojis, searchIndex, 'hello')).toHaveLength(1);
+			expect(search(tableWithEmojis, searchIndex, '🌍')).toHaveLength(0);
 		});
 	});
 });
@@ -674,20 +508,13 @@ describe('highlightSearchResult', () => {
 		]);
 
 	const table = createSampleTable();
-	const { invertedIndex, documentLengths, averageDocumentLength } =
-		createSearchIndex(table, {
-			title: (s) => s,
-			content: (s) => s,
-		});
+	const searchIndex = createSearchIndex(table, {
+		title: (s) => s,
+		content: (s) => s,
+	});
 
 	it('highlights matched tokens in a search result', () => {
-		const [result] = search(
-			table,
-			invertedIndex,
-			documentLengths,
-			averageDocumentLength,
-			'hello',
-		);
+		const [result] = search(table, searchIndex, 'hello');
 		assert(result);
 		const highlightedResult = highlightSearchResult(result, {
 			id: (s) => String(s),
@@ -710,13 +537,7 @@ describe('highlightSearchResult', () => {
 	});
 
 	it('handles case-insensitive matching', () => {
-		const [result] = search(
-			table,
-			invertedIndex,
-			documentLengths,
-			averageDocumentLength,
-			'HELLO',
-		);
+		const [result] = search(table, searchIndex, 'HELLO');
 		assert(result);
 		const highlightedResult = highlightSearchResult(result, {
 			id: (s) => String(s),
@@ -742,15 +563,10 @@ describe('highlightSearchResult', () => {
 		const tableWithPunctuation = createTable([
 			{ id: 1, title: 'Hello, World!' },
 		]);
-		const { invertedIndex, documentLengths, averageDocumentLength } =
-			createSearchIndex(tableWithPunctuation, { title: (s) => s });
-		const [result] = search(
-			tableWithPunctuation,
-			invertedIndex,
-			documentLengths,
-			averageDocumentLength,
-			'hello',
-		);
+		const searchIndex = createSearchIndex(tableWithPunctuation, {
+			title: (s) => s,
+		});
+		const [result] = search(tableWithPunctuation, searchIndex, 'hello');
 		assert(result);
 		const highlightedResult = highlightSearchResult(result, {
 			id: (s) => String(s),
@@ -770,15 +586,10 @@ describe('highlightSearchResult', () => {
 
 	it('handles non-string values in the record', () => {
 		const tableWithNumbers = createTable([{ id: 1, count: 42 }]);
-		const { invertedIndex, documentLengths, averageDocumentLength } =
-			createSearchIndex(tableWithNumbers, { count: (s) => String(s) });
-		const [result] = search(
-			tableWithNumbers,
-			invertedIndex,
-			documentLengths,
-			averageDocumentLength,
-			'42',
-		);
+		const searchIndex = createSearchIndex(tableWithNumbers, {
+			count: (s) => String(s),
+		});
+		const [result] = search(tableWithNumbers, searchIndex, '42');
 		assert(result);
 		const highlightedResult = highlightSearchResult(result, {
 			id: (s) => String(s),
@@ -792,15 +603,10 @@ describe('highlightSearchResult', () => {
 
 	it('handles unicode characters', () => {
 		const tableWithUnicode = createTable([{ id: 1, title: '你好世界' }]);
-		const { invertedIndex, documentLengths, averageDocumentLength } =
-			createSearchIndex(tableWithUnicode, { title: (s) => s });
-		const [result] = search(
-			tableWithUnicode,
-			invertedIndex,
-			documentLengths,
-			averageDocumentLength,
-			'你好',
-		);
+		const searchIndex = createSearchIndex(tableWithUnicode, {
+			title: (s) => s,
+		});
+		const [result] = search(tableWithUnicode, searchIndex, '你好');
 		assert(result);
 		const highlightedResult = highlightSearchResult(result, {
 			id: (s) => String(s),
@@ -817,15 +623,8 @@ describe('highlightSearchResult', () => {
 
 	it('handles emojis', () => {
 		const tableWithEmojis = createTable([{ id: 1, title: 'Hello 🌍' }]);
-		const { invertedIndex, documentLengths, averageDocumentLength } =
-			createSearchIndex(tableWithEmojis, { title: (s) => s });
-		const [result] = search(
-			tableWithEmojis,
-			invertedIndex,
-			documentLengths,
-			averageDocumentLength,
-			'hello',
-		);
+		const searchIndex = createSearchIndex(tableWithEmojis, { title: (s) => s });
+		const [result] = search(tableWithEmojis, searchIndex, 'hello');
 		assert(result);
 		const highlightedResult = highlightSearchResult(result, {
 			id: (s) => String(s),
@@ -845,15 +644,8 @@ describe('highlightSearchResult', () => {
 describe('highlightFirst', () => {
 	it('highlights matched token in a single sentence', () => {
 		const table = createTable([{ title: 'The blue dogs.' }]);
-		const { invertedIndex, documentLengths, averageDocumentLength } =
-			createSearchIndex(table, { title: (s) => s });
-		const [result] = search(
-			table,
-			invertedIndex,
-			documentLengths,
-			averageDocumentLength,
-			'dogs',
-		);
+		const searchIndex = createSearchIndex(table, { title: (s) => s });
+		const [result] = search(table, searchIndex, 'dogs');
 		assert(result);
 		const highlightedResult = highlightFirst(result, { title: (s) => s });
 		expect(highlightedResult).toEqual([
@@ -872,15 +664,8 @@ describe('highlightFirst', () => {
 
 	it('handles multiple matched tokens in a single sentence', () => {
 		const table = createTable([{ title: 'The blue dogs.' }]);
-		const { invertedIndex, documentLengths, averageDocumentLength } =
-			createSearchIndex(table, { title: (s) => s });
-		const [result] = search(
-			table,
-			invertedIndex,
-			documentLengths,
-			averageDocumentLength,
-			'blue dogs',
-		);
+		const searchIndex = createSearchIndex(table, { title: (s) => s });
+		const [result] = search(table, searchIndex, 'blue dogs');
 		assert(result);
 		const highlightedResult = highlightFirst(result, { title: (s) => s });
 		expect(highlightedResult).toEqual([
@@ -899,15 +684,8 @@ describe('highlightFirst', () => {
 
 	it('highlights matched token in multiple sentences', () => {
 		const table = createTable([{ title: 'The blue dogs. The green dogs.' }]);
-		const { invertedIndex, documentLengths, averageDocumentLength } =
-			createSearchIndex(table, { title: (s) => s });
-		const [result] = search(
-			table,
-			invertedIndex,
-			documentLengths,
-			averageDocumentLength,
-			'dogs',
-		);
+		const searchIndex = createSearchIndex(table, { title: (s) => s });
+		const [result] = search(table, searchIndex, 'dogs');
 		assert(result);
 		const highlightedResult = highlightFirst(result, { title: (s) => s });
 		expect(highlightedResult).toEqual([
@@ -937,15 +715,8 @@ describe('highlightFirst', () => {
 
 	it('handles multiple matched tokens in a single sentence', () => {
 		const table = createTable([{ title: 'The blue dogs. The green dogs.' }]);
-		const { invertedIndex, documentLengths, averageDocumentLength } =
-			createSearchIndex(table, { title: (s) => s });
-		const [result] = search(
-			table,
-			invertedIndex,
-			documentLengths,
-			averageDocumentLength,
-			'blue dogs',
-		);
+		const searchIndex = createSearchIndex(table, { title: (s) => s });
+		const [result] = search(table, searchIndex, 'blue dogs');
 		assert(result);
 		const highlightedResult = highlightFirst(result, { title: (s) => s });
 		expect(highlightedResult).toEqual([
@@ -980,15 +751,8 @@ describe('highlightFirst', () => {
 				content: 'The green dogs.',
 			},
 		]);
-		const { invertedIndex, documentLengths, averageDocumentLength } =
-			createSearchIndex(table, { title: (s) => s });
-		const [result] = search(
-			table,
-			invertedIndex,
-			documentLengths,
-			averageDocumentLength,
-			'blue dogs',
-		);
+		const searchIndex = createSearchIndex(table, { title: (s) => s });
+		const [result] = search(table, searchIndex, 'blue dogs');
 		assert(result);
 		const highlightedResult = highlightFirst(result, {
 			title: (s) => s,
@@ -1020,15 +784,8 @@ describe('highlightFirst', () => {
 
 	it('highlights matched tokens case-insensitively', () => {
 		const table = createTable([{ title: 'The BLUE DOGS bark.' }]);
-		const { invertedIndex, documentLengths, averageDocumentLength } =
-			createSearchIndex(table, { title: (s) => s });
-		const [result] = search(
-			table,
-			invertedIndex,
-			documentLengths,
-			averageDocumentLength,
-			'blue dogs',
-		);
+		const searchIndex = createSearchIndex(table, { title: (s) => s });
+		const [result] = search(table, searchIndex, 'blue dogs');
 		assert(result);
 		const highlightedResult = highlightFirst(result, { title: (s) => s });
 		expect(highlightedResult).toEqual([
@@ -1079,15 +836,8 @@ describe('highlightFirst', () => {
 
 	it('handles non-string options', () => {
 		const table = createTable([{ value: 42 }]);
-		const { invertedIndex, documentLengths, averageDocumentLength } =
-			createSearchIndex(table, { value: (s) => String(s) });
-		const [result] = search(
-			table,
-			invertedIndex,
-			documentLengths,
-			averageDocumentLength,
-			'42',
-		);
+		const searchIndex = createSearchIndex(table, { value: (s) => String(s) });
+		const [result] = search(table, searchIndex, '42');
 		assert(result);
 		const highlightedResult = highlightFirst(result, {
 			value: (n) => String(n),
@@ -1103,15 +853,8 @@ describe('highlightFirst', () => {
 		const table = createTable([
 			{ title: 'One two three four five six seven eight.' },
 		]);
-		const { invertedIndex, documentLengths, averageDocumentLength } =
-			createSearchIndex(table, { title: (s) => s });
-		const [result] = search(
-			table,
-			invertedIndex,
-			documentLengths,
-			averageDocumentLength,
-			'six',
-		);
+		const searchIndex = createSearchIndex(table, { title: (s) => s });
+		const [result] = search(table, searchIndex, 'six');
 		assert(result);
 		const highlightedResult = highlightFirst(
 			result,
@@ -1142,15 +885,8 @@ describe('highlightFirst', () => {
 		const table = createTable([
 			{ title: 'Five six seven eight. One two three four five.' },
 		]);
-		const { invertedIndex, documentLengths, averageDocumentLength } =
-			createSearchIndex(table, { title: (s) => s });
-		const [result] = search(
-			table,
-			invertedIndex,
-			documentLengths,
-			averageDocumentLength,
-			'two',
-		);
+		const searchIndex = createSearchIndex(table, { title: (s) => s });
+		const [result] = search(table, searchIndex, 'two');
 		assert(result);
 		const highlightedResult = highlightFirst(
 			result,
@@ -1188,15 +924,8 @@ describe('highlightFirst', () => {
 		const table = createTable([
 			{ title: 'One two three four five six seven eight.' },
 		]);
-		const { invertedIndex, documentLengths, averageDocumentLength } =
-			createSearchIndex(table, { title: (s) => s });
-		const [result] = search(
-			table,
-			invertedIndex,
-			documentLengths,
-			averageDocumentLength,
-			'two',
-		);
+		const searchIndex = createSearchIndex(table, { title: (s) => s });
+		const [result] = search(table, searchIndex, 'two');
 		assert(result);
 		const highlightedResult = highlightFirst(
 			result,
@@ -1224,15 +953,8 @@ describe('highlightFirst', () => {
 		const table = createTable([
 			{ title: 'One two three four. Five six seven eight.' },
 		]);
-		const { invertedIndex, documentLengths, averageDocumentLength } =
-			createSearchIndex(table, { title: (s) => s });
-		const [result] = search(
-			table,
-			invertedIndex,
-			documentLengths,
-			averageDocumentLength,
-			'two six',
-		);
+		const searchIndex = createSearchIndex(table, { title: (s) => s });
+		const [result] = search(table, searchIndex, 'two six');
 		assert(result);
 		const highlightedResult = highlightFirst(
 			result,

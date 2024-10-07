@@ -11,20 +11,13 @@ describe('highlightSearchResult', () => {
 		]);
 
 	const table = createSampleTable();
-	const { invertedIndex, documentLengths, averageDocumentLength } =
-		createSearchIndex(table, {
-			title: (s) => s,
-			content: (s) => s,
-		});
+	const searchIndex = createSearchIndex(table, {
+		title: (s) => s,
+		content: (s) => s,
+	});
 
 	it('only highlights filtered columns', () => {
-		const [result] = search(
-			table,
-			invertedIndex,
-			documentLengths,
-			averageDocumentLength,
-			'hello',
-		);
+		const [result] = search(table, searchIndex, 'hello');
 		assert(result);
 		const highlightedResult = highlightSearchResult(result, {
 			id: (s) => String(s),
