@@ -260,7 +260,7 @@ export interface HighlightFirstOptions {
 	locale?: Intl.LocalesArgument;
 }
 
-export function highlightFirst<
+export function highlightFlattenColumns<
 	T extends SearchDocument,
 	C extends StringValueColumns<T>,
 >(

@@ -2,7 +2,7 @@ import { assert, describe, expect, it } from 'vitest';
 import {
 	createSearchIndex,
 	findMatchingDocs,
-	highlightFirst,
+	highlightFlattenColumns,
 	highlightSearchResult,
 	rankBM25,
 	search,
@@ -567,7 +567,7 @@ describe('highlightFirst', () => {
 		const searchIndex = createSearchIndex(table, ['title']);
 		const [result] = search(table, searchIndex, 'dogs');
 		assert(result);
-		const highlightedResult = highlightFirst(result, ['title']);
+		const highlightedResult = highlightFlattenColumns(result, ['title']);
 		expect(highlightedResult).toEqual([
 			['The', false],
 			[' ', false],
@@ -583,7 +583,7 @@ describe('highlightFirst', () => {
 		const searchIndex = createSearchIndex(table, ['title']);
 		const [result] = search(table, searchIndex, 'blue dogs');
 		assert(result);
-		const highlightedResult = highlightFirst(result, ['title']);
+		const highlightedResult = highlightFlattenColumns(result, ['title']);
 		expect(highlightedResult).toEqual([
 			['The', false],
 			[' ', false],
@@ -599,7 +599,7 @@ describe('highlightFirst', () => {
 		const searchIndex = createSearchIndex(table, ['title']);
 		const [result] = search(table, searchIndex, 'dogs');
 		assert(result);
-		const highlightedResult = highlightFirst(result, ['title']);
+		const highlightedResult = highlightFlattenColumns(result, ['title']);
 		expect(highlightedResult).toEqual([
 			['The', false],
 			[' ', false],
@@ -622,7 +622,7 @@ describe('highlightFirst', () => {
 		const searchIndex = createSearchIndex(table, ['title']);
 		const [result] = search(table, searchIndex, 'blue dogs');
 		assert(result);
-		const highlightedResult = highlightFirst(result, ['title']);
+		const highlightedResult = highlightFlattenColumns(result, ['title']);
 		expect(highlightedResult).toEqual([
 			['The', false],
 			[' ', false],
@@ -650,7 +650,10 @@ describe('highlightFirst', () => {
 		const searchIndex = createSearchIndex(table, ['title']);
 		const [result] = search(table, searchIndex, 'blue dogs');
 		assert(result);
-		const highlightedResult = highlightFirst(result, ['title', 'content']);
+		const highlightedResult = highlightFlattenColumns(result, [
+			'title',
+			'content',
+		]);
 		expect(highlightedResult).toEqual([
 			['The', false],
 			[' ', false],
@@ -672,7 +675,7 @@ describe('highlightFirst', () => {
 		const searchIndex = createSearchIndex(table, ['title']);
 		const [result] = search(table, searchIndex, 'blue dogs');
 		assert(result);
-		const highlightedResult = highlightFirst(result, ['title']);
+		const highlightedResult = highlightFlattenColumns(result, ['title']);
 		expect(highlightedResult).toEqual([
 			['The', false],
 			[' ', false],
@@ -686,7 +689,7 @@ describe('highlightFirst', () => {
 	});
 
 	it('handles empty text', () => {
-		const highlightedResult = highlightFirst(
+		const highlightedResult = highlightFlattenColumns(
 			{
 				document: {
 					title: '',
@@ -701,7 +704,7 @@ describe('highlightFirst', () => {
 	});
 
 	it('handles text with no matches', () => {
-		const highlightedResult = highlightFirst(
+		const highlightedResult = highlightFlattenColumns(
 			{
 				document: {
 					title: 'foo bar',
@@ -722,7 +725,7 @@ describe('highlightFirst', () => {
 		const searchIndex = createSearchIndex(table, ['title']);
 		const [result] = search(table, searchIndex, 'six');
 		assert(result);
-		const highlightedResult = highlightFirst(result, ['title'], {
+		const highlightedResult = highlightFlattenColumns(result, ['title'], {
 			padStart: 3,
 		});
 		expect(highlightedResult).toEqual([
@@ -748,7 +751,7 @@ describe('highlightFirst', () => {
 		const searchIndex = createSearchIndex(table, ['title']);
 		const [result] = search(table, searchIndex, 'two');
 		assert(result);
-		const highlightedResult = highlightFirst(result, ['title'], {
+		const highlightedResult = highlightFlattenColumns(result, ['title'], {
 			padStart: 3,
 		});
 		expect(highlightedResult).toEqual([
@@ -777,7 +780,7 @@ describe('highlightFirst', () => {
 		const searchIndex = createSearchIndex(table, ['title']);
 		const [result] = search(table, searchIndex, 'two');
 		assert(result);
-		const highlightedResult = highlightFirst(result, ['title'], {
+		const highlightedResult = highlightFlattenColumns(result, ['title'], {
 			matchLength: 5,
 		});
 		expect(highlightedResult).toEqual([
@@ -800,7 +803,7 @@ describe('highlightFirst', () => {
 		const searchIndex = createSearchIndex(table, ['title']);
 		const [result] = search(table, searchIndex, 'two six');
 		assert(result);
-		const highlightedResult = highlightFirst(result, ['title'], {
+		const highlightedResult = highlightFlattenColumns(result, ['title'], {
 			matchLength: 7,
 		});
 		expect(highlightedResult).toEqual([
