@@ -26,7 +26,7 @@ describe('tokenize', () => {
 	it('handles punctuation', () => {
 		expect(tokenize('Hello, world!')).toEqual({
 			tokens: [
-				['hello', 1],
+				['Hello', 1],
 				[',', 0],
 				[' ', 0],
 				['world', 1],
@@ -125,7 +125,7 @@ describe('tokenize', () => {
 	it('handles stopwords with punctuation', () => {
 		expect(tokenize('And, the! but.')).toEqual({
 			tokens: [
-				['and', 3],
+				['And', 3],
 				[',', 0],
 				[' ', 0],
 				['the', 3],
@@ -141,11 +141,11 @@ describe('tokenize', () => {
 	it('is case insensitive for stopwords', () => {
 		expect(tokenize('THE QUICK Brown fox')).toEqual({
 			tokens: [
-				['the', 3],
+				['THE', 3],
 				[' ', 0],
-				['quick', 1],
+				['QUICK', 1],
 				[' ', 0],
-				['brown', 1],
+				['Brown', 1],
 				[' ', 0],
 				['fox', 1],
 			],
@@ -171,7 +171,7 @@ describe('findMatchingDocs', () => {
 			tokens: [['apple', 1]] as [string, number][],
 			wordCount: 1,
 		};
-		const results = findMatchingDocs(invertedIndex, queryTokens);
+		const results = findMatchingDocs(invertedIndex, queryTokens, {});
 
 		expect(results.get(1)).toEqual([
 			{ docFreq: 1, termFreq: 2, token: 'apple', fuzzyDistance: 0 },
@@ -194,7 +194,9 @@ describe('findMatchingDocs', () => {
 			tokens: [['appl', 1]] as [string, number][], // One character off
 			wordCount: 1,
 		};
-		const results = findMatchingDocs(invertedIndex, queryTokens, 1);
+		const results = findMatchingDocs(invertedIndex, queryTokens, {
+			similarityThreshold: 1,
+		});
 
 		expect(results.get(1)).toEqual([
 			{ docFreq: 1, termFreq: 2, token: 'apple', fuzzyDistance: 1 },
@@ -217,7 +219,9 @@ describe('findMatchingDocs', () => {
 			tokens: [['appl', 1]] as [string, number][], // One character off
 			wordCount: 1,
 		};
-		const results = findMatchingDocs(invertedIndex, queryTokens, 0); // No fuzzy matching
+		const results = findMatchingDocs(invertedIndex, queryTokens, {
+			similarityThreshold: 0, // No fuzzy matching
+		});
 
 		expect(results.size).toBe(0); // No matches
 	});

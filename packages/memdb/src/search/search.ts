@@ -20,18 +20,16 @@ export function tokenize(
 	let wordCount = 0;
 
 	for (const { segment, isWordLike } of segmenter.segment(text)) {
-		const word = segment.toLowerCase();
-
 		let bitset = 0;
 		if (isWordLike) {
 			bitset |= TOKEN_IS_WORD_LIKE;
 			wordCount++;
-			if (stopwords.includes(word.toLowerCase())) {
+			if (stopwords.includes(segment.toLowerCase())) {
 				bitset |= TOKEN_IS_STOPWORD;
 			}
 		}
 
-		tokens.push([word, bitset]);
+		tokens.push([segment, bitset]);
 	}
 
 	return { tokens, wordCount };
@@ -74,10 +72,11 @@ export function createSearchIndex<T extends Record<string, unknown>>(
 
 				for (const [token, flags] of tokens) {
 					if (flags & TOKEN_IS_WORD_LIKE && !(flags & TOKEN_IS_STOPWORD)) {
-						if (!invertedIndex.has(token)) {
-							invertedIndex.set(token, new Map());
+						const t = token.toLocaleLowerCase(locale);
+						if (!invertedIndex.has(t)) {
+							invertedIndex.set(t, new Map());
 						}
-						const termFreq = invertedIndex.get(token)!;
+						const termFreq = invertedIndex.get(t)!;
 						termFreq.set(docId, (termFreq.get(docId) || 0) + 1);
 					}
 				}
@@ -112,7 +111,7 @@ export function search<T extends Record<string, unknown>>(
 	locale?: Intl.LocalesArgument,
 ) {
 	const queryTokens = tokenize(query, locale);
-	const matchedDocs = findMatchingDocs(invertedIndex, queryTokens);
+	const matchedDocs = findMatchingDocs(invertedIndex, queryTokens, { locale });
 	return rankBM25(matchedDocs, table, documentLengths, averageDocumentLength);
 }
 
@@ -123,16 +122,22 @@ export interface DocumentMatch {
 	token: string;
 }
 
+export interface FindMatchingDocsOptions {
+	locale?: Intl.LocalesArgument;
+	similarityThreshold?: number;
+}
+
 export function findMatchingDocs(
 	invertedIndex: Map<string, Map<number, number>>,
 	queryTokens: SearchTokens,
-	similarityThreshold = 2,
+	options: FindMatchingDocsOptions,
 ) {
+	const { locale, similarityThreshold = 2 } = options;
 	const matchedDocs = new Map<number, DocumentMatch[]>();
 
 	const uniqueTokens = new Set<string>();
 	for (const [token] of queryTokens.tokens) {
-		uniqueTokens.add(token);
+		uniqueTokens.add(token.toLocaleLowerCase(locale));
 	}
 
 	for (const token of uniqueTokens) {
