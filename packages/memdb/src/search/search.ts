@@ -1,16 +1,38 @@
 import type { Table } from '../table.js';
 import type { Simplify } from '../types.js';
 import { levenshteinDistance } from './levenshtein.js';
+import { stopwords } from './stopwords.js';
 
-export function tokenize(text: string, locale?: Intl.LocalesArgument) {
-	const words = [];
+const TOKEN_IS_WORD_LIKE = 1 << 0;
+const TOKEN_IS_STOPWORD = 1 << 1;
+
+interface SearchTokens {
+	tokens: [string, number][];
+	wordCount: number;
+}
+
+export function tokenize(
+	text: string,
+	locale?: Intl.LocalesArgument,
+): SearchTokens {
+	const tokens: SearchTokens['tokens'] = [];
 	const segmenter = new Intl.Segmenter(locale, { granularity: 'word' });
+	let wordCount = 0;
+
 	for (const { segment, isWordLike } of segmenter.segment(text)) {
+		let bitset = 0;
 		if (isWordLike) {
-			words.push(segment.toLowerCase());
+			bitset |= TOKEN_IS_WORD_LIKE;
+			wordCount++;
+			if (stopwords.includes(segment.toLowerCase())) {
+				bitset |= TOKEN_IS_STOPWORD;
+			}
 		}
+
+		tokens.push([segment, bitset]);
 	}
-	return words;
+
+	return { tokens, wordCount };
 }
 
 function calculateBM25(
@@ -29,11 +51,25 @@ function calculateBM25(
 	);
 }
 
-export function createSearchIndex<T extends Record<string, unknown>>(
-	table: Table<T>,
-	columns: { [K in keyof T]?: (value: T[K]) => string },
-	locale?: Intl.LocalesArgument,
-) {
+export interface BM25Options {
+	averageDocumentLength: number;
+	documentCount: number;
+	documentLengths: number[];
+}
+
+export interface SearchIndex extends BM25Options {
+	invertedIndex: Map<string, Map<number, number>>;
+}
+
+export type StringValueColumns<T extends SearchDocument> = Extract<
+	keyof T,
+	{ [K in keyof T]: T[K] extends string ? K : never }[keyof T]
+>;
+
+export function createSearchIndex<
+	T extends SearchDocument,
+	C extends StringValueColumns<T>,
+>(table: Table<T>, columns: C[], locale?: Intl.LocalesArgument) {
 	const records = table.records;
 	const invertedIndex = new Map<string, Map<number, number>>();
 	const documentLengths = new Array<number>(records.length);
@@ -41,18 +77,18 @@ export function createSearchIndex<T extends Record<string, unknown>>(
 	let totalDocumentLength = 0;
 	for (const [docId, record] of records.entries()) {
 		let docLength = 0;
-		for (const [column, serializeFunc] of objectEntries(columns)) {
+		for (const column of columns) {
 			const value = record[column];
-			if (value !== null && value !== undefined && serializeFunc) {
-				const serializedValue = serializeFunc(value);
-				const tokens = tokenize(serializedValue, locale);
-				docLength += tokens.length;
+			const { tokens, wordCount } = tokenize(value as string, locale);
+			docLength += wordCount;
 
-				for (const token of tokens) {
-					if (!invertedIndex.has(token)) {
-						invertedIndex.set(token, new Map());
+			for (const [token, flags] of tokens) {
+				if (flags & TOKEN_IS_WORD_LIKE && !(flags & TOKEN_IS_STOPWORD)) {
+					const t = token.toLocaleLowerCase(locale);
+					if (!invertedIndex.has(t)) {
+						invertedIndex.set(t, new Map());
 					}
-					const termFreq = invertedIndex.get(token)!;
+					const termFreq = invertedIndex.get(t)!;
 					termFreq.set(docId, (termFreq.get(docId) || 0) + 1);
 				}
 			}
@@ -62,32 +98,37 @@ export function createSearchIndex<T extends Record<string, unknown>>(
 		totalDocumentLength += docLength;
 	}
 
-	const averageDocumentLength = totalDocumentLength / records.length;
+	const documentCount = records.length;
+	const averageDocumentLength = totalDocumentLength / documentCount;
 
 	return {
-		invertedIndex,
-		documentLengths,
 		averageDocumentLength,
+		documentCount,
+		documentLengths,
+		invertedIndex,
 	};
 }
 
-export type SearchResult<T extends Record<string, unknown>> = {
+export interface SearchDocument {
+	[x: string]: unknown;
+}
+
+export type SearchResult<T extends SearchDocument> = {
 	document: T;
 	score: number;
 	matchedTokens: string[];
 };
 
-export function search<T extends Record<string, unknown>>(
+export function search<T extends SearchDocument>(
 	table: Table<T>,
-	invertedIndex: Map<string, Map<number, number>>,
-	documentLengths: number[],
-	averageDocumentLength: number,
+	searchIndex: SearchIndex,
 	query: string,
 	locale?: Intl.LocalesArgument,
 ) {
+	const { invertedIndex, ...bm25Options } = searchIndex;
 	const queryTokens = tokenize(query, locale);
-	const matchedDocs = findMatchingDocs(invertedIndex, queryTokens);
-	return rankBM25(matchedDocs, table, documentLengths, averageDocumentLength);
+	const matchedDocs = findMatchingDocs(invertedIndex, queryTokens, { locale });
+	return rankBM25(matchedDocs, table, bm25Options);
 }
 
 export interface DocumentMatch {
@@ -97,14 +138,25 @@ export interface DocumentMatch {
 	token: string;
 }
 
+export interface FindMatchingDocsOptions {
+	locale?: Intl.LocalesArgument;
+	similarityThreshold?: number;
+}
+
 export function findMatchingDocs(
 	invertedIndex: Map<string, Map<number, number>>,
-	queryTokens: string[],
-	similarityThreshold = 2,
+	queryTokens: SearchTokens,
+	options: FindMatchingDocsOptions,
 ) {
+	const { locale, similarityThreshold = 2 } = options;
 	const matchedDocs = new Map<number, DocumentMatch[]>();
 
-	for (const token of new Set(queryTokens)) {
+	const uniqueTokens = new Set<string>();
+	for (const [token] of queryTokens.tokens) {
+		uniqueTokens.add(token.toLocaleLowerCase(locale));
+	}
+
+	for (const token of uniqueTokens) {
 		for (const [indexToken, docs] of invertedIndex.entries()) {
 			const distance = levenshteinDistance(token, indexToken);
 
@@ -127,14 +179,13 @@ export function findMatchingDocs(
 	return matchedDocs;
 }
 
-export function rankBM25<T extends Record<string, unknown>>(
+export function rankBM25<T extends SearchDocument>(
 	matchedDocs: Map<number, DocumentMatch[]>,
 	table: Table<T>,
-	documentLengths: number[],
-	averageDocumentLength: number,
-): Array<SearchResult<T>> {
-	const totalDocs = table.records.length;
-	const scores = new Array<number>(totalDocs);
+	options: BM25Options,
+): Simplify<SearchResult<T>>[] {
+	const { averageDocumentLength, documentCount, documentLengths } = options;
+	const scores = new Array<number>(documentCount);
 	const matchedTokensMap = new Map<number, Set<string>>();
 
 	for (const [docId, terms] of matchedDocs) {
@@ -149,7 +200,7 @@ export function rankBM25<T extends Record<string, unknown>>(
 						docFreq,
 						docLength,
 						averageDocumentLength,
-						totalDocs,
+						documentCount,
 					) * penaltyFactor;
 				scores[docId] = (scores[docId] || 0) + score;
 
@@ -180,52 +231,27 @@ export function rankBM25<T extends Record<string, unknown>>(
 	return results;
 }
 
-export type SearchHighlights<T extends Record<string, unknown>> = {
+export type SearchHighlights<T extends SearchDocument> = {
 	[K in keyof T]: [string, boolean][];
 };
 
-function highlightText(
-	text: string,
-	tokens: string[],
-	locale?: Intl.LocalesArgument,
-) {
-	const lowerTokens = tokens.map((t) => t.toLowerCase());
-	const segmenter = new Intl.Segmenter(locale, { granularity: 'word' });
-	const highlightedSegments: [string, boolean][] = [];
-
-	for (const { segment, isWordLike } of segmenter.segment(text)) {
-		if (isWordLike && lowerTokens.includes(segment.toLowerCase())) {
-			highlightedSegments.push([segment, true]);
-		} else {
-			highlightedSegments.push([segment, false]);
-		}
-	}
-
-	return highlightedSegments;
-}
-
 export function highlightSearchResult<
-	T extends Record<string, unknown>,
-	C extends { [K in keyof T]?: (value: T[K]) => string },
->(searchResult: SearchResult<T>, columns: C, locale?: Intl.LocalesArgument) {
+	T extends SearchDocument,
+	C extends StringValueColumns<T>,
+>(searchResult: SearchResult<T>, columns: C[], locale?: Intl.LocalesArgument) {
 	const { document, matchedTokens } = searchResult;
-	const highlightResult = {} as Simplify<
-		SearchHighlights<{ [P in keyof C]: P extends keyof T ? T[P] : never }>
-	>;
-	for (const [column, serializeFunc] of objectEntries(columns)) {
-		/* eslint-disable-next-line @typescript-eslint/no-explicit-any */
-		const text = serializeFunc?.(document[column as keyof T] as any);
-		const highlights =
-			typeof text === 'string'
-				? highlightText(text, matchedTokens, locale)
-				: [];
-		highlightResult[column] = highlights;
+	const highlightResult = {} as Simplify<SearchHighlights<Pick<T, C>>>;
+	for (const column of columns) {
+		const { tokens } = tokenize(document[column] as string, locale);
+		highlightResult[column] = tokens.map(
+			([token]) =>
+				[
+					token,
+					matchedTokens.includes(token.toLocaleLowerCase(locale)),
+				] satisfies [string, boolean],
+		);
 	}
 	return highlightResult;
-}
-
-function objectEntries<T extends object>(obj: T) {
-	return Object.entries(obj) as Array<[keyof T, T[keyof T]]>;
 }
 
 export interface HighlightFirstOptions {
@@ -234,103 +260,82 @@ export interface HighlightFirstOptions {
 	locale?: Intl.LocalesArgument;
 }
 
-export function highlightFirst<T extends Record<string, unknown>>(
+export function highlightFlattenColumns<
+	T extends SearchDocument,
+	C extends StringValueColumns<T>,
+>(
 	searchResult: SearchResult<T>,
-	columns: { [K in keyof T]?: (value: T[K]) => string },
+	columns: C[],
 	options?: HighlightFirstOptions,
 ) {
-	const { locale } = options ?? {};
-	let { matchLength = 10, padStart = 4 } = options ?? {};
-	matchLength = matchLength >= 0 ? matchLength : 10;
-	padStart = padStart >= 0 ? padStart : 4;
-
-	const sentenceSegmenter = new Intl.Segmenter(locale, {
-		granularity: 'sentence',
-	});
-	const wordSegmenter = new Intl.Segmenter(locale, { granularity: 'word' });
+	const { locale, matchLength = 10, padStart = 4 } = options ?? {};
 	const { document, matchedTokens } = searchResult;
-	const highlights: {
-		words: [string, boolean][];
-	}[] = [];
+	const segmenter = new Intl.Segmenter(locale, { granularity: 'word' });
+	const paddingSegments = new RingBuffer<[string, boolean][]>(padStart + 1);
+	const highlights: [string, boolean][][] = [];
 
-	for (const [column, serializeFunc] of objectEntries(columns)) {
-		let firstMatchedSentence = null;
-		const previousSentences: [string, boolean][][] = [];
-		const text = serializeFunc?.(document[column]);
-		if (!text) continue;
-
-		for (const { segment: sentence } of sentenceSegmenter.segment(text)) {
-			const wordsInSentence: [string, boolean][] = [];
-			for (const { segment: word, isWordLike } of wordSegmenter.segment(
-				sentence,
-			)) {
-				if (
-					isWordLike &&
-					!firstMatchedSentence &&
-					matchedTokens.includes(word.toLowerCase())
-				) {
-					firstMatchedSentence = {
-						sentenceIndex: previousSentences.length,
-						wordIndex: wordsInSentence.length,
-					};
+	let firstMatchFound = false;
+	for (const column of columns) {
+		for (const { isWordLike, segment } of segmenter.segment(
+			document[column] as string,
+		)) {
+			if (isWordLike) {
+				const isMatch = matchedTokens.includes(
+					segment.toLocaleLowerCase(locale),
+				);
+				if (firstMatchFound) {
+					// Second accumulate elements until `matchLength` after `firstMatchFound`
+					highlights.push([[segment, isMatch]]);
+					if (highlights.length >= matchLength) break;
+				} else {
+					// First accumulate `padStart` elements before `firstMatchFound`
+					paddingSegments.add([[segment, isMatch]]);
+					if (isMatch) {
+						firstMatchFound = true;
+						highlights.push(...paddingSegments.toArray());
+					}
 				}
-				wordsInSentence.push([word, Boolean(isWordLike)]);
+			} else {
+				// Do not count non-words towards `padStart` and `matchLength` constraints
+				const target = firstMatchFound
+					? highlights.at(-1)
+					: paddingSegments.getLast();
+				if (target) target.push([segment, false]);
 			}
-			previousSentences.push(wordsInSentence);
-		}
-
-		// If no match is found, skip this column
-		if (!firstMatchedSentence) continue;
-
-		// Find the starting sentence and word index based on padStart
-		let startSentenceIndex = firstMatchedSentence.sentenceIndex;
-		let startWordIndex = firstMatchedSentence.wordIndex;
-		let wordsCounted = 0;
-		for (
-			let i = firstMatchedSentence.sentenceIndex;
-			i >= 0 && wordsCounted <= padStart;
-			i--
-		) {
-			const words = previousSentences[i]!;
-			const jStart =
-				i === firstMatchedSentence.sentenceIndex
-					? firstMatchedSentence.wordIndex
-					: words.length - 1;
-			for (let j = jStart; j >= 0 && wordsCounted <= padStart; j--) {
-				const isWordLike = words[j]![1];
-				startSentenceIndex = i;
-				startWordIndex = j;
-				if (isWordLike) {
-					wordsCounted++;
-				}
-			}
-		}
-		wordsCounted = 0;
-		for (
-			let i = startSentenceIndex;
-			i < previousSentences.length && wordsCounted < matchLength;
-			i++
-		) {
-			// Construct the final array of words up to matchLength
-			const finalWords: [string, boolean][] = [];
-			const words = previousSentences[i]!;
-			for (
-				let j = i === startSentenceIndex ? startWordIndex : 0;
-				j < words.length && wordsCounted < matchLength;
-				j++
-			) {
-				const [word, isWordLike] = words[j]!;
-				const isHighlighted = matchedTokens.includes(word!.toLowerCase());
-				finalWords.push([word!, isHighlighted]);
-				if (isWordLike) {
-					wordsCounted++;
-				}
-			}
-			highlights.push({
-				words: finalWords,
-			});
 		}
 	}
 
-	return highlights;
+	return highlights.flat(1);
+}
+
+/*
+    RingBuffer is 2x faster than `array.shift()` followed by `array.push()`
+	https://esbench.com/bench/67043446545f8900a4de2b8f
+*/
+class RingBuffer<T> {
+	buffer: Array<T>;
+	bufferLength: number;
+	index: number;
+	constructor(bufferLength: number) {
+		this.buffer = new Array<T>(bufferLength);
+		this.bufferLength = bufferLength;
+		this.index = 0;
+	}
+	add(element: T) {
+		this.buffer[this.index] = element;
+		this.index = (this.index + 1) % this.bufferLength;
+	}
+	getLast() {
+		const lastIndex = (this.index - 1 + this.bufferLength) % this.bufferLength;
+		return this.buffer[lastIndex];
+	}
+	toArray() {
+		const isFull = this.bufferLength - 1 in this.buffer;
+		if (isFull) {
+			return this.buffer
+				.slice(this.index)
+				.concat(this.buffer.slice(0, this.index));
+		}
+		return this.buffer.slice(0, this.index);
+	}
 }
