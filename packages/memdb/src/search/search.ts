@@ -5,6 +5,19 @@ import { stopwords } from './stopwords.js';
 
 const TOKEN_IS_WORD_LIKE = 1 << 0;
 const TOKEN_IS_STOPWORD = 1 << 1;
+const TOKEN_IS_MATCHED = 1 << 2;
+
+export function isTokenWordLike(flags: number): boolean {
+	return (flags & TOKEN_IS_WORD_LIKE) !== 0;
+}
+
+export function isTokenStopWord(flags: number): boolean {
+	return (flags & TOKEN_IS_STOPWORD) !== 0;
+}
+
+export function isTokenMatched(flags: number): boolean {
+	return (flags & TOKEN_IS_MATCHED) !== 0;
+}
 
 interface SearchTokens {
 	tokens: [string, number][];
@@ -114,6 +127,7 @@ export interface SearchDocument {
 }
 
 export type SearchResult<T extends SearchDocument> = {
+	index: number;
 	document: T;
 	score: number;
 	matchedTokens: string[];
@@ -152,8 +166,10 @@ export function findMatchingDocs(
 	const matchedDocs = new Map<number, DocumentMatch[]>();
 
 	const uniqueTokens = new Set<string>();
-	for (const [token] of queryTokens.tokens) {
-		uniqueTokens.add(token.toLocaleLowerCase(locale));
+	for (const [token, flags] of queryTokens.tokens) {
+		if (isTokenWordLike(flags) && !isTokenStopWord(flags)) {
+			uniqueTokens.add(token.toLocaleLowerCase(locale));
+		}
 	}
 
 	for (const token of uniqueTokens) {
@@ -169,7 +185,7 @@ export function findMatchingDocs(
 						docFreq: docs.size,
 						fuzzyDistance: distance,
 						termFreq,
-						token: indexToken, // Use the actual matched token
+						token: indexToken,
 					});
 				}
 			}
@@ -191,48 +207,42 @@ export function rankBM25<T extends SearchDocument>(
 	for (const [docId, terms] of matchedDocs) {
 		for (const { docFreq, fuzzyDistance, termFreq, token } of terms) {
 			const docLength = documentLengths[docId];
-			if (typeof docLength === 'number') {
-				// Apply a penalty for fuzzy matches based on Levenshtein distance
-				const penaltyFactor = 1 / (fuzzyDistance + 1);
-				const score =
-					calculateBM25(
-						termFreq,
-						docFreq,
-						docLength,
-						averageDocumentLength,
-						documentCount,
-					) * penaltyFactor;
-				scores[docId] = (scores[docId] || 0) + score;
+			// Apply a penalty for fuzzy matches based on Levenshtein distance
+			const penaltyFactor = 1 / (fuzzyDistance + 1);
+			const score =
+				calculateBM25(
+					termFreq,
+					docFreq,
+					docLength,
+					averageDocumentLength,
+					documentCount,
+				) * penaltyFactor;
+			scores[docId] = (scores[docId] || 0) + score;
 
-				if (!matchedTokensMap.has(docId)) {
-					matchedTokensMap.set(docId, new Set());
-				}
-				matchedTokensMap.get(docId)!.add(token);
+			if (!matchedTokensMap.has(docId)) {
+				matchedTokensMap.set(docId, new Set());
 			}
+			matchedTokensMap.get(docId)!.add(token);
 		}
 	}
 
 	const scoreEntries = Object.entries(scores).sort(([, a], [, b]) => b - a);
 	const results = [];
 	for (const [docId, score] of scoreEntries) {
-		const id = parseInt(docId);
-		const document = table.records[id];
-		const matchedTokens = Array.from(matchedTokensMap.get(id) || []);
-		if (document) {
-			results.push({
-				id,
-				document,
-				matchedTokens,
-				score,
-			});
-		}
+		const index = parseInt(docId);
+		results.push({
+			index,
+			document: table.records[index],
+			matchedTokens: Array.from(matchedTokensMap.get(index) || []),
+			score,
+		});
 	}
 
 	return results;
 }
 
 export type SearchHighlights<T extends SearchDocument> = {
-	[K in keyof T]: [string, boolean][];
+	[K in keyof T]: [string, number][];
 };
 
 export function highlightSearchResult<
@@ -243,18 +253,17 @@ export function highlightSearchResult<
 	const highlightResult = {} as Simplify<SearchHighlights<Pick<T, C>>>;
 	for (const column of columns) {
 		const { tokens } = tokenize(document[column] as string, locale);
-		highlightResult[column] = tokens.map(
-			([token]) =>
-				[
-					token,
-					matchedTokens.includes(token.toLocaleLowerCase(locale)),
-				] satisfies [string, boolean],
-		);
+		highlightResult[column] = tokens.map((token) => {
+			if (matchedTokens.includes(token[0].toLocaleLowerCase(locale))) {
+				token[1] |= TOKEN_IS_MATCHED;
+			}
+			return token;
+		});
 	}
 	return highlightResult;
 }
 
-export interface HighlightFirstOptions {
+export interface HighlightFlattenColumnsOptions {
 	matchLength?: number;
 	padStart?: number;
 	locale?: Intl.LocalesArgument;
@@ -266,30 +275,33 @@ export function highlightFlattenColumns<
 >(
 	searchResult: SearchResult<T>,
 	columns: C[],
-	options?: HighlightFirstOptions,
+	options?: HighlightFlattenColumnsOptions,
 ) {
 	const { locale, matchLength = 10, padStart = 4 } = options ?? {};
 	const { document, matchedTokens } = searchResult;
 	const segmenter = new Intl.Segmenter(locale, { granularity: 'word' });
-	const paddingSegments = new RingBuffer<[string, boolean][]>(padStart + 1);
-	const highlights: [string, boolean][][] = [];
+	const paddingSegments = new RingBuffer<[string, number][]>(padStart + 1);
+	const highlights: [string, number][][] = [];
 
 	let firstMatchFound = false;
 	for (const column of columns) {
 		for (const { isWordLike, segment } of segmenter.segment(
 			document[column] as string,
 		)) {
+			let flags = 0;
 			if (isWordLike) {
-				const isMatch = matchedTokens.includes(
-					segment.toLocaleLowerCase(locale),
-				);
+				const lowerSegment = segment.toLocaleLowerCase(locale);
+				const isMatch = matchedTokens.includes(lowerSegment);
+				flags |= TOKEN_IS_WORD_LIKE;
+				if (isMatch) flags |= TOKEN_IS_MATCHED;
+				if (stopwords.includes(lowerSegment)) flags |= TOKEN_IS_STOPWORD;
 				if (firstMatchFound) {
 					// Second accumulate elements until `matchLength` after `firstMatchFound`
-					highlights.push([[segment, isMatch]]);
+					highlights.push([[segment, flags]]);
 					if (highlights.length >= matchLength) break;
 				} else {
 					// First accumulate `padStart` elements before `firstMatchFound`
-					paddingSegments.add([[segment, isMatch]]);
+					paddingSegments.add([[segment, flags]]);
 					if (isMatch) {
 						firstMatchFound = true;
 						highlights.push(...paddingSegments.toArray());
@@ -300,7 +312,27 @@ export function highlightFlattenColumns<
 				const target = firstMatchFound
 					? highlights.at(-1)
 					: paddingSegments.getLast();
-				if (target) target.push([segment, false]);
+				if (target) target.push([segment, flags]);
+			}
+		}
+	}
+
+	if (!highlights.length) {
+		columnLoop: for (const column of columns) {
+			for (const { isWordLike, segment } of segmenter.segment(
+				document[column] as string,
+			)) {
+				let flags = 0;
+				if (isWordLike) {
+					flags |= TOKEN_IS_WORD_LIKE;
+					const lowerSegment = segment.toLocaleLowerCase(locale);
+					if (matchedTokens.includes(lowerSegment)) flags |= TOKEN_IS_MATCHED;
+					if (stopwords.includes(lowerSegment)) flags |= TOKEN_IS_STOPWORD;
+					highlights.push([[segment, flags]]);
+					if (highlights.length >= matchLength) break columnLoop;
+				} else {
+					highlights.at(-1)?.push([segment, flags]);
+				}
 			}
 		}
 	}

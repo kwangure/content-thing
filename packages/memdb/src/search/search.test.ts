@@ -329,7 +329,7 @@ describe('search', () => {
 			expect(result).toEqual([
 				// Ordered by BM25 score
 				{
-					id: 1,
+					index: 1,
 					document: {
 						text: 'one one one',
 					},
@@ -337,7 +337,7 @@ describe('search', () => {
 					score: 0.22255232104087094,
 				},
 				{
-					id: 2,
+					index: 2,
 					document: {
 						text: 'number one one',
 					},
@@ -345,7 +345,7 @@ describe('search', () => {
 					score: 0.1907591323207465,
 				},
 				{
-					id: 0,
+					index: 0,
 					document: {
 						text: 'number number one',
 					},
@@ -363,7 +363,7 @@ describe('search', () => {
 			expect(result).toEqual([
 				// Ordered by BM25 score
 				{
-					id: 1,
+					index: 1,
 					document: {
 						text: 'number one',
 					},
@@ -371,7 +371,7 @@ describe('search', () => {
 					score: 0.8754687373538999,
 				},
 				{
-					id: 0,
+					index: 0,
 					document: {
 						text: 'one one',
 					},
@@ -393,7 +393,7 @@ describe('search', () => {
 			expect(result).toEqual([
 				// Ordered by BM25 score
 				{
-					id: 1,
+					index: 1,
 					document: {
 						text: 'number one',
 					},
@@ -401,7 +401,7 @@ describe('search', () => {
 					score: 0.15709575602885006,
 				},
 				{
-					id: 2,
+					index: 2,
 					document: {
 						text: 'number one number',
 					},
@@ -409,7 +409,7 @@ describe('search', () => {
 					score: 0.13353139262452257,
 				},
 				{
-					id: 0,
+					index: 0,
 					document: {
 						text: 'number one number number',
 					},
@@ -472,16 +472,16 @@ describe('highlightSearchResult', () => {
 			'title',
 		]);
 		expect(highlightedResult).toEqual({
-			id: [['1', false]],
+			id: [['1', 1]],
 			title: [
-				['Another', false],
-				[' ', false],
-				['Test', false],
+				['Another', 1],
+				[' ', 0],
+				['Test', 1],
 			],
 			content: [
-				['Hello', true],
-				[' ', false],
-				['again', false],
+				['Hello', 5],
+				[' ', 0],
+				['again', 3],
 			],
 		});
 	});
@@ -495,16 +495,16 @@ describe('highlightSearchResult', () => {
 			'title',
 		]);
 		expect(highlightedResult).toEqual({
-			id: [['1', false]],
+			id: [['1', 1]],
 			title: [
-				['Another', false],
-				[' ', false],
-				['Test', false],
+				['Another', 1],
+				[' ', 0],
+				['Test', 1],
 			],
 			content: [
-				['Hello', true],
-				[' ', false],
-				['again', false],
+				['Hello', 5],
+				[' ', 0],
+				['again', 3],
 			],
 		});
 	});
@@ -518,13 +518,13 @@ describe('highlightSearchResult', () => {
 		assert(result);
 		const highlightedResult = highlightSearchResult(result, ['id', 'title']);
 		expect(highlightedResult).toEqual({
-			id: [['1', false]],
+			id: [['1', 1]],
 			title: [
-				['Hello', true],
-				[',', false],
-				[' ', false],
-				['World', false],
-				['!', false],
+				['Hello', 5],
+				[',', 0],
+				[' ', 0],
+				['World', 1],
+				['!', 0],
 			],
 		});
 	});
@@ -536,10 +536,10 @@ describe('highlightSearchResult', () => {
 		assert(result);
 		const highlightedResult = highlightSearchResult(result, ['id', 'title']);
 		expect(highlightedResult).toEqual({
-			id: [['1', false]],
+			id: [['1', 1]],
 			title: [
-				['你好', true],
-				['世界', true], // fuzzy match
+				['你好', 5],
+				['世界', 5], // fuzzy match
 			],
 		});
 	});
@@ -551,11 +551,11 @@ describe('highlightSearchResult', () => {
 		assert(result);
 		const highlightedResult = highlightSearchResult(result, ['id', 'title']);
 		expect(highlightedResult).toEqual({
-			id: [['1', false]],
+			id: [['1', 1]],
 			title: [
-				['Hello', true],
-				[' ', false],
-				['🌍', false],
+				['Hello', 5],
+				[' ', 0],
+				['🌍', 0],
 			],
 		});
 	});
@@ -569,12 +569,12 @@ describe('highlightFirst', () => {
 		assert(result);
 		const highlightedResult = highlightFlattenColumns(result, ['title']);
 		expect(highlightedResult).toEqual([
-			['The', false],
-			[' ', false],
-			['blue', false],
-			[' ', false],
-			['dogs', true],
-			['.', false],
+			['The', 3],
+			[' ', 0],
+			['blue', 1],
+			[' ', 0],
+			['dogs', 5],
+			['.', 0],
 		]);
 	});
 
@@ -585,12 +585,12 @@ describe('highlightFirst', () => {
 		assert(result);
 		const highlightedResult = highlightFlattenColumns(result, ['title']);
 		expect(highlightedResult).toEqual([
-			['The', false],
-			[' ', false],
-			['blue', true],
-			[' ', false],
-			['dogs', true],
-			['.', false],
+			['The', 3],
+			[' ', 0],
+			['blue', 5],
+			[' ', 0],
+			['dogs', 5],
+			['.', 0],
 		]);
 	});
 
@@ -601,19 +601,19 @@ describe('highlightFirst', () => {
 		assert(result);
 		const highlightedResult = highlightFlattenColumns(result, ['title']);
 		expect(highlightedResult).toEqual([
-			['The', false],
-			[' ', false],
-			['blue', false],
-			[' ', false],
-			['dogs', true],
-			['.', false],
-			[' ', false],
-			['The', false],
-			[' ', false],
-			['green', false],
-			[' ', false],
-			['dogs', true],
-			['.', false],
+			['The', 3],
+			[' ', 0],
+			['blue', 1],
+			[' ', 0],
+			['dogs', 5],
+			['.', 0],
+			[' ', 0],
+			['The', 3],
+			[' ', 0],
+			['green', 1],
+			[' ', 0],
+			['dogs', 5],
+			['.', 0],
 		]);
 	});
 
@@ -624,19 +624,19 @@ describe('highlightFirst', () => {
 		assert(result);
 		const highlightedResult = highlightFlattenColumns(result, ['title']);
 		expect(highlightedResult).toEqual([
-			['The', false],
-			[' ', false],
-			['blue', true],
-			[' ', false],
-			['dogs', true],
-			['.', false],
-			[' ', false],
-			['The', false],
-			[' ', false],
-			['green', false],
-			[' ', false],
-			['dogs', true],
-			['.', false],
+			['The', 3],
+			[' ', 0],
+			['blue', 5],
+			[' ', 0],
+			['dogs', 5],
+			['.', 0],
+			[' ', 0],
+			['The', 3],
+			[' ', 0],
+			['green', 1],
+			[' ', 0],
+			['dogs', 5],
+			['.', 0],
 		]);
 	});
 
@@ -655,18 +655,18 @@ describe('highlightFirst', () => {
 			'content',
 		]);
 		expect(highlightedResult).toEqual([
-			['The', false],
-			[' ', false],
-			['blue', true],
-			[' ', false],
-			['dogs', true],
-			['.', false],
-			['The', false],
-			[' ', false],
-			['green', false],
-			[' ', false],
-			['dogs', true],
-			['.', false],
+			['The', 3],
+			[' ', 0],
+			['blue', 5],
+			[' ', 0],
+			['dogs', 5],
+			['.', 0],
+			['The', 3],
+			[' ', 0],
+			['green', 1],
+			[' ', 0],
+			['dogs', 5],
+			['.', 0],
 		]);
 	});
 
@@ -677,20 +677,21 @@ describe('highlightFirst', () => {
 		assert(result);
 		const highlightedResult = highlightFlattenColumns(result, ['title']);
 		expect(highlightedResult).toEqual([
-			['The', false],
-			[' ', false],
-			['BLUE', true],
-			[' ', false],
-			['DOGS', true],
-			[' ', false],
-			['bark', false],
-			['.', false],
+			['The', 3],
+			[' ', 0],
+			['BLUE', 5],
+			[' ', 0],
+			['DOGS', 5],
+			[' ', 0],
+			['bark', 1],
+			['.', 0],
 		]);
 	});
 
 	it('handles empty text', () => {
 		const highlightedResult = highlightFlattenColumns(
 			{
+				index: 0,
 				document: {
 					title: '',
 					content: '',
@@ -706,6 +707,7 @@ describe('highlightFirst', () => {
 	it('handles text with no matches', () => {
 		const highlightedResult = highlightFlattenColumns(
 			{
+				index: 0,
 				document: {
 					title: 'foo bar',
 					content: 'bar baz',
@@ -715,10 +717,17 @@ describe('highlightFirst', () => {
 			},
 			['content', 'title'],
 		);
-		expect(highlightedResult).toEqual([]);
+		expect(highlightedResult).toEqual([
+			['bar', 1],
+			[' ', 0],
+			['baz', 1],
+			['foo', 1],
+			[' ', 0],
+			['bar', 1],
+		]);
 	});
 
-	it('respects the padStart starting in the current sentence', () => {
+	it('respects the padStart with words only in padding', () => {
 		const table = createTable([
 			{ title: 'One two three four five six seven eight.' },
 		]);
@@ -729,22 +738,22 @@ describe('highlightFirst', () => {
 			padStart: 3,
 		});
 		expect(highlightedResult).toEqual([
-			['three', false],
-			[' ', false],
-			['four', false],
-			[' ', false],
-			['five', false],
-			[' ', false],
-			['six', true],
-			[' ', false],
-			['seven', false],
-			[' ', false],
-			['eight', false],
-			['.', false],
+			['three', 1],
+			[' ', 0],
+			['four', 1],
+			[' ', 0],
+			['five', 1],
+			[' ', 0],
+			['six', 5],
+			[' ', 0],
+			['seven', 1],
+			[' ', 0],
+			['eight', 1],
+			['.', 0],
 		]);
 	});
 
-	it('respects the padStart starting in the previous sentence', () => {
+	it('respects the padStart starting mixed with punctuation or non-word', () => {
 		const table = createTable([
 			{ title: 'Five six seven eight. One two three four five.' },
 		]);
@@ -755,25 +764,25 @@ describe('highlightFirst', () => {
 			padStart: 3,
 		});
 		expect(highlightedResult).toEqual([
-			['seven', false],
-			[' ', false],
-			['eight', false],
-			['.', false],
-			[' ', false],
-			['One', false],
-			[' ', false],
-			['two', true],
-			[' ', false],
-			['three', false],
-			[' ', false],
-			['four', false],
-			[' ', false],
-			['five', false],
-			['.', false],
+			['seven', 1],
+			[' ', 0],
+			['eight', 1],
+			['.', 0],
+			[' ', 0],
+			['One', 1],
+			[' ', 0],
+			['two', 5],
+			[' ', 0],
+			['three', 1],
+			[' ', 0],
+			['four', 1],
+			[' ', 0],
+			['five', 1],
+			['.', 0],
 		]);
 	});
 
-	it('respects the matchLength ending in the current sentence', () => {
+	it('respects the matchLength before punctuation', () => {
 		const table = createTable([
 			{ title: 'One two three four five six seven eight.' },
 		]);
@@ -784,19 +793,19 @@ describe('highlightFirst', () => {
 			matchLength: 5,
 		});
 		expect(highlightedResult).toEqual([
-			['One', false],
-			[' ', false],
-			['two', true],
-			[' ', false],
-			['three', false],
-			[' ', false],
-			['four', false],
-			[' ', false],
-			['five', false],
+			['One', 1],
+			[' ', 0],
+			['two', 5],
+			[' ', 0],
+			['three', 1],
+			[' ', 0],
+			['four', 1],
+			[' ', 0],
+			['five', 1],
 		]);
 	});
 
-	it('respects the matchLength ending in the next sentence', () => {
+	it('respects the matchLength after punctuation or non-word', () => {
 		const table = createTable([
 			{ title: 'One two three four. Five six seven eight.' },
 		]);
@@ -807,20 +816,42 @@ describe('highlightFirst', () => {
 			matchLength: 7,
 		});
 		expect(highlightedResult).toEqual([
-			['One', false],
-			[' ', false],
-			['two', true],
-			[' ', false],
-			['three', false],
-			[' ', false],
-			['four', false],
-			['.', false],
-			[' ', false],
-			['Five', false],
-			[' ', false],
-			['six', true],
-			[' ', false],
-			['seven', false],
+			['One', 1],
+			[' ', 0],
+			['two', 5],
+			[' ', 0],
+			['three', 1],
+			[' ', 0],
+			['four', 1],
+			['.', 0],
+			[' ', 0],
+			['Five', 1],
+			[' ', 0],
+			['six', 5],
+			[' ', 0],
+			['seven', 1],
+		]);
+	});
+
+	it('respects matchLength with no matches', () => {
+		const highlightedResult = highlightFlattenColumns(
+			{
+				index: 0,
+				document: {
+					title: 'foo bar',
+					content: 'bar baz corge',
+				},
+				matchedTokens: ['qux'],
+				score: 0,
+			},
+			['title', 'content'],
+			{ matchLength: 3 },
+		);
+		expect(highlightedResult).toEqual([
+			['foo', 1],
+			[' ', 0],
+			['bar', 1],
+			['bar', 1],
 		]);
 	});
 });
