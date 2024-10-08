@@ -1,5 +1,12 @@
 # @content-thing/memdb
 
+## 0.0.9
+
+### Patch Changes
+
+- 7c95d76: Return unhighlighted tokens when no match in highlightFlattenColumns
+- 7c95d76: Rename SearchResult id property to index
+
 ## 0.0.8
 
 ### Patch Changes
