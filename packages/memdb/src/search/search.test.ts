@@ -329,7 +329,7 @@ describe('search', () => {
 			expect(result).toEqual([
 				// Ordered by BM25 score
 				{
-					id: 1,
+					index: 1,
 					document: {
 						text: 'one one one',
 					},
@@ -337,7 +337,7 @@ describe('search', () => {
 					score: 0.22255232104087094,
 				},
 				{
-					id: 2,
+					index: 2,
 					document: {
 						text: 'number one one',
 					},
@@ -345,7 +345,7 @@ describe('search', () => {
 					score: 0.1907591323207465,
 				},
 				{
-					id: 0,
+					index: 0,
 					document: {
 						text: 'number number one',
 					},
@@ -363,7 +363,7 @@ describe('search', () => {
 			expect(result).toEqual([
 				// Ordered by BM25 score
 				{
-					id: 1,
+					index: 1,
 					document: {
 						text: 'number one',
 					},
@@ -371,7 +371,7 @@ describe('search', () => {
 					score: 0.8754687373538999,
 				},
 				{
-					id: 0,
+					index: 0,
 					document: {
 						text: 'one one',
 					},
@@ -393,7 +393,7 @@ describe('search', () => {
 			expect(result).toEqual([
 				// Ordered by BM25 score
 				{
-					id: 1,
+					index: 1,
 					document: {
 						text: 'number one',
 					},
@@ -401,7 +401,7 @@ describe('search', () => {
 					score: 0.15709575602885006,
 				},
 				{
-					id: 2,
+					index: 2,
 					document: {
 						text: 'number one number',
 					},
@@ -409,7 +409,7 @@ describe('search', () => {
 					score: 0.13353139262452257,
 				},
 				{
-					id: 0,
+					index: 0,
 					document: {
 						text: 'number one number number',
 					},
@@ -691,6 +691,7 @@ describe('highlightFirst', () => {
 	it('handles empty text', () => {
 		const highlightedResult = highlightFlattenColumns(
 			{
+				index: 0,
 				document: {
 					title: '',
 					content: '',
@@ -706,6 +707,7 @@ describe('highlightFirst', () => {
 	it('handles text with no matches', () => {
 		const highlightedResult = highlightFlattenColumns(
 			{
+				index: 0,
 				document: {
 					title: 'foo bar',
 					content: 'bar baz',

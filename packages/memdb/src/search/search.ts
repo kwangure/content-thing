@@ -114,6 +114,7 @@ export interface SearchDocument {
 }
 
 export type SearchResult<T extends SearchDocument> = {
+	index: number;
 	document: T;
 	score: number;
 	matchedTokens: string[];
@@ -191,41 +192,35 @@ export function rankBM25<T extends SearchDocument>(
 	for (const [docId, terms] of matchedDocs) {
 		for (const { docFreq, fuzzyDistance, termFreq, token } of terms) {
 			const docLength = documentLengths[docId];
-			if (typeof docLength === 'number') {
-				// Apply a penalty for fuzzy matches based on Levenshtein distance
-				const penaltyFactor = 1 / (fuzzyDistance + 1);
-				const score =
-					calculateBM25(
-						termFreq,
-						docFreq,
-						docLength,
-						averageDocumentLength,
-						documentCount,
-					) * penaltyFactor;
-				scores[docId] = (scores[docId] || 0) + score;
+			// Apply a penalty for fuzzy matches based on Levenshtein distance
+			const penaltyFactor = 1 / (fuzzyDistance + 1);
+			const score =
+				calculateBM25(
+					termFreq,
+					docFreq,
+					docLength,
+					averageDocumentLength,
+					documentCount,
+				) * penaltyFactor;
+			scores[docId] = (scores[docId] || 0) + score;
 
-				if (!matchedTokensMap.has(docId)) {
-					matchedTokensMap.set(docId, new Set());
-				}
-				matchedTokensMap.get(docId)!.add(token);
+			if (!matchedTokensMap.has(docId)) {
+				matchedTokensMap.set(docId, new Set());
 			}
+			matchedTokensMap.get(docId)!.add(token);
 		}
 	}
 
 	const scoreEntries = Object.entries(scores).sort(([, a], [, b]) => b - a);
 	const results = [];
 	for (const [docId, score] of scoreEntries) {
-		const id = parseInt(docId);
-		const document = table.records[id];
-		const matchedTokens = Array.from(matchedTokensMap.get(id) || []);
-		if (document) {
-			results.push({
-				id,
-				document,
-				matchedTokens,
-				score,
-			});
-		}
+		const index = parseInt(docId);
+		results.push({
+			index,
+			document: table.records[index],
+			matchedTokens: Array.from(matchedTokensMap.get(index) || []),
+			score,
+		});
 	}
 
 	return results;
@@ -254,7 +249,7 @@ export function highlightSearchResult<
 	return highlightResult;
 }
 
-export interface HighlightFirstOptions {
+export interface HighlightFlattenColumnsOptions {
 	matchLength?: number;
 	padStart?: number;
 	locale?: Intl.LocalesArgument;
@@ -266,7 +261,7 @@ export function highlightFlattenColumns<
 >(
 	searchResult: SearchResult<T>,
 	columns: C[],
-	options?: HighlightFirstOptions,
+	options?: HighlightFlattenColumnsOptions,
 ) {
 	const { locale, matchLength = 10, padStart = 4 } = options ?? {};
 	const { document, matchedTokens } = searchResult;
