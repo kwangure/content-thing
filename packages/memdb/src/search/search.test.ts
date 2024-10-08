@@ -717,10 +717,17 @@ describe('highlightFirst', () => {
 			},
 			['content', 'title'],
 		);
-		expect(highlightedResult).toEqual([]);
+		expect(highlightedResult).toEqual([
+			['bar', false],
+			[' ', false],
+			['baz', false],
+			['foo', false],
+			[' ', false],
+			['bar', false],
+		]);
 	});
 
-	it('respects the padStart starting in the current sentence', () => {
+	it('respects the padStart with words only in padding', () => {
 		const table = createTable([
 			{ title: 'One two three four five six seven eight.' },
 		]);
@@ -746,7 +753,7 @@ describe('highlightFirst', () => {
 		]);
 	});
 
-	it('respects the padStart starting in the previous sentence', () => {
+	it('respects the padStart starting mixed with punctuation or non-word', () => {
 		const table = createTable([
 			{ title: 'Five six seven eight. One two three four five.' },
 		]);
@@ -775,7 +782,7 @@ describe('highlightFirst', () => {
 		]);
 	});
 
-	it('respects the matchLength ending in the current sentence', () => {
+	it('respects the matchLength before punctuation', () => {
 		const table = createTable([
 			{ title: 'One two three four five six seven eight.' },
 		]);
@@ -798,7 +805,7 @@ describe('highlightFirst', () => {
 		]);
 	});
 
-	it('respects the matchLength ending in the next sentence', () => {
+	it('respects the matchLength after punctuation or non-word', () => {
 		const table = createTable([
 			{ title: 'One two three four. Five six seven eight.' },
 		]);
@@ -823,6 +830,28 @@ describe('highlightFirst', () => {
 			['six', true],
 			[' ', false],
 			['seven', false],
+		]);
+	});
+
+	it('respects matchLength with no matches', () => {
+		const highlightedResult = highlightFlattenColumns(
+			{
+				index: 0,
+				document: {
+					title: 'foo bar',
+					content: 'bar baz corge',
+				},
+				matchedTokens: ['qux'],
+				score: 0,
+			},
+			['title', 'content'],
+			{ matchLength: 3 },
+		);
+		expect(highlightedResult).toEqual([
+			['foo', false],
+			[' ', false],
+			['bar', false],
+			['bar', false],
 		]);
 	});
 });

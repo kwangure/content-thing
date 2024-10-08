@@ -300,6 +300,21 @@ export function highlightFlattenColumns<
 		}
 	}
 
+	if (!highlights.length) {
+		columnLoop: for (const column of columns) {
+			for (const { isWordLike, segment } of segmenter.segment(
+				document[column] as string,
+			)) {
+				if (isWordLike) {
+					highlights.push([[segment, false]]);
+					if (highlights.length >= matchLength) break columnLoop;
+				} else {
+					highlights.at(-1)?.push([segment, false]);
+				}
+			}
+		}
+	}
+
 	return highlights.flat(1);
 }
 
