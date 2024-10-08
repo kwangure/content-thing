@@ -5,6 +5,7 @@ import { stopwords } from './stopwords.js';
 
 const TOKEN_IS_WORD_LIKE = 1 << 0;
 const TOKEN_IS_STOPWORD = 1 << 1;
+const TOKEN_IS_MATCHED = 1 << 2;
 
 export function isTokenWordLike(flags: number): boolean {
 	return (flags & TOKEN_IS_WORD_LIKE) !== 0;
@@ -12,6 +13,10 @@ export function isTokenWordLike(flags: number): boolean {
 
 export function isTokenStopWord(flags: number): boolean {
 	return (flags & TOKEN_IS_STOPWORD) !== 0;
+}
+
+export function isTokenMatched(flags: number): boolean {
+	return (flags & TOKEN_IS_MATCHED) !== 0;
 }
 
 interface SearchTokens {
@@ -237,7 +242,7 @@ export function rankBM25<T extends SearchDocument>(
 }
 
 export type SearchHighlights<T extends SearchDocument> = {
-	[K in keyof T]: [string, boolean][];
+	[K in keyof T]: [string, number][];
 };
 
 export function highlightSearchResult<
@@ -248,13 +253,12 @@ export function highlightSearchResult<
 	const highlightResult = {} as Simplify<SearchHighlights<Pick<T, C>>>;
 	for (const column of columns) {
 		const { tokens } = tokenize(document[column] as string, locale);
-		highlightResult[column] = tokens.map(
-			([token]) =>
-				[
-					token,
-					matchedTokens.includes(token.toLocaleLowerCase(locale)),
-				] satisfies [string, boolean],
-		);
+		highlightResult[column] = tokens.map((token) => {
+			if (matchedTokens.includes(token[0].toLocaleLowerCase(locale))) {
+				token[1] |= TOKEN_IS_MATCHED;
+			}
+			return token;
+		});
 	}
 	return highlightResult;
 }
@@ -276,25 +280,28 @@ export function highlightFlattenColumns<
 	const { locale, matchLength = 10, padStart = 4 } = options ?? {};
 	const { document, matchedTokens } = searchResult;
 	const segmenter = new Intl.Segmenter(locale, { granularity: 'word' });
-	const paddingSegments = new RingBuffer<[string, boolean][]>(padStart + 1);
-	const highlights: [string, boolean][][] = [];
+	const paddingSegments = new RingBuffer<[string, number][]>(padStart + 1);
+	const highlights: [string, number][][] = [];
 
 	let firstMatchFound = false;
 	for (const column of columns) {
 		for (const { isWordLike, segment } of segmenter.segment(
 			document[column] as string,
 		)) {
+			let flags = 0;
 			if (isWordLike) {
-				const isMatch = matchedTokens.includes(
-					segment.toLocaleLowerCase(locale),
-				);
+				const lowerSegment = segment.toLocaleLowerCase(locale);
+				const isMatch = matchedTokens.includes(lowerSegment);
+				flags |= TOKEN_IS_WORD_LIKE;
+				if (isMatch) flags |= TOKEN_IS_MATCHED;
+				if (stopwords.includes(lowerSegment)) flags |= TOKEN_IS_STOPWORD;
 				if (firstMatchFound) {
 					// Second accumulate elements until `matchLength` after `firstMatchFound`
-					highlights.push([[segment, isMatch]]);
+					highlights.push([[segment, flags]]);
 					if (highlights.length >= matchLength) break;
 				} else {
 					// First accumulate `padStart` elements before `firstMatchFound`
-					paddingSegments.add([[segment, isMatch]]);
+					paddingSegments.add([[segment, flags]]);
 					if (isMatch) {
 						firstMatchFound = true;
 						highlights.push(...paddingSegments.toArray());
@@ -305,7 +312,7 @@ export function highlightFlattenColumns<
 				const target = firstMatchFound
 					? highlights.at(-1)
 					: paddingSegments.getLast();
-				if (target) target.push([segment, false]);
+				if (target) target.push([segment, flags]);
 			}
 		}
 	}
@@ -315,11 +322,16 @@ export function highlightFlattenColumns<
 			for (const { isWordLike, segment } of segmenter.segment(
 				document[column] as string,
 			)) {
+				let flags = 0;
 				if (isWordLike) {
-					highlights.push([[segment, false]]);
+					flags |= TOKEN_IS_WORD_LIKE;
+					const lowerSegment = segment.toLocaleLowerCase(locale);
+					if (matchedTokens.includes(lowerSegment)) flags |= TOKEN_IS_MATCHED;
+					if (stopwords.includes(lowerSegment)) flags |= TOKEN_IS_STOPWORD;
+					highlights.push([[segment, flags]]);
 					if (highlights.length >= matchLength) break columnLoop;
 				} else {
-					highlights.at(-1)?.push([segment, false]);
+					highlights.at(-1)?.push([segment, flags]);
 				}
 			}
 		}

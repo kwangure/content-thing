@@ -18,7 +18,7 @@ describe('highlightSearchResult', () => {
 		assert(result);
 		const highlightedResult = highlightSearchResult(result, ['content']);
 		expectTypeOf(highlightedResult).toMatchTypeOf<{
-			content: [string, boolean][];
+			content: [string, number][];
 		}>();
 	});
 });

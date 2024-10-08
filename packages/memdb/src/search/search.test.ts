@@ -472,16 +472,16 @@ describe('highlightSearchResult', () => {
 			'title',
 		]);
 		expect(highlightedResult).toEqual({
-			id: [['1', false]],
+			id: [['1', 1]],
 			title: [
-				['Another', false],
-				[' ', false],
-				['Test', false],
+				['Another', 1],
+				[' ', 0],
+				['Test', 1],
 			],
 			content: [
-				['Hello', true],
-				[' ', false],
-				['again', false],
+				['Hello', 5],
+				[' ', 0],
+				['again', 3],
 			],
 		});
 	});
@@ -495,16 +495,16 @@ describe('highlightSearchResult', () => {
 			'title',
 		]);
 		expect(highlightedResult).toEqual({
-			id: [['1', false]],
+			id: [['1', 1]],
 			title: [
-				['Another', false],
-				[' ', false],
-				['Test', false],
+				['Another', 1],
+				[' ', 0],
+				['Test', 1],
 			],
 			content: [
-				['Hello', true],
-				[' ', false],
-				['again', false],
+				['Hello', 5],
+				[' ', 0],
+				['again', 3],
 			],
 		});
 	});
@@ -518,13 +518,13 @@ describe('highlightSearchResult', () => {
 		assert(result);
 		const highlightedResult = highlightSearchResult(result, ['id', 'title']);
 		expect(highlightedResult).toEqual({
-			id: [['1', false]],
+			id: [['1', 1]],
 			title: [
-				['Hello', true],
-				[',', false],
-				[' ', false],
-				['World', false],
-				['!', false],
+				['Hello', 5],
+				[',', 0],
+				[' ', 0],
+				['World', 1],
+				['!', 0],
 			],
 		});
 	});
@@ -536,10 +536,10 @@ describe('highlightSearchResult', () => {
 		assert(result);
 		const highlightedResult = highlightSearchResult(result, ['id', 'title']);
 		expect(highlightedResult).toEqual({
-			id: [['1', false]],
+			id: [['1', 1]],
 			title: [
-				['你好', true],
-				['世界', true], // fuzzy match
+				['你好', 5],
+				['世界', 5], // fuzzy match
 			],
 		});
 	});
@@ -551,11 +551,11 @@ describe('highlightSearchResult', () => {
 		assert(result);
 		const highlightedResult = highlightSearchResult(result, ['id', 'title']);
 		expect(highlightedResult).toEqual({
-			id: [['1', false]],
+			id: [['1', 1]],
 			title: [
-				['Hello', true],
-				[' ', false],
-				['🌍', false],
+				['Hello', 5],
+				[' ', 0],
+				['🌍', 0],
 			],
 		});
 	});
@@ -569,12 +569,12 @@ describe('highlightFirst', () => {
 		assert(result);
 		const highlightedResult = highlightFlattenColumns(result, ['title']);
 		expect(highlightedResult).toEqual([
-			['The', false],
-			[' ', false],
-			['blue', false],
-			[' ', false],
-			['dogs', true],
-			['.', false],
+			['The', 3],
+			[' ', 0],
+			['blue', 1],
+			[' ', 0],
+			['dogs', 5],
+			['.', 0],
 		]);
 	});
 
@@ -585,12 +585,12 @@ describe('highlightFirst', () => {
 		assert(result);
 		const highlightedResult = highlightFlattenColumns(result, ['title']);
 		expect(highlightedResult).toEqual([
-			['The', false],
-			[' ', false],
-			['blue', true],
-			[' ', false],
-			['dogs', true],
-			['.', false],
+			['The', 3],
+			[' ', 0],
+			['blue', 5],
+			[' ', 0],
+			['dogs', 5],
+			['.', 0],
 		]);
 	});
 
@@ -601,19 +601,19 @@ describe('highlightFirst', () => {
 		assert(result);
 		const highlightedResult = highlightFlattenColumns(result, ['title']);
 		expect(highlightedResult).toEqual([
-			['The', false],
-			[' ', false],
-			['blue', false],
-			[' ', false],
-			['dogs', true],
-			['.', false],
-			[' ', false],
-			['The', false],
-			[' ', false],
-			['green', false],
-			[' ', false],
-			['dogs', true],
-			['.', false],
+			['The', 3],
+			[' ', 0],
+			['blue', 1],
+			[' ', 0],
+			['dogs', 5],
+			['.', 0],
+			[' ', 0],
+			['The', 3],
+			[' ', 0],
+			['green', 1],
+			[' ', 0],
+			['dogs', 5],
+			['.', 0],
 		]);
 	});
 
@@ -624,19 +624,19 @@ describe('highlightFirst', () => {
 		assert(result);
 		const highlightedResult = highlightFlattenColumns(result, ['title']);
 		expect(highlightedResult).toEqual([
-			['The', false],
-			[' ', false],
-			['blue', true],
-			[' ', false],
-			['dogs', true],
-			['.', false],
-			[' ', false],
-			['The', false],
-			[' ', false],
-			['green', false],
-			[' ', false],
-			['dogs', true],
-			['.', false],
+			['The', 3],
+			[' ', 0],
+			['blue', 5],
+			[' ', 0],
+			['dogs', 5],
+			['.', 0],
+			[' ', 0],
+			['The', 3],
+			[' ', 0],
+			['green', 1],
+			[' ', 0],
+			['dogs', 5],
+			['.', 0],
 		]);
 	});
 
@@ -655,18 +655,18 @@ describe('highlightFirst', () => {
 			'content',
 		]);
 		expect(highlightedResult).toEqual([
-			['The', false],
-			[' ', false],
-			['blue', true],
-			[' ', false],
-			['dogs', true],
-			['.', false],
-			['The', false],
-			[' ', false],
-			['green', false],
-			[' ', false],
-			['dogs', true],
-			['.', false],
+			['The', 3],
+			[' ', 0],
+			['blue', 5],
+			[' ', 0],
+			['dogs', 5],
+			['.', 0],
+			['The', 3],
+			[' ', 0],
+			['green', 1],
+			[' ', 0],
+			['dogs', 5],
+			['.', 0],
 		]);
 	});
 
@@ -677,14 +677,14 @@ describe('highlightFirst', () => {
 		assert(result);
 		const highlightedResult = highlightFlattenColumns(result, ['title']);
 		expect(highlightedResult).toEqual([
-			['The', false],
-			[' ', false],
-			['BLUE', true],
-			[' ', false],
-			['DOGS', true],
-			[' ', false],
-			['bark', false],
-			['.', false],
+			['The', 3],
+			[' ', 0],
+			['BLUE', 5],
+			[' ', 0],
+			['DOGS', 5],
+			[' ', 0],
+			['bark', 1],
+			['.', 0],
 		]);
 	});
 
@@ -718,12 +718,12 @@ describe('highlightFirst', () => {
 			['content', 'title'],
 		);
 		expect(highlightedResult).toEqual([
-			['bar', false],
-			[' ', false],
-			['baz', false],
-			['foo', false],
-			[' ', false],
-			['bar', false],
+			['bar', 1],
+			[' ', 0],
+			['baz', 1],
+			['foo', 1],
+			[' ', 0],
+			['bar', 1],
 		]);
 	});
 
@@ -738,18 +738,18 @@ describe('highlightFirst', () => {
 			padStart: 3,
 		});
 		expect(highlightedResult).toEqual([
-			['three', false],
-			[' ', false],
-			['four', false],
-			[' ', false],
-			['five', false],
-			[' ', false],
-			['six', true],
-			[' ', false],
-			['seven', false],
-			[' ', false],
-			['eight', false],
-			['.', false],
+			['three', 1],
+			[' ', 0],
+			['four', 1],
+			[' ', 0],
+			['five', 1],
+			[' ', 0],
+			['six', 5],
+			[' ', 0],
+			['seven', 1],
+			[' ', 0],
+			['eight', 1],
+			['.', 0],
 		]);
 	});
 
@@ -764,21 +764,21 @@ describe('highlightFirst', () => {
 			padStart: 3,
 		});
 		expect(highlightedResult).toEqual([
-			['seven', false],
-			[' ', false],
-			['eight', false],
-			['.', false],
-			[' ', false],
-			['One', false],
-			[' ', false],
-			['two', true],
-			[' ', false],
-			['three', false],
-			[' ', false],
-			['four', false],
-			[' ', false],
-			['five', false],
-			['.', false],
+			['seven', 1],
+			[' ', 0],
+			['eight', 1],
+			['.', 0],
+			[' ', 0],
+			['One', 1],
+			[' ', 0],
+			['two', 5],
+			[' ', 0],
+			['three', 1],
+			[' ', 0],
+			['four', 1],
+			[' ', 0],
+			['five', 1],
+			['.', 0],
 		]);
 	});
 
@@ -793,15 +793,15 @@ describe('highlightFirst', () => {
 			matchLength: 5,
 		});
 		expect(highlightedResult).toEqual([
-			['One', false],
-			[' ', false],
-			['two', true],
-			[' ', false],
-			['three', false],
-			[' ', false],
-			['four', false],
-			[' ', false],
-			['five', false],
+			['One', 1],
+			[' ', 0],
+			['two', 5],
+			[' ', 0],
+			['three', 1],
+			[' ', 0],
+			['four', 1],
+			[' ', 0],
+			['five', 1],
 		]);
 	});
 
@@ -816,20 +816,20 @@ describe('highlightFirst', () => {
 			matchLength: 7,
 		});
 		expect(highlightedResult).toEqual([
-			['One', false],
-			[' ', false],
-			['two', true],
-			[' ', false],
-			['three', false],
-			[' ', false],
-			['four', false],
-			['.', false],
-			[' ', false],
-			['Five', false],
-			[' ', false],
-			['six', true],
-			[' ', false],
-			['seven', false],
+			['One', 1],
+			[' ', 0],
+			['two', 5],
+			[' ', 0],
+			['three', 1],
+			[' ', 0],
+			['four', 1],
+			['.', 0],
+			[' ', 0],
+			['Five', 1],
+			[' ', 0],
+			['six', 5],
+			[' ', 0],
+			['seven', 1],
 		]);
 	});
 
@@ -848,10 +848,10 @@ describe('highlightFirst', () => {
 			{ matchLength: 3 },
 		);
 		expect(highlightedResult).toEqual([
-			['foo', false],
-			[' ', false],
-			['bar', false],
-			['bar', false],
+			['foo', 1],
+			[' ', 0],
+			['bar', 1],
+			['bar', 1],
 		]);
 	});
 });
