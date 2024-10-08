@@ -6,6 +6,14 @@ import { stopwords } from './stopwords.js';
 const TOKEN_IS_WORD_LIKE = 1 << 0;
 const TOKEN_IS_STOPWORD = 1 << 1;
 
+export function isTokenWordLike(flags: number): boolean {
+	return (flags & TOKEN_IS_WORD_LIKE) !== 0;
+}
+
+export function isTokenStopWord(flags: number): boolean {
+	return (flags & TOKEN_IS_STOPWORD) !== 0;
+}
+
 interface SearchTokens {
 	tokens: [string, number][];
 	wordCount: number;
@@ -153,8 +161,10 @@ export function findMatchingDocs(
 	const matchedDocs = new Map<number, DocumentMatch[]>();
 
 	const uniqueTokens = new Set<string>();
-	for (const [token] of queryTokens.tokens) {
-		uniqueTokens.add(token.toLocaleLowerCase(locale));
+	for (const [token, flags] of queryTokens.tokens) {
+		if (isTokenWordLike(flags) && !isTokenStopWord(flags)) {
+			uniqueTokens.add(token.toLocaleLowerCase(locale));
+		}
 	}
 
 	for (const token of uniqueTokens) {
@@ -170,7 +180,7 @@ export function findMatchingDocs(
 						docFreq: docs.size,
 						fuzzyDistance: distance,
 						termFreq,
-						token: indexToken, // Use the actual matched token
+						token: indexToken,
 					});
 				}
 			}
