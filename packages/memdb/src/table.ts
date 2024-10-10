@@ -5,12 +5,14 @@ type NotAUnion<T, U = T> = U extends any
 		: never
 	: never;
 
-export function createTable<T extends Record<string, unknown>>(
-	records: NotAUnion<T>[],
-) {
+export interface TableRecord {
+	[x: string]: unknown;
+}
+
+export function createTable<T extends TableRecord>(records: NotAUnion<T>[]) {
 	return { records } satisfies Table<T>;
 }
 
-export type Table<T extends Record<string, unknown>> = {
+export type Table<T extends TableRecord> = {
 	records: NotAUnion<T>[];
 };
