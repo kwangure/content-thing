@@ -1,9 +1,9 @@
+import type { Table, TableRecord } from './table.js';
 import type { Simplify } from './types.js';
-import type { Table } from './table.js';
 
-type WhereCondition<T extends Record<string, unknown>> = (record: T) => boolean;
+type WhereCondition<T extends TableRecord> = (record: T) => boolean;
 
-export function filter<T extends Record<string, unknown>>(table: Table<T>) {
+export function filter<T extends TableRecord>(table: Table<T>) {
 	/* eslint-disable-next-line @typescript-eslint/ban-types */
 	return new FilterBuilder<T, {}, keyof T & string>(table);
 }
@@ -14,7 +14,7 @@ export type ComputedFields<T> = {
 } & {};
 
 class FilterBuilder<
-	TRecord extends Record<string, unknown>,
+	TRecord extends TableRecord,
 	TComputed extends ComputedFields<TRecord>,
 	TSelected extends keyof TRecord,
 > {
@@ -58,7 +58,7 @@ class FilterBuilder<
 }
 
 export function execute<
-	TRecord extends Record<string, unknown>,
+	TRecord extends TableRecord,
 	TComputed extends ComputedFields<TRecord>,
 	TSelected extends keyof TRecord & string,
 >(queryBuilder: FilterBuilder<TRecord, TComputed, TSelected>) {
@@ -80,7 +80,7 @@ export function execute<
 			continue;
 		}
 
-		const filteredRecord: Record<string, unknown> = {};
+		const filteredRecord: TableRecord = {};
 		for (const field of selectedFields) {
 			if (field in record) {
 				filteredRecord[field] = record[field];

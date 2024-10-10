@@ -1,4 +1,4 @@
-import type { Table } from '../table.js';
+import type { TableRecord, Table } from '../table.js';
 import type { Simplify } from '../types.js';
 import { levenshteinDistance } from './levenshtein.js';
 import { stopwords } from './stopwords.js';
@@ -74,13 +74,13 @@ export interface SearchIndex extends BM25Options {
 	invertedIndex: Map<string, Map<number, number>>;
 }
 
-export type StringValueColumns<T extends SearchDocument> = Extract<
+export type StringValueColumns<T extends TableRecord> = Extract<
 	keyof T,
 	{ [K in keyof T]: T[K] extends string ? K : never }[keyof T]
 >;
 
 export function createSearchIndex<
-	T extends SearchDocument,
+	T extends TableRecord,
 	C extends StringValueColumns<T>,
 >(table: Table<T>, columns: C[], locale?: Intl.LocalesArgument) {
 	const records = table.records;
@@ -122,18 +122,14 @@ export function createSearchIndex<
 	};
 }
 
-export interface SearchDocument {
-	[x: string]: unknown;
-}
-
-export type SearchResult<T extends SearchDocument> = {
+export type SearchResult<T extends TableRecord> = {
 	index: number;
 	document: T;
 	score: number;
 	matchedTokens: string[];
 };
 
-export function search<T extends SearchDocument>(
+export function search<T extends TableRecord>(
 	table: Table<T>,
 	searchIndex: SearchIndex,
 	query: string,
@@ -195,7 +191,7 @@ export function findMatchingDocs(
 	return matchedDocs;
 }
 
-export function rankBM25<T extends SearchDocument>(
+export function rankBM25<T extends TableRecord>(
 	matchedDocs: Map<number, DocumentMatch[]>,
 	table: Table<T>,
 	options: BM25Options,
@@ -241,12 +237,12 @@ export function rankBM25<T extends SearchDocument>(
 	return results;
 }
 
-export type SearchHighlights<T extends SearchDocument> = {
+export type SearchHighlights<T extends TableRecord> = {
 	[K in keyof T]: [string, number][];
 };
 
 export function highlightSearchResult<
-	T extends SearchDocument,
+	T extends TableRecord,
 	C extends StringValueColumns<T>,
 >(searchResult: SearchResult<T>, columns: C[], locale?: Intl.LocalesArgument) {
 	const { document, matchedTokens } = searchResult;
@@ -270,7 +266,7 @@ export interface HighlightFlattenColumnsOptions {
 }
 
 export function highlightFlattenColumns<
-	T extends SearchDocument,
+	T extends TableRecord,
 	C extends StringValueColumns<T>,
 >(
 	searchResult: SearchResult<T>,
