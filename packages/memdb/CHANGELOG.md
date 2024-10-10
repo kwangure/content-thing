@@ -1,5 +1,11 @@
 # @content-thing/memdb
 
+## 0.0.10
+
+### Patch Changes
+
+- 89ba5c1: Use string Interface index signature instead of string Record
+
 ## 0.0.9
 
 ### Patch Changes
