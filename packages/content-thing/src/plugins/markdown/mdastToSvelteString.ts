@@ -5,7 +5,6 @@ import {
 	css,
 	highlightLines,
 	html,
-	isSupportedLanguage,
 	json,
 	python,
 	rust,
@@ -236,3 +235,10 @@ const SUPPORTED_LANGUAGES = {
 	ts: typescript,
 	tsx: typescript,
 };
+
+export type HighlightLanguage = keyof typeof SUPPORTED_LANGUAGES;
+
+function isSupportedLanguage(language: unknown): language is HighlightLanguage {
+	if (typeof language !== 'string') return false;
+	return Object.hasOwn(SUPPORTED_LANGUAGES, language);
+}

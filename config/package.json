@@ -3,12 +3,11 @@
 	"private": true,
 	"dependencies": {
 		"eslint-config-prettier": "^9.1.0",
-		"eslint-plugin-svelte": "^2.35.1",
-		"globals": "^13.23.0",
-		"prettier-plugin-svelte": "^3.1.2",
-		"prettier-plugin-tailwindcss": "^0.5.7",
-		"svelte": "^4.2.8",
-		"typescript-eslint": "^7.2.0"
+		"eslint-plugin-svelte": "^2.46.1",
+		"globals": "^15.14.0",
+		"prettier-plugin-svelte": "^3.3.2",
+		"svelte": "^5.17.3",
+		"typescript-eslint": "^8.19.0"
 	},
 	"type": "module"
 }
