@@ -68,8 +68,8 @@
 	],
 	"devDependencies": {
 		"@types/node": "^20.10.5",
-		"publint": "^0.2.6",
-		"typescript": "^5.4.5",
+		"publint": "^0.3.0",
+		"typescript": "^5.7.0",
 		"vitest": "^1.6.0"
 	},
 	"type": "module"

@@ -9,16 +9,7 @@ const { browser, es2021, node } = globals;
 
 export default [
 	{
-		ignores: [
-			'**/.svelte-kit/',
-			'**/.wireit/',
-			'**/dist/',
-			'**/packages/*/.types/',
-			'**/packages/*/public/',
-			'**/root/',
-			'**/build/',
-			'**/tmp/',
-		],
+		ignores: ['**/.svelte-kit/', '**/.wireit/', '**/dist/', '**/build/'],
 	},
 	js.configs.recommended,
 	...tseslint.configs.recommended,

@@ -31,9 +31,7 @@ lint_staged_files() {
         printf "\033[0;33m\nNo files to lint.\033[0m"
         return
     fi
-    export ESLINT_USE_FLAT_CONFIG=true
     echo_command pnpm eslint --color --cache --fix --config ./config/eslint.config.js --cache-location ./config/.eslintcache $FILES
-    unset ESLINT_USE_FLAT_CONFIG
     echo_command git add $FILES
 }
 

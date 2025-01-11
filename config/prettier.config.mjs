@@ -3,7 +3,7 @@ const config = {
 	useTabs: true,
 	singleQuote: true,
 	trailingComma: 'all',
-	plugins: ['prettier-plugin-svelte', 'prettier-plugin-tailwindcss'],
+	plugins: ['prettier-plugin-svelte'],
 	overrides: [
 		{
 			files: '*.svelte',

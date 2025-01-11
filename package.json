@@ -38,7 +38,7 @@
 			"output": []
 		},
 		"lint": {
-			"command": "cross-env ESLINT_USE_FLAT_CONFIG=true eslint --color --cache --fix --config ./config/eslint.config.js --cache-location ./config/.eslintcache \"**/*.{js,svelte,ts}\"",
+			"command": "eslint --color --cache --fix --config ./config/eslint.config.js --cache-location ./config/.eslintcache \"**/*.{js,svelte,ts}\"",
 			"files": [
 				"**/*.{js,svelte,ts}",
 				"!packages/*/dist/**",
@@ -92,10 +92,9 @@
 		}
 	},
 	"devDependencies": {
-		"@changesets/cli": "^2.26.2",
-		"cross-env": "^7.0.3",
-		"eslint": "^8.55.0",
-		"prettier": "^3.1.0",
-		"wireit": "^0.14.1"
+		"@changesets/cli": "^2.27.2",
+		"eslint": "^9.17.0",
+		"prettier": "^3.4.0",
+		"wireit": "^0.14.9"
 	}
 }
